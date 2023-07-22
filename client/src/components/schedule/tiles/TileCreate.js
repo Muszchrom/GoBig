@@ -33,7 +33,6 @@ export default function TileCreate({open, setOpen, color}) {
                                            submitFunction={createSubject}
                                            data={userData}>Upload subject?</TileUploadModal>}
             
-            <img className="overlay-svg" src={`${source}/static/Edit.svg`} alt="Pencil icon"/>
         </Overlay>
     )
 }
