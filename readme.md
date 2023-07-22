@@ -10,7 +10,7 @@ In case you have directory certbot, certbot/www, certbot/conf, ommit list below 
 3. In nginx/ run: docker compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d %DOMAIN.ORG%
 4. Paste this code in nginx/conf/default.conf, replace %DOMAIN.ORG% with your domain name and restart docker compose
 server {  
-    listen 443 default_server ssl;  
+&nbsp;&nbsp;&nbsp;&nbsp;listen 443 default_server ssl;  
     listen [::]:443 ssl;  
 
     server_name %DOMAIN.ORG%;  
