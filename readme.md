@@ -11,17 +11,13 @@ In case you have directory certbot, certbot/www, certbot/conf, ommit list below 
 4. Paste this code in nginx/conf/default.conf, replace %DOMAIN.ORG% with your domain name and restart docker compose
 server {  
 &emsp;listen 443 default_server ssl;  
-&emsp;listen [::]:443 ssl;  
-
-&emsp;server_name %DOMAIN.ORG%;  
-
+&emsp;listen [::]:443 ssl;    
+&emsp;server_name %DOMAIN.ORG%;    
 &emsp;ssl_certificate /etc/nginx/ssl/live/%DOMAIN.ORG%/fullchain.pem;  
-&emsp;ssl_certificate_key /etc/nginx/ssl/live/%DOMAIN.ORG%/privkey.pem;  
-
+&emsp;ssl_certificate_key /etc/nginx/ssl/live/%DOMAIN.ORG%/privkey.pem;    
 &emsp;location / {  
 &emsp;&emsp;proxy_pass http://192.168.100.54:3000$request_uri;  
-&emsp;}  
-
+&emsp;}    
 &emsp;location /api {  
 &emsp;&emsp;proxy_pass http://192.168.100.54:5000$request_uri;  
 &emsp;}  
