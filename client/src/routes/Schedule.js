@@ -5,12 +5,27 @@ import NotFound from './NotFound'
 import { semesterBlueprint } from '../components/data.js' // change it later
 import Header from '../components/schedule/Header'
 import TileMounter from '../components/schedule/TileMounter'
+import { getSchedule } from '../components/Requests'
 
 export default function Schedule({signedIn}) {
     const [currentWeek, setCurrentWeek] = useState(semesterBlueprint.weeks[0])
     const daysOfTheWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+    const [schedule, setSchedule] = useState([])
 
     useEffect(() => {getAndSetCurrentWeek()}, [])
+    useEffect(() => {
+        (async () => {
+            const fetchedSchedule = await getSchedule()
+            if (fetchedSchedule) {
+                const bufferArray = [[], [], [], [], [], [], []]
+                fetchedSchedule.forEach((subject) => {
+                    // data is sorted by day and start, so theres no need for extra sorting
+                    bufferArray[subject.day].push(subject)
+                })
+                setSchedule(bufferArray)
+            }
+        })()
+    }, [])
     
     const getCurrentDay = () => {return daysOfTheWeek[new Date().getDay()]}
 
@@ -31,18 +46,23 @@ export default function Schedule({signedIn}) {
 
     return (
     <>
-        <Header getCurrentDay={getCurrentDay} currentWeek={currentWeek} handleWeekChange={handleWeekChange} getAndSetCurrentWeek={getAndSetCurrentWeek}/>
+        <Header 
+            getCurrentDay={getCurrentDay} 
+            currentWeek={currentWeek} 
+            handleWeekChange={handleWeekChange} 
+            getAndSetCurrentWeek={getAndSetCurrentWeek}/>
         <Routes>
             <Route exact path="/" element={<HandleDefaultPath getCurrentDay={getCurrentDay} />} />
             {daysOfTheWeek.map((path, index) => (
-                <Route path={`/${path}`} key={index} element={<TileMounter signedIn={signedIn} currentWeek={currentWeek}/>} />
+                <Route path={`/${path}`} key={index} element={
+                    <TileMounter 
+                        signedIn={signedIn} 
+                        scheduleForTheDay={schedule[index]} 
+                        currentWeek={currentWeek}/>
+                } />
             ))}
             <Route path="*" element={<NotFound goTo={"/"} title={"ERR 404"} />} />
         </Routes>
-        <span>
-            semesterBlueprint should be fetched from server
-            AdditionalInfo data should also be fetched from server
-        </span>
     </>
     )
 }

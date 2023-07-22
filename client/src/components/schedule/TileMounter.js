@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 
 import { CommonTile, WaitingTile, CreateTile } from './Tiles'
 import AdditionalInfo from './AdditionalInfo'
-import { getScheduleForDay } from '../Requests'
 import { NavigateBackTo } from '../Common';
 
 const availableColors = [
@@ -17,27 +16,20 @@ const availableColors = [
   ];
 
 
-export default function TileMounter({signedIn, currentWeek}) {
+export default function TileMounter({signedIn, currentWeek, scheduleForTheDay}) {
     const [dataAcquired, setDataAcquired] = useState(false)
     const [fetchedSchedule, setFetchedSchedule] = useState([])
     const [color, setColor] = useState([])
 
     let location = useLocation()
 
-    // fetch data
+    // true: [][any index] === undefined
     useEffect(() => {
-      (async () => {
-        const pathName = location.pathname.split('/')
-        const dayName = pathName[pathName.length - 1]
-        const dayNameAsNumber = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].indexOf(dayName.toLowerCase())
-        if (dayNameAsNumber < 0) return
-
-        let data = await getScheduleForDay(dayNameAsNumber)
-        data = data.rows
-        setFetchedSchedule(data)
+      if (scheduleForTheDay) {
+        setFetchedSchedule(scheduleForTheDay)
         setDataAcquired(true)
-      })()
-    }, [location])
+      }
+    }, [location, scheduleForTheDay])
 
     // create random color array
     useEffect(() => {
