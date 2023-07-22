@@ -3,16 +3,6 @@
 }
 
 :root {
-  --text: rgb(85, 87, 71);
-  --text2: rgb(60, 62, 46);
-  --text3: rgb(55, 57, 41);
-  --c1: rgb(255, 199, 199);
-  --c2: rgb(255, 232, 192);
-  --c3: rgb(255, 243, 143);
-  --c4: rgb(185, 230, 181);
-  --c5: rgb(183, 228, 255);
-  --c6: rgb(230, 200, 246);
-  --c7: rgb(255, 201, 228);
   --Lightcoral: #F08080;
   --Background: #FAEBD7;
   --Text: #322F2B;
@@ -31,7 +21,28 @@ body {
   background: var(--Background);
 }
 
-h1, h2, h3, h4, h5, h6, p, span, a, li, button, input {
+button,
+.day-picker h1,
+.nav-dropdown li a,
+.nav-button,
+.tile,
+.absolute-button,
+.absolute-close-button,
+.create-tile-inner,
+.week-nav-button,
+.tile-edit-button,
+.span-button,
+.edit-tile-dropdown li {
+  cursor: pointer;
+}
+.overlay {
+  cursor: auto;
+}
+.edit-tile-input-label {
+  cursor: default;
+}
+
+h1, h2, h3, h4, h5, h6, p, span, a, li, button, input, label {
   font-family: 'Varela Round', sans-serif;
   color: var(--Text);
 }
@@ -45,7 +56,6 @@ h1, h2, h3, h4, h5, h6, p, span, a, li, button, input {
 }
 
 a {
-  color: var(--text);
   text-decoration: none;
 }
 
@@ -67,7 +77,6 @@ li img {
 .app-header {
   background: lightcoral;
   width: 100%;
-  /* margin-bottom: 1em; */
   box-shadow: var(--Shadow);
 }
 .header-inner {
@@ -141,7 +150,7 @@ li img {
   padding: 0;
   margin-top: 0;
   height: 150px;
-  border-bottom: 2px solid var(--text);
+  border-bottom: 2px solid var(--Text);
   overflow-y: scroll;
   list-style-type: none;
 }
@@ -172,26 +181,6 @@ li img {
   z-index: 1;
 }
 
-button,
-.day-picker h1,
-.nav-dropdown li a,
-.nav-button,
-.tile,
-.absolute-button,
-.absolute-close-button,
-.create-tile-inner,
-.week-nav-button,
-.tile-edit-button,
-.span-button,
-.edit-tile-dropdown li {
-  cursor: pointer;
-}
-.overlay {
-  cursor: auto;
-}
-.edit-tile-input-label {
-  cursor: default;
-}
 /* ------------------------------------- */
 /* TILES ------------------------------- */
 /* ------------------------------------- */
@@ -376,16 +365,14 @@ button,
   padding: 1em 1em 1em 0;
   border-radius: 0 0 12px 0;
   border-bottom: 4px solid var(--Lightcoral);
-  /* border-left: 1px solid var(--Lightcoral); */
 }
 .edit-tile-dropdown li {
   padding: 8px;
   transition: all .2s ease-in-out;
-  /* border-bottom: 1px solid var(--Text); */
   border-left: 2px solid transparent;
   position: relative;
 }
-.edit-tile-dropdown li:hover {
+.edit-tile-dropdown li:hover:not(.edit-tile-dropdown-item-selected) {
   border-left: 2px solid var(--Lightcoral);
 }
 
@@ -405,6 +392,7 @@ button,
 .icon-input-wrapper {
   position: absolute;
   background-color: inherit;
+  border-radius: 50%;
   right: 1em;
   bottom: 50%;
   z-index: 1;
@@ -486,7 +474,7 @@ button,
   letter-spacing: 1.1px;
   margin-top: 0;
   font-size: 1.4em;
-  color: var(--text2);
+  color: var(--Text);
   width: 85%;
   overflow-wrap: break-word;
 }
@@ -576,9 +564,7 @@ button,
 }
 .image-frame {
   width: 100%;
-  /* height: calc(70vw - 1.4em); */
   height: calc(70vw - 3.5em);
-  /* max-height: 385px; */
   max-height: 310px;
   box-shadow: 0 0 28px beige;
   box-shadow: inset 0 0 28px antiquewhite;

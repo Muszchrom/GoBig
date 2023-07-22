@@ -45,21 +45,23 @@ export default function TileForm({children, subject, manageData}) {
     return (
         <form onSubmit={handleSubmit} className="tile-form">
             {/* REMOVE SHIT IN STARTENDINPUT RIGHT BELOW */}
-            <StartEndInput removeMe={setIcon} start={subjectStartEnd.split(' - ')[0]} end={subjectStartEnd.split(' - ')[1]} startEnd={subjectStartEnd} setStartEnd={setSubjectStartEnd}>Start - End</StartEndInput>
-            <TextInputBigger currentState={subjectName} changeState={setSubjectName}>Subject name</TextInputBigger>
-            <TextInput currentState={teacher} changeState={setTeacher}>Teacher</TextInput>
+            <StartEndInput _name="start-end" removeMe={setIcon} start={subjectStartEnd.split(' - ')[0]} end={subjectStartEnd.split(' - ')[1]} startEnd={subjectStartEnd} setStartEnd={setSubjectStartEnd}>Start - End</StartEndInput>
+            <TextInputBigger _name="subject-name" currentState={subjectName} changeState={setSubjectName}>Subject name</TextInputBigger>
+            <TextInput _name="teacher" currentState={teacher} changeState={setTeacher}>Teacher</TextInput>
             <DropdownInput 
+                _name="subject-type"
                 options={["Laboratory", "Lecture", "Classes", "Project", "Foreign language course"]} 
                 currentState={subjectType}
                 changeState={setSubjectType}>Subject type</DropdownInput>
-            <TextInput currentState={hall} changeState={setHall}>Hall</TextInput>
-            <TextInput currentState={additionalInfo} changeState={setAdditionalInfo}>Additional information</TextInput>
+            <TextInput _name="hall" currentState={hall} changeState={setHall}>Hall</TextInput>
+            <TextInput _name="additional-info" currentState={additionalInfo} changeState={setAdditionalInfo}>Additional information</TextInput>
             <DropdownInput 
+                _name="week-type"
                 options={['Every week', 'Odd weeks', 'Even weeks']} 
                 currentState={weekType}
                 changeState={setWeekType}>Week type</DropdownInput>
-            <TextInput currentState={weekStart} changeState={setWeekStart}>Week start</TextInput>
-            <TextInput currentState={weekEnd} changeState={setWeekEnd}>Week end</TextInput>
+            <TextInput _name="week-start" currentState={weekStart} changeState={setWeekStart}>Week start</TextInput>
+            <TextInput _name="week-end" currentState={weekEnd} changeState={setWeekEnd}>Week end</TextInput>
             <IconInput currentState={icon} changeState={setIcon}/>
             <div className='two-buttons-horizontal-container'>
                 {children}

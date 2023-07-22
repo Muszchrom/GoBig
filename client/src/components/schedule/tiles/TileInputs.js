@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { source } from "../../../source"
 
 // Custom input for editing subject, takes subject start and end time in 00:00 format
-export function StartEndInput({startEnd, setStartEnd, children}) {
+export function StartEndInput({startEnd, setStartEnd, children, _name}) {
     const [cursor, setCursor] = useState(0)
     const timeInput = useRef();
 
@@ -56,13 +56,13 @@ export function StartEndInput({startEnd, setStartEnd, children}) {
 
     return (
         <div>
-            <span className='edit-tile-input-label'>{children}</span><br></br>
-            <input type="text" className="heading2 edit-tile-input" value={startEnd} ref={timeInput} onChange={handleChange}></input>
+            <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
+            <input id={_name} autoComplete="off" type="text" className="heading2 edit-tile-input" value={startEnd} ref={timeInput} onChange={handleChange}></input>
         </div>
     )
 }
 
-export function DropdownInput({options, children, currentState, changeState}) {
+export function DropdownInput({options, children, currentState, changeState, _name}) {
     const [open, setOpen] = useState(false);
 
     const handleSelect = (e) => {
@@ -72,8 +72,8 @@ export function DropdownInput({options, children, currentState, changeState}) {
 
     return (
         <div style={{backgroundColor: "inherit"}}>
-            <span className='edit-tile-input-label'>{children}</span><br></br>
-            <button type="button" className="heading2 edit-tile-button" onClick={() => setOpen(!open)}>{currentState}</button>
+            <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
+            <button id={_name} type="button" className="heading2 edit-tile-button" onClick={() => setOpen(!open)}>{currentState}</button>
             {open && (
                 <ul className="edit-tile-dropdown no-select">
                     {options.map((item, index) => {
@@ -88,20 +88,20 @@ export function DropdownInput({options, children, currentState, changeState}) {
     )
 }
 
-export function TextInputBigger({children, currentState, changeState}) {
+export function TextInputBigger({children, currentState, changeState, _name}) {
     return (
         <div>
-            <span className='edit-tile-input-label'>{children}</span><br></br>
-            <input type="text" className="heading1 edit-tile-input" value={currentState} onChange={e => changeState(e.target.value)}></input>
+            <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
+            <input id={_name} type="text" className="heading1 edit-tile-input" value={currentState} onChange={e => changeState(e.target.value)}></input>
         </div>
     )
 }
 
-export function TextInput({children, currentState, changeState}) {
+export function TextInput({children, currentState, changeState, _name}) {
     return (
         <div>
-            <span className='edit-tile-input-label'>{children}</span><br></br>
-            <input type="text" className="heading2 edit-tile-input" value={currentState} onChange={e => changeState(e.target.value)}></input>
+            <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
+            <input id={_name} type="text" className="heading2 edit-tile-input" value={currentState} onChange={e => changeState(e.target.value)}></input>
         </div>
     )
 }
@@ -113,18 +113,14 @@ export function IconInput({currentState, changeState}) {
     //     top: calc(-1 * (min(calc((50vw + 50vw / 2) / 2 + 50vw / 8), 175px) * cos(-0.4rad) - min(calc(50vw / 4), 50px)));
     //     left: calc(min(calc((50vw + 50vw / 2) / 2 + 50vw / 8), 175px)  * sin(-0.4rad) + min(calc(50vw / 4), 50px));
     // }
-    // Instead of weird cleanup in adjustElementsPosition() i could use useEffect() with return statement
-    // but im not sure which implementation is faster
     const icons = ["Default.svg", "Exercises.svg", "Labo.svg", "Lecture.svg", "Lektorat.svg"]
     const btn = useRef()
+    let state = false
 
-    const [buttonActive, setButtonActive] = useState(false)
-    
     const vw = (percent) => {
         return (percent * window.innerWidth)/100
     }
 
-    // 
     const calculateTop = (radAngle) => {
         return -1 * (Math.min(vw(50)*7/8, 175) * Math.cos(radAngle) - Math.min(vw(50)/4, 50))
     }
@@ -156,14 +152,15 @@ export function IconInput({currentState, changeState}) {
     }
 
     const schowChildren = () => {
-        if (buttonActive) {
-            resetElementsPosition()
+        if (state) {
             window.removeEventListener('resize', adjustElementsPosition)
+            resetElementsPosition()
+            state = false
         } else {
-            adjustElementsPosition()
             window.addEventListener('resize', adjustElementsPosition)
+            adjustElementsPosition()
+            state = true
         }
-        setButtonActive(!buttonActive)
     }
     return (
         <div className="icon-input-wrapper">
