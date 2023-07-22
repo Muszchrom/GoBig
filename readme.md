@@ -10,21 +10,21 @@ In case you have directory certbot, certbot/www, certbot/conf, ommit list below 
 3. In nginx/ run: docker compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d %DOMAIN.ORG%
 4. Paste this code in nginx/conf/default.conf, replace %DOMAIN.ORG% with your domain name and restart docker compose
 server {  
-&nbsp;&nbsp;&nbsp;&nbsp;listen 443 default_server ssl;  
-    listen [::]:443 ssl;  
+&emsp;listen 443 default_server ssl;  
+&emsp;listen [::]:443 ssl;  
 
-    server_name %DOMAIN.ORG%;  
+&emsp;server_name %DOMAIN.ORG%;  
 
-    ssl_certificate /etc/nginx/ssl/live/%DOMAIN.ORG%/fullchain.pem;  
-    ssl_certificate_key /etc/nginx/ssl/live/%DOMAIN.ORG%/privkey.pem;  
+&emsp;ssl_certificate /etc/nginx/ssl/live/%DOMAIN.ORG%/fullchain.pem;  
+&emsp;ssl_certificate_key /etc/nginx/ssl/live/%DOMAIN.ORG%/privkey.pem;  
 
-    location / {  
-        proxy_pass http://192.168.100.54:3000$request_uri;  
-    }  
+&emsp;location / {  
+&emsp;&emsp;proxy_pass http://192.168.100.54:3000$request_uri;  
+&emsp;}  
 
-    location /api {  
-        proxy_pass http://192.168.100.54:5000$request_uri;  
-    }  
+&emsp;location /api {  
+&emsp;&emsp;proxy_pass http://192.168.100.54:5000$request_uri;  
+&emsp;}  
 }
 5. Before certificate expiration, renew it with: docker compose run --rm certbot renew
 
