@@ -3,10 +3,12 @@
 ## Setting up nginx and SSL
 Big thank you to https://mindsers.blog/post/https-using-nginx-certbot-docker/
 
+In case you have directory certbot, certbot/www, certbot/conf, ommit list below and copy yuors /certbot directory to nginx/, paste code from point 4 to nginx/nginx/conf/default.conf and docker compose up
+
 1. Map port 80 to 80 and 443 to 443 in the router settigns and replace %DOMAIN.ORG% with your domain name in nginx/conf/default.conf.
-2. Run: docker compose up
-3. Run: docker compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d %DOMAIN.ORG%
-4. Paste this code in nginx/conf/default.conf, replace %DOMAIN.ORG% with your domain name
+2. In nginx/ run: docker compose up
+3. In nginx/ run: docker compose run --rm certbot certonly --webroot --webroot-path /var/www/certbot/ -d %DOMAIN.ORG%
+4. Paste this code in nginx/conf/default.conf, replace %DOMAIN.ORG% with your domain name and restart docker compose
 server {
     listen 443 default_server ssl;
     listen [::]:443 ssl;
