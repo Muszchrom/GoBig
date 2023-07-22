@@ -69,6 +69,20 @@ const getSubjectsByDay = (day) => {
     });
 }
 
+const getSchedule = () => {
+    const sql = `SELECT * FROM schedule ORDER BY day, start`
+
+    return new Promise((resolve, reject) => {
+        db.all(sql, (err, rows) => {
+            if (err) {
+                reject(err)
+                return
+            }
+            resolve(rows);
+        })
+    })
+}
+
 const updateSubject = (id, queryFields, values) => {
     const sql = `UPDATE schedule SET ${queryFields} WHERE id=?`
     values.push(id);
@@ -209,6 +223,17 @@ const validateUpdate = async (req, res, next) => {
 /* -------------------------------------------------------
 ######################### Routes #########################
 ------------------------------------------------------- */
+
+router.get('/', (req, res) => {
+    getSchedule()
+        .then((rows) => {
+            res.status(200).json({message: "Rows selected successfully!", rows: rows})
+        })
+        .catch((err) => {
+            console.warn(err)
+            return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]})
+        })
+})
 
 // Get schedule for given day
 router.get('/:day', (req, res) => {
