@@ -394,16 +394,18 @@ li img {
   background-color: inherit;
   border-radius: 50%;
   right: 1em;
-  bottom: 50%;
+  top: 164px;
   z-index: 1;
 }
 .icon-input-button {
   position: relative;
   background-color: inherit;
-  width: calc(50vw);
-  height: calc(50vw);
+  width: min(50vw, 50vh);
+  height: min(50vw, 50vh);
   max-width: 200px;
   max-height: 200px;
+  min-width: 100px;
+  min-height: 100px;
   box-shadow: var(--Shadow);
   border-radius: 50%;
 }
@@ -416,10 +418,12 @@ li img {
 .icon-input-child {
   position: absolute;
   background-color: inherit;
-  width: calc(50vw / 2);
-  height: calc(50vw / 2);
+  width: min(25vw, 25vh);
+  height: min(25vw, 25vh);
   max-width: 100px;
   max-height: 100px;
+  min-width: 50px;
+  min-height: 50px;
   box-shadow: var(--Shadow);
   border-radius: 50%;
   transition: all .2s ease-in-out;

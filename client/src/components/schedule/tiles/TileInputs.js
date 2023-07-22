@@ -121,12 +121,16 @@ export function IconInput({currentState, changeState}) {
         return (percent * window.innerWidth)/100
     }
 
+    const vh = (percent) => {
+        return (percent * window.innerHeight)/100
+    }
+
     const calculateTop = (radAngle) => {
-        return -1 * (Math.min(vw(50)*7/8, 175) * Math.cos(radAngle) - Math.min(vw(50)/4, 50))
+        return -1 * (Math.min(vw(50)*7/8, 175, vh(50)*7/8) * Math.cos(radAngle) - Math.min(vw(50)/4, 50, vh(50)/4))
     }
     
     const calculateLeft = (radAngle) => {
-        return Math.min(vw(50)*7/8, 175) * Math.sin(radAngle) + Math.min(vw(50)/4, 50)
+        return Math.min(vw(50)*7/8, 175, vh(50)*7/8) * Math.sin(radAngle) + Math.min(vw(50)/4, 50, vh(50)/4)
     }
 
     const adjustElementsPosition = () => {
