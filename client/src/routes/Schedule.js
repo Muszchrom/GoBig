@@ -69,6 +69,7 @@ export default function Schedule({signedIn}) {
                         signedIn={signedIn} 
                         scheduleForTheDay={schedule[index]} 
                         currentWeek={currentWeek}/>
+                        
                 } />
             ))}
             <Route path="*" element={<NotFound goTo={"/"} title={"ERR 404"} />} />
