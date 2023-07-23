@@ -6,12 +6,13 @@ import { source } from "../../../source"
 import TileUploadModal from "./TileUploadModal"
 import TileForm from "./TileForm"
 
-export default function TileEdit({open, setOpen, subject, color}) {
+export default function TileEdit({open, setOpen, subject, color, updateScheduleWithoutApiCall, uniqueKey}) {
     const [userData, setUserData] = useState({})
     const [showModal, setShowModal] = useState(false)
     const [modalType, setModalType] = useState('UPDATE')
+    const [uploadedSuccessfully, setUploadedSuccessfully] = useState(false)
 
-    const handleUpload = (data) => {
+    const handleUploadButtonClick = (data) => {
         // find changes
         const fields = ["start", "end", "subjectName", "subjectType", "hall", "teacher", "icon", "additionalInfo", "weekStart", "weekEnd", "weekType"]
         const updateArray = []
@@ -28,29 +29,46 @@ export default function TileEdit({open, setOpen, subject, color}) {
         setShowModal(!showModal)
     }
 
-    const handleDelete = () => {
+    const handleDeleteButtonClick = () => {
         setModalType("DELETE")
         setUserData({"id": subject.id})
         setShowModal(!showModal)
     }
-    
+
+    const handleClose = () => {
+        setOpen(!open)
+        if (uploadedSuccessfully) {
+            updateScheduleWithoutApiCall(subject.day, userData, uniqueKey)
+        }
+    }
+
+    const handleDeleteSubject = async () => {
+        const errors = await deleteSubject(userData)
+        if (!errors.length) setUploadedSuccessfully(true)
+        return errors
+    }
+
+    const handleUpdateSubject = async () => {
+        const errors = await updateSubject(userData)
+        if (!errors.length) setUploadedSuccessfully(true)
+        return errors
+    }
+
     return (
         <Overlay backgroundColor={color} setOpen={setOpen} open={open}>
-            <TileForm subject={subject} manageData={handleUpload}>
-                <div role="button" onClick={handleDelete} className="span-button heading1 error">
+            <TileForm subject={subject} manageData={handleUploadButtonClick}>
+                <div role="button" onClick={handleDeleteButtonClick} className="span-button heading1 error">
                     <img className="span-button-icon" src={`${source}/static/Close - red.svg`} alt=""></img>
                     <span className="error">Delete</span>
                 </div>
             </TileForm>
             {showModal && 
                 <TileUploadModal color={color}
-                                 handleClose={() => setShowModal(!showModal)}
-                                 submitFunction={modalType === "UPDATE" ? updateSubject : deleteSubject}
-                                 data={userData}>
+                                 handleClose={handleClose}
+                                 submitFunction={modalType === "UPDATE" ? handleUpdateSubject : handleDeleteSubject}>
                     {modalType === "UPDATE" ? "Update subject?" : "Delete subject?"}
                 </TileUploadModal>
             }
-            {/* <img className="overlay-svg" src={`${source}/static/Edit.svg`} alt="Pencil icon"/> */}
         </Overlay>
     )
 }

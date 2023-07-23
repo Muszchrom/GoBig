@@ -2,14 +2,14 @@ import { SubmitButton, CancelButton, LoadingButtonAnimation, ErrorList } from ".
 import { ModalWindow } from "../../Overlay"
 import { useState } from "react"
 
-export default function TileUploadModal({color, children, handleClose, submitFunction, data}) {
+export default function TileUploadModal({color, children, handleClose, submitFunction}) {
     const [uploading, setUploading] = useState(false)
     const [uploadErrors, setUploadErrors] = useState([])
     const [uploadFinished, setUploadFinished] = useState(false)
 
     const upload = async () => {
         setUploading(true)
-        const errors = await submitFunction(data)
+        const errors = await submitFunction()
         setUploadErrors(errors)
         setUploadFinished(true)
         setUploading(false)
