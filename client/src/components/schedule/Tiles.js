@@ -5,7 +5,7 @@ import TileData from './tiles/TileData'
 import TileEdit from './tiles/TileEdit'
 import TileCreate from './tiles/TileCreate'
 
-export function CommonTile({subject, color, editMode,  setEditMode, specialType, signedIn}) {
+export function CommonTile({subject, editMode,  setEditMode, specialType, signedIn}) {
     const [open, setOpen] = useState(false)
     const [editingTile, setEditingTile] = useState(false)
 
@@ -30,7 +30,7 @@ export function CommonTile({subject, color, editMode,  setEditMode, specialType,
                 role="button" 
                 tabIndex="0" 
                 className="tile" 
-                style={{background: color}}
+                style={{background: specialType === "not today" ? "gray" : subject.onClient_color}}
             >
                 <div className="tile-inner">
                     <div className="tile-text-conatiner">
@@ -49,7 +49,7 @@ export function CommonTile({subject, color, editMode,  setEditMode, specialType,
             )}
         </div>
 
-        {open && <TileData color={color} 
+        {open && <TileData color={specialType === "not today" ? "gray" : subject.onClient_color} 
                            setOpen={setOpen} 
                            open={open} 
                            subject={subject} 
@@ -60,7 +60,7 @@ export function CommonTile({subject, color, editMode,  setEditMode, specialType,
         {editingTile && <TileEdit open={editingTile}
                                   setOpen={setEditingTile}
                                   subject={subject}
-                                  color={color} />}
+                                  color={specialType === "not today" ? "gray" : subject.onClient_color} />}
     </>
     )
 }

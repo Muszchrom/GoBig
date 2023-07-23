@@ -19,6 +19,16 @@ export default function Schedule({signedIn}) {
             if (fetchedSchedule) {
                 const bufferArray = [[], [], [], [], [], [], []]
                 fetchedSchedule.forEach((subject) => {
+                    const availableColors = [
+                        "rgb(255, 199, 199)",
+                        "rgb(255, 232, 192)",
+                        "rgb(255, 243, 143)",
+                        "rgb(185, 230, 181)",
+                        "rgb(183, 228, 255)",
+                        "rgb(230, 200, 246)",
+                        "rgb(255, 201, 228)"
+                    ]
+                    subject['onClient_color'] = availableColors[Math.floor(Math.random() * (6 - 0 + 1)) + 0]
                     // data is sorted by day and start, so theres no need for extra sorting
                     bufferArray[subject.day].push(subject)
                 })
