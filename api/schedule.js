@@ -161,7 +161,7 @@ const validateSubject = (req, res, next) => {
         return next();
     }
     const errorMessages = errors.array().map(error => error.msg);
-    return res.status(401).json({
+    return res.status(400).json({
         message: "Validation error(s) occured, check errors for more info", 
         errors: errorMessages
     });
