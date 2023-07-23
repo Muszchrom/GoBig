@@ -13,7 +13,6 @@ export default function TileUploadModal({color, children, handleClose, submitFun
         setUploadErrors(errors)
         setUploadFinished(true)
         setUploading(false)
-        console.log(errors)
     }
 
     return (
@@ -42,7 +41,7 @@ export default function TileUploadModal({color, children, handleClose, submitFun
                         <LoadingButtonAnimation />
                     </>
                 }
-                {!!(uploadFinished & uploadErrors.length) && 
+                {!!(uploadFinished & !!uploadErrors.length) && 
                     <>
                         <span className="heading1">
                             Upload failure!
