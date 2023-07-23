@@ -318,20 +318,6 @@ router.post('/', verifyToken, validationChain, validateSubject, (req, res) => {
                 return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]})
             }
         })
-
-    // createSubject(valuesArray)
-    //     .then((result) => {
-    //         if (result) {
-    //             return res.status(201).json({message: "Subject successfully created"})
-    //         } else {
-    //             return res.status(500).json({message: "Unable to save subject in database", errors: ["Unable to save subject in database"]});
-    //         }
-    //     })
-    //     .catch((err) => {
-    //         console.warn(err);
-    //         return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]});
-    //     })
-    
 });
 
 // Update schedule row
