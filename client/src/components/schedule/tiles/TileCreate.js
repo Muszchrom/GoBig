@@ -24,9 +24,14 @@ export default function TileCreate({open, setOpen, color, updateScheduleWithoutA
         setShowModal(!showModal)
     }
     const submitionFunction = async () => {
-        const errors = await createSubject(userData)
-        if (!errors.length) setUploadedSuccessfully(true)
-        return errors
+        const result = await createSubject(userData)
+        if (Array.isArray(result)) {
+            return result
+        } else {
+            setUserData(result)
+            setUploadedSuccessfully(true)
+            return []
+        }
     }
 
     const handleClose = () => {

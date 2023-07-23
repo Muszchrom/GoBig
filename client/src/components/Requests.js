@@ -48,7 +48,7 @@ export const getScheduleForDay = async (day) => {
 }
 
 export const updateSubject = async (requestBody) => {
-    // validate shit here inshallah
+    // validate this request on client
     let errors = []
 
     let data = await fetch(`${source}/schedule`, {
@@ -66,7 +66,7 @@ export const updateSubject = async (requestBody) => {
 }
 
 export const createSubject = async (requestBody) => {
-    // validate shit here inshallah
+    // validate this request on client
     let errors = []
 
     let data = await fetch(`${source}/schedule`, {
@@ -78,13 +78,13 @@ export const createSubject = async (requestBody) => {
     
     const status = data.status
     data = await data.json()
-    if (status === 200) return []
+    if (status === 201) return data.row[0]
     if (data.errors?.length) return data.errors
     else return errors.push(`Status code: ${status}`)
 }
 
 export const deleteSubject = async (requestBody) => {
-    // validate shit here inshallah
+    // validate this request on client
     let errors = []
     try {
         let data = await fetch(`${source}/schedule`, {
