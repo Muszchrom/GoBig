@@ -10,7 +10,7 @@ export default function Landing({signedIn, setSignedIn}) {
     return(
         <>
         <div className="jumbo" style={{position: "fixed", zIndex: "-1"}}>
-            <span className="welcome-sign">Hello!!!</span>
+            <span className="welcome-sign">Hello!</span>
         </div>
         <div className="jumbo invis">
             <svg className="waveAnimSvg" preserveAspectRatio="none" id="svg" viewBox="0 0 1440 490" xmlns="http://www.w3.org/2000/svg">
