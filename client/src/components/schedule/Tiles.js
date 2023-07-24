@@ -5,7 +5,7 @@ import TileData from './tiles/TileData'
 import TileEdit from './tiles/TileEdit'
 import TileCreate from './tiles/TileCreate'
 
-export function CommonTile({subject, editMode,  setEditMode, specialType, signedIn}) {
+export function CommonTile({subject, editMode,  setEditMode, specialType, signedIn, updateScheduleWithoutApiCall, uniqueKey}) {
     const [open, setOpen] = useState(false)
     const [editingTile, setEditingTile] = useState(false)
 
@@ -60,6 +60,8 @@ export function CommonTile({subject, editMode,  setEditMode, specialType, signed
         {editingTile && <TileEdit open={editingTile}
                                   setOpen={setEditingTile}
                                   subject={subject}
+                                  updateScheduleWithoutApiCall={updateScheduleWithoutApiCall}
+                                  uniqueKey={uniqueKey}
                                   color={specialType === "not today" ? "gray" : subject.onClient_color} />}
     </>
     )
@@ -69,7 +71,7 @@ export function WaitingTile() {
     return (<div className="tile animated-background"></div>)
 }
 
-export function CreateTile() {
+export function CreateTile({updateScheduleWithoutApiCall}) {
     const [creatingTile, setCreatingTile] = useState(false)
     return (
         <>
@@ -78,6 +80,7 @@ export function CreateTile() {
                 </button>
             </div>
             {creatingTile && <TileCreate open={creatingTile}
+                                         updateScheduleWithoutApiCall={updateScheduleWithoutApiCall}
                                          setOpen={setCreatingTile}
                                          color={"#FAEBD7"}/>}
         </>

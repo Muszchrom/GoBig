@@ -36,15 +36,14 @@ export default function TileForm({children, subject, manageData}) {
             "teacher": teacher,
             "icon": icon,
             "additionalInfo": additionalInfo,
-            "weekStart": weekStart,
-            "weekEnd": weekEnd,
+            "weekStart": parseInt(weekStart),
+            "weekEnd": parseInt(weekEnd),
             "weekType": weekTypeAsNumber,
         })
     }
 
     return (
         <form onSubmit={handleSubmit} className="tile-form">
-            {/* REMOVE SHIT IN STARTENDINPUT RIGHT BELOW */}
             <StartEndInput _name="start-end" removeMe={setIcon} start={subjectStartEnd.split(' - ')[0]} end={subjectStartEnd.split(' - ')[1]} startEnd={subjectStartEnd} setStartEnd={setSubjectStartEnd}>Start - End</StartEndInput>
             <TextInputBigger _name="subject-name" currentState={subjectName} changeState={setSubjectName}>Subject name</TextInputBigger>
             <TextInput _name="teacher" currentState={teacher} changeState={setTeacher}>Teacher</TextInput>

@@ -4,7 +4,7 @@ import { CommonTile, WaitingTile, CreateTile } from './Tiles'
 import AdditionalInfo from './AdditionalInfo'
 import { NavigateBackTo } from '../Common';
 
-export default function TileMounter({signedIn, currentWeek, scheduleForTheDay}) {
+export default function TileMounter({signedIn, currentWeek, scheduleForTheDay, updateScheduleWithoutApiCall}) {
   const [editMode, setEditMode] = useState(false)
   return (
     <div className="container">
@@ -24,6 +24,8 @@ export default function TileMounter({signedIn, currentWeek, scheduleForTheDay}) 
                 key={index}
                 subject={subject}
                 specialType={specialType}
+                updateScheduleWithoutApiCall={updateScheduleWithoutApiCall}
+                uniqueKey={index}
                 editMode={editMode}
                 setEditMode={setEditMode}
                 signedIn={signedIn}>
@@ -31,7 +33,7 @@ export default function TileMounter({signedIn, currentWeek, scheduleForTheDay}) 
             )
           })}
           {!!signedIn && (
-            (editMode || !scheduleForTheDay.length) && <CreateTile></CreateTile>
+            (editMode || !scheduleForTheDay.length) && <CreateTile updateScheduleWithoutApiCall={updateScheduleWithoutApiCall}></CreateTile>
           )}
         </>
       ) : (

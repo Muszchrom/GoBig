@@ -12,6 +12,69 @@ export default function Schedule({signedIn}) {
     const daysOfTheWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
     const [schedule, setSchedule] = useState([])
 
+    const createRandomColor = () => {
+        const availableColors = [
+            "rgb(255, 199, 199)",
+            "rgb(255, 232, 192)",
+            "rgb(255, 243, 143)",
+            "rgb(185, 230, 181)",
+            "rgb(183, 228, 255)",
+            "rgb(230, 200, 246)",
+            "rgb(255, 201, 228)"
+        ]
+        return availableColors[Math.floor(Math.random() * (6 - 0 + 1)) + 0]
+    }
+
+    const updateScheduleWithoutApiCall = (dayToUpdate, changes, uniqueKey=-1) => {
+        // when subject is deleted
+        if (uniqueKey !== -1 && Object.keys(changes).length === 1) {
+            schedule[dayToUpdate] = [
+                ...schedule[dayToUpdate].slice(0, uniqueKey),
+                ...schedule[dayToUpdate].slice(uniqueKey+1, schedule[dayToUpdate].length)
+            ]
+            setSchedule(schedule.slice())
+            return
+        }
+        // when subject is updated but subject.start is not
+        else if (uniqueKey !== -1 && !changes.updateArray.includes('start')) {
+            changes.updateArray.forEach((item) => {
+                schedule[dayToUpdate][uniqueKey][item] = changes[item]
+            })
+            setSchedule(schedule.slice())
+            return
+        } 
+        // when subject is updated and subject.start changes
+        else if (uniqueKey !== -1 && changes.updateArray.includes('start')) {
+            const buffer = schedule[dayToUpdate][uniqueKey]
+            changes.updateArray.forEach((item) => {
+                buffer[item] = changes[item]
+            })
+            // remove subject for easier sorting
+            schedule[dayToUpdate] = [
+                ...schedule[dayToUpdate].slice(0, uniqueKey),
+                ...schedule[dayToUpdate].slice(uniqueKey+1, schedule[dayToUpdate].length)
+            ]
+            changes = buffer
+        }
+        if (!changes.onClient_color) {
+            changes['onClient_color'] = createRandomColor()
+        }
+        // if new tile is created or subject.start changes
+        const newStart = parseInt(changes.start.replace(':', ''))
+        // get injection index
+        for (var i=0; i<schedule[dayToUpdate].length; i+=1) {
+            if (newStart < parseInt(schedule[dayToUpdate][i].start.replace(':', ''))) break
+        }
+        // inject changes
+        schedule[dayToUpdate] = [
+            ...schedule[dayToUpdate].slice(0, i), 
+            changes, 
+            ...schedule[dayToUpdate].slice(i, schedule[dayToUpdate].length)
+        ]
+        // update state, since array is mutable, we need to copy the array, in this case with .slice()
+        setSchedule(schedule.slice())
+    }
+
     useEffect(() => {getAndSetCurrentWeek()}, [])
     useEffect(() => {
         (async () => {
@@ -19,17 +82,7 @@ export default function Schedule({signedIn}) {
             if (fetchedSchedule) {
                 const bufferArray = [[], [], [], [], [], [], []]
                 fetchedSchedule.forEach((subject) => {
-                    const availableColors = [
-                        "rgb(255, 199, 199)",
-                        "rgb(255, 232, 192)",
-                        "rgb(255, 243, 143)",
-                        "rgb(185, 230, 181)",
-                        "rgb(183, 228, 255)",
-                        "rgb(230, 200, 246)",
-                        "rgb(255, 201, 228)"
-                    ]
-                    subject['onClient_color'] = availableColors[Math.floor(Math.random() * (6 - 0 + 1)) + 0]
-                    // data is sorted by day and start, so theres no need for extra sorting
+                    subject['onClient_color'] = createRandomColor()
                     bufferArray[subject.day].push(subject)
                 })
                 setSchedule(bufferArray)
@@ -67,7 +120,8 @@ export default function Schedule({signedIn}) {
                 <Route path={`/${path}`} key={index} element={
                     <TileMounter 
                         signedIn={signedIn} 
-                        scheduleForTheDay={schedule[index]} 
+                        scheduleForTheDay={schedule[index]}
+                        updateScheduleWithoutApiCall={updateScheduleWithoutApiCall}
                         currentWeek={currentWeek}/>
                         
                 } />

@@ -55,6 +55,20 @@ const createSubject = (valuesArray) => {
     });
 }
 
+const getSubjectsByData = (valuesArray) => {
+    const sql = `SELECT * FROM schedule WHERE day=? AND start=? AND end=? AND subjectName=? AND subjectType=? AND hall=? AND teacher=? AND icon=? AND additionalInfo=? AND weekStart=? AND weekEnd=? AND weekType=?`
+
+    return new Promise((resolve, reject) => {
+        db.all(sql, valuesArray, (err, rows) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(rows);
+        })
+    });
+}
+
 const getSubjectsByDay = (day) => {
     const sql = `SELECT * FROM schedule WHERE day=? ORDER BY start`
 
@@ -273,17 +287,36 @@ router.post('/', verifyToken, validationChain, validateSubject, (req, res) => {
         req.body.weekType
     ]
 
-    createSubject(valuesArray)
+    // check if subject exists (need that to retrieve id later on)
+    getSubjectsByData(valuesArray)
+        .then((rows) => {
+            if (rows.length) {
+                throw new Error("user_exists")
+            } else {
+                return createSubject(valuesArray)
+            }
+        })
         .then((result) => {
             if (result) {
-                return res.status(201).json({message: "Subject successfully created"})
+                return getSubjectsByData(valuesArray)
             } else {
-                return res.status(500).json({message: "Unable to save subject in database", errors: ["Unable to save subject in database"]});
+                throw new Error("Unable to save user in database")
+            }
+        })
+        .then((rows) => {
+            if (rows.length) {
+                return res.status(201).json({message: "Subject successfully created", row: rows})
+            } else {
+                throw new Error("Unable to find just created subject in the database")
             }
         })
         .catch((err) => {
-            console.warn(err);
-            return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]});
+            if (err.message === "user_exists") {
+                return res.status(400).json({message: "This subject already exists", errors: ["This subject already exists"]})
+            } else {
+                console.warn(err);
+                return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]})
+            }
         })
 });
 

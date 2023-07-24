@@ -6,12 +6,14 @@ import { useLocation } from 'react-router-dom';
 import TileUploadModal from "./TileUploadModal"
 import TileForm from "./TileForm";
 
-export default function TileCreate({open, setOpen, color}) {
+export default function TileCreate({open, setOpen, color, updateScheduleWithoutApiCall}) {
     const [userData, setUserData] = useState({})
     const [showModal, setShowModal] = useState(false)
+    const [uploadedSuccessfully, setUploadedSuccessfully] = useState(false)
+
     let location = useLocation()
 
-    const handleCreate = (data) => {
+    const handleCreateButtonClick = (data) => {
         const pathName = location.pathname.split('/')
         const dayName = pathName[pathName.length - 1]
         const dayNameAsNumber = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"].indexOf(dayName.toLowerCase())
@@ -21,16 +23,31 @@ export default function TileCreate({open, setOpen, color}) {
         setUserData(data)
         setShowModal(!showModal)
     }
-    
+    const submitionFunction = async () => {
+        const result = await createSubject(userData)
+        if (Array.isArray(result)) {
+            return result
+        } else {
+            setUserData(result)
+            setUploadedSuccessfully(true)
+            return []
+        }
+    }
+
+    const handleClose = () => {
+        setOpen(!open)
+        if (uploadedSuccessfully) {
+            updateScheduleWithoutApiCall(userData.day, userData)
+        }
+    }
+
     return (
         <Overlay backgroundColor={color} setOpen={setOpen} open={open}>
-            <TileForm manageData={handleCreate}/>
-            {/* <OverlayInnerEditSubjectForm setUserData={setUserData} handleClick={toggleModal}/> */}
+            <TileForm manageData={handleCreateButtonClick}/>
 
             {showModal && <TileUploadModal color={color}
-                                           handleClose={() => setShowModal(!showModal)}
-                                           submitFunction={createSubject}
-                                           data={userData}>Upload subject?</TileUploadModal>}
+                                           handleClose={handleClose}
+                                           submitFunction={submitionFunction}>Upload subject?</TileUploadModal>}
             
         </Overlay>
     )

@@ -255,8 +255,8 @@ li img {
   justify-content: flex-end;
 }
 .tile-icon-container img {
-  max-height: 42px;
-  max-width: 42px;
+  height: 42px;
+  width: 42px;
 }
 
 .tile-edit-button {
