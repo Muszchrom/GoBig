@@ -56,7 +56,9 @@ export default function Schedule({signedIn}) {
             ]
             changes = buffer
         }
-        changes['onClient_color'] = createRandomColor()
+        if (!changes.onClient_color) {
+            changes['onClient_color'] = createRandomColor()
+        }
         // if new tile is created or subject.start changes
         const newStart = parseInt(changes.start.replace(':', ''))
         // get injection index
