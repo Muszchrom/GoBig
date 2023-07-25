@@ -1,63 +1,146 @@
 import { useState, useRef, useEffect } from 'react';
 import { source } from "../../../source"
 
-// Custom input for editing subject, takes subject start and end time in 00:00 format
-export function StartEndInput({startEnd, setStartEnd, children, _name}) {
-    const [cursor, setCursor] = useState(0)
-    const timeInput = useRef();
 
-    useEffect(() => {
-        timeInput.current.selectionStart = cursor;
-        timeInput.current.selectionEnd = cursor;
-    }, [cursor])
+export function TextInput({children, inputRef, initVal, validatingFuntion}) {
+    const [validationErrors, setValidationError] = useState([])
+    
+    const wrapperRef = useRef()
+    const labelRef = useRef()
+    // const inputRef = useRef()
 
-
-    const charDifference = (e, str) => {
-        for (let i=0; i<str.length; i++) {
-            if (str[i] !== e.target.value[i]) {
-                return {
-                    char: str[i],
-                    idx: i,
-                    eventChar: e.target.value[i]
-                }
-            }
-        }
+    const handleClick = () => {
+        inputRef.current.focus()
     }
 
-    // basically only allow digits to be changed
-    const handleChange = (e) => {
-        let cursorLocation = e.target.selectionStart
-        let newTimeString = startEnd
-        const difference = charDifference(e, startEnd)
-        
-        // if character is getting removed
-        if (e.target.value.length < startEnd.length) {
-            if (cursorLocation === 10 || cursorLocation === 2) cursorLocation -= 1
-            else if (cursorLocation === 7) cursorLocation -= 3
-            newTimeString = startEnd.slice(0, cursorLocation) + "0" + startEnd.slice(cursorLocation+1, startEnd.length)
-            // if character is getting added
-        } else if (e.target.value.length > startEnd.length) {
-            if (!isNaN(parseInt(difference?.eventChar))) {
-                if (difference) {
-                    newTimeString = startEnd.slice(0, cursorLocation-1) + difference.eventChar + startEnd.slice(cursorLocation, startEnd.length)    
-                } else if (e.target.value[cursorLocation]) {
-                    newTimeString = startEnd.slice(0, cursorLocation-1) + e.target.value[cursorLocation] + startEnd.slice(cursorLocation, startEnd.length)
-                }
-                if (cursorLocation === 2 || cursorLocation === 10) cursorLocation += 1
-                else if (cursorLocation === 5) cursorLocation += 3
-            }
+    const handleFocus = () => {
+        wrapperRef.current.classList.add('ex-activeWrapper')
+        labelRef.current.classList.add('ex-activeTitle')
+        inputRef.current.classList.add('ex-activeInput')
+    }
+    
+    const handleOutFocus = () => {
+        if (validationErrors.length) {
+            console.log(validationErrors)
         }
-        
-        newTimeString.match(/^[0-9]{2}:[0-9]{2} - [0-9]{2}:[0-9]{2}$/) && (() => {
-            setStartEnd(newTimeString)
-            setCursor(cursorLocation)
-        })()
+        wrapperRef.current.classList.remove('ex-activeWrapper')
+        labelRef.current.classList.remove('ex-activeTitle')
+        inputRef.current.classList.remove('ex-activeInput')
+    }
+    const calcRows = (e) => {
+        setValidationError(validatingFuntion(e.target.value))
+        inputRef.current.rows = 1
+        inputRef.current.rows = parseInt(inputRef.current.scrollHeight/19)
     }
 
     return (
-        <div>
-            <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
-            <input id={_name} autoComplete="off" type="text" className="heading2 edit-tile-input" value={startEnd} ref={timeInput} onChange={handleChange}></input>
+        <div ref={wrapperRef} className="ex-inputWrapper" role="button" onClick={handleClick}>
+            <label ref={labelRef} className="ex-inputTitle">{children}</label>
+            <div className="ex-inputInnerWrapper">
+                <div className="ex-textAreaWrapper">
+                    <textarea ref={inputRef} rows="1" className="ex-textInput" onChange={calcRows} onFocus={handleFocus} onBlur={handleOutFocus}></textarea>
+                </div>
+                <div className="ex-svgWrapper">
+                    <img src={`${source}/static/Confirm.svg`} alt="Change me"/>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+
+export function StartEndInput({children, inputRef, initVal, validatingFuntion}) {
+    const [validationErrors, setValidationError] = useState([])
+    const wrapperRef = useRef()
+    const labelRef = useRef()
+
+    const [startEnd, setStartEnd] = useState(initVal)
+    const [previousSelection, setpreviousSelection] = useState('')
+    const [cursor, setCursor] = useState(0)
+
+    useEffect(() => {
+        inputRef.current.selectionStart = cursor;
+        inputRef.current.selectionEnd = cursor;
+    }, [cursor, inputRef])
+
+    const listeningFunction = () => {
+        setpreviousSelection([inputRef.current.selectionStart, inputRef.current.selectionEnd])
+    }
+
+    const handleFocus = () => {
+        wrapperRef.current.classList.add('ex-activeWrapper')
+        labelRef.current.classList.add('ex-activeTitle')
+        inputRef.current.classList.add('ex-activeInput')
+        document.addEventListener("selectionchange", listeningFunction);
+    }
+    const handleOutFocus = () => {
+        document.removeEventListener("selectionchange", listeningFunction);
+        if (validationErrors.length) console.log(validationErrors)
+        wrapperRef.current.classList.remove('ex-activeWrapper')
+        labelRef.current.classList.remove('ex-activeTitle')
+        inputRef.current.classList.remove('ex-activeInput')
+    }
+
+
+    // basically only allow digits to be changed
+    const handleChange = (e) => {
+        // save previous unchanged parts of string
+        let unchangedBeggining = ''
+        let unchangedEnding = ''
+        let diff = e.target.value
+        let iBeginning = 0
+        let iEnding = 1
+
+        while (true) {
+            if (iBeginning < previousSelection[0]) {
+                unchangedBeggining += diff[0]
+                diff = diff.slice(1, diff.length)
+                iBeginning += 1
+            }
+            if (startEnd.length - iEnding >= previousSelection[1]) {
+                unchangedEnding = startEnd[startEnd.length - iEnding] + unchangedEnding
+                diff = diff.slice(0, diff.length-1)
+                iEnding += 1
+            }
+            if (!(iBeginning < previousSelection[0]) && !(startEnd.length - iEnding >= previousSelection[1])) break
+        }
+        
+        // remove all non nums
+        unchangedBeggining = unchangedBeggining.replace(/\D/g, '');
+        unchangedEnding = unchangedEnding.replace(/\D/g, '');
+        diff = diff.replace(/\D/g, '');
+    
+        let out = ["0", "0", "0", "0", "0", "0", "0", "0"]
+        // insert beginning
+        for (let i=0; i<unchangedBeggining.length; i++) {
+            out[i] = unchangedBeggining[i]
+        }
+        // inser end
+        for (let i=0; i<unchangedEnding.length; i++) {
+            out[out.length - 1 - i] = unchangedEnding[unchangedEnding.length - 1 - i]
+        }
+        // insert diff
+        for (let i=0; i<diff.length; i++) {
+            if (unchangedBeggining.length + i > out.length - 1) break
+            out[unchangedBeggining.length + i] = diff[i]
+        }
+
+        setValidationError(validatingFuntion(e.target.value))
+        setStartEnd(`${out[0]}${out[1]}:${out[2]}${out[3]} - ${out[4]}${out[5]}:${out[6]}${out[7]}`)
+        setCursor(e.target.selectionEnd)
+    }
+
+    return (
+        <div ref={wrapperRef} className="ex-inputWrapper" role="button" onClick={() => {inputRef.current.focus()}}>
+            <label ref={labelRef} className="ex-inputTitle">{children}</label>
+            <div className="ex-inputInnerWrapper">
+                <div className="ex-textAreaWrapper">
+                    <textarea ref={inputRef} rows="1" className="ex-textInput" value={startEnd} onChange={handleChange} onFocus={handleFocus} onBlur={handleOutFocus}></textarea>
+                </div>
+                <div className="ex-svgWrapper">
+                    <img src={`${source}/static/Confirm.svg`} alt="Change me"/>
+                </div>
+            </div>
         </div>
     )
 }
@@ -97,14 +180,14 @@ export function TextInputBigger({children, currentState, changeState, _name}) {
     )
 }
 
-export function TextInput({children, currentState, changeState, _name}) {
-    return (
-        <div>
-            <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
-            <input id={_name} autoComplete="off" type="text" className="heading2 edit-tile-input" value={currentState} onChange={e => changeState(e.target.value)}></input>
-        </div>
-    )
-}
+// export function TextInput({children, currentState, changeState, _name}) {
+//     return (
+//         <div>
+//             <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
+//             <input id={_name} autoComplete="off" type="text" className="heading2 edit-tile-input" value={currentState} onChange={e => changeState(e.target.value)}></input>
+//         </div>
+//     )
+// }
 
 export function IconInput({currentState, changeState}) {
     // Styles logic was moved from css to js because webpack couldnt compile those.

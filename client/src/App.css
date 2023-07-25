@@ -458,6 +458,71 @@ li img {
   align-items: center;
 }
 
+
+
+
+.ex-inputWrapper,
+.ex-textInput,
+.ex-inputTitle {
+  transition: all .2s ease-in-out;
+}
+.ex-inputWrapper {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--Background);
+  border: 2px solid var(--Text);
+  box-shadow: var(--Shadow);
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.ex-inputTitle {
+  color: var(--Text);
+  opacity: .5;
+  width: 100%;
+}
+.ex-inputInnerWrapper {
+  display: flex;
+  gap: 10px;
+}
+.ex-textAreaWrapper {
+  width: 100%;
+}
+.ex-textInput {
+  border: none;
+  background-color: var(--Background);
+  border-radius: 4px;
+  caret-color: var(--Lightcoral);
+  color: var(--Text);
+  font-family: "Varela Round";
+  font-size: 16px;
+  resize: none;
+  outline: none;
+  width: 100%;
+  padding: 0;
+  cursor: pointer;
+}
+.ex-svgWrapper {
+  width: 19px;
+  height: 19px;
+}
+.ex-activeWrapper {
+  border-color: var(--Lightcoral);
+}
+.ex-activeTitle {
+  color: var(--Lightcoral);
+  opacity: unset;
+}
+.ex-activeInput {
+  padding: 4px;
+  background-color: #FFFBF5;
+}
+
+
+
+
+
+
 .modal-inner {
   display: flex;
   flex-direction: column;
