@@ -9,7 +9,7 @@ export default function TileForm({children, subject, manageData}) {
     // const [subjectStartEnd, setSubjectStartEnd] = useState(subject 
     //     ? `${subject.start.slice(0, 2)}:${subject.start.slice(3, 5)} - ${subject.end.slice(0, 2)}:${subject.end.slice(3, 5)}` 
     //     : "00:00 - 00:00")
-    const [subjectType, setSubjectType] = useState(subject?.subjectType || ["Laboratory", "Lecture", "Classes", "Project", "Foreign language course"][0])
+    // const [subjectType, setSubjectType] = useState(subject?.subjectType || ["Laboratory", "Lecture", "Classes", "Project", "Foreign language course"][0])
     const [icon, setIcon] = useState(subject?.icon || "Lektorat.svg")
     const [weekType, setWeekType] = useState(['Every week', 'Odd weeks', 'Even weeks'][subject?.weekType || 0])
 
@@ -20,6 +20,8 @@ export default function TileForm({children, subject, manageData}) {
     const teacher = useRef()
     const weekStart = useRef()
     const weekEnd = useRef()
+    const subjectType = useRef()
+    
 
     const validate = (value) => {
         return []
@@ -87,12 +89,17 @@ export default function TileForm({children, subject, manageData}) {
                 Teacher
             </TextInput>
             
-            <DropdownInput 
+            {/* <DropdownInput 
                 _name="subject-type"
                 options={["Laboratory", "Lecture", "Classes", "Project", "Foreign language course"]} 
                 currentState={subjectType}
-                changeState={setSubjectType}>Subject type</DropdownInput>
-            
+                changeState={setSubjectType}>Subject type</DropdownInput> */}
+            <DropdownInput 
+                inputRef={subjectType}
+                initVal={subject?.subjectType || ""}
+                options={["Laboratory", "Lecture", "Classes", "Project", "Foreign language course"]} 
+                validatingFuntion={validate}>Subject type</DropdownInput>
+
             <TextInput inputRef={hall} initVal={subject?.hall || ""}  validatingFuntion={validate}>
                 Hall
             </TextInput>

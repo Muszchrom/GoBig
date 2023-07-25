@@ -487,6 +487,9 @@ li img {
 }
 .ex-textAreaWrapper {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .ex-textInput {
   border: none;
@@ -517,7 +520,18 @@ li img {
   padding: 4px;
   background-color: #FFFBF5;
 }
-
+.ex-dropdownItemsContainer {
+  max-height: 0;
+  overflow: auto;
+  flex-direction: column;
+}
+.ex-dropdownItemsContainerActive {
+  max-height: 93.6px;
+  display: flex;
+}
+.ex-dropdownItem {
+  padding: 6px;
+}
 
 
 

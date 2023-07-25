@@ -48,14 +48,14 @@ export function TextInput({children, inputRef, initVal, validatingFuntion}) {
     )
 }
 
-
+// this needs refactoring
 export function StartEndInput({children, inputRef, initVal, validatingFuntion}) {
     const [validationErrors, setValidationError] = useState([])
     const wrapperRef = useRef()
     const labelRef = useRef()
 
     const [startEnd, setStartEnd] = useState(initVal)
-    const [previousSelection, setpreviousSelection] = useState('')
+    const [previousSelection, setpreviousSelection] = useState([0, 0])
     const [cursor, setCursor] = useState(0)
 
     useEffect(() => {
@@ -64,7 +64,7 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
     }, [cursor, inputRef])
 
     const listeningFunction = () => {
-        setpreviousSelection([inputRef.current.selectionStart, inputRef.current.selectionEnd])
+        setpreviousSelection([inputRef?.current?.selectionStart, inputRef?.current?.selectionEnd])
     }
 
     const handleFocus = () => {
@@ -145,31 +145,114 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
     )
 }
 
-export function DropdownInput({options, children, currentState, changeState, _name}) {
-    const [open, setOpen] = useState(false);
+export function DropdownInput({children, inputRef, initVal, options, validatingFuntion}) {
+    const [validationErrors, setValidationError] = useState([])
+    const [matchingOptions, setMatchingOptions] = useState(options)
+    const [value, setValue] = useState(initVal)
+    const [focused, setFocused] = useState(false)
 
-    const handleSelect = (e) => {
-        changeState(e.target.innerHTML)
-        setOpen(!open)
+    const wrapperRef = useRef()
+    const labelRef = useRef()
+    const dropdown = useRef()
+
+    useEffect(() => {
+        const clickInDetector = (e) => {
+            if ((wrapperRef.current && !wrapperRef.current.contains(e.target)) || e.key === "Tab") {
+                document.removeEventListener('mousedown', clickInDetector)
+                document.removeEventListener('keydown', clickInDetector)
+                e.key === "Tab" & matchingOptions.length === 1 && setValue(matchingOptions[0])
+                handleOutFocus()
+            }
+        }
+        if (focused) {
+            document.addEventListener('mousedown', clickInDetector)
+            document.addEventListener('keydown', clickInDetector)
+        }
+        return () => {
+            document.removeEventListener('mousedown', clickInDetector)
+            document.removeEventListener('keydown', clickInDetector)
+        }
+    }, [focused, value])
+
+    const handleClick = () => {
+        if (!focused) inputRef.current.focus()
     }
 
+    const handleFocus = () => {
+        wrapperRef.current.classList.add('ex-activeWrapper')
+        labelRef.current.classList.add('ex-activeTitle')
+        dropdown.current.classList.add('ex-dropdownItemsContainerActive')
+        inputRef.current.classList.add('ex-activeInput')
+        setFocused(true)
+    }
+    
+    const handleOutFocus = () => {
+        wrapperRef.current.classList.remove('ex-activeWrapper')
+        labelRef.current.classList.remove('ex-activeTitle')
+        dropdown.current.classList.remove('ex-dropdownItemsContainerActive')
+        inputRef.current.classList.remove('ex-activeInput')
+        setFocused(false)
+    }
+
+    const handleChange = (e) => {
+        const opts = []
+        options.forEach(element => {
+            if (element.match(new RegExp(e.target.value + ".+", "i"))) {
+                opts.push(element)
+            }
+        });
+        e.target.value ? setMatchingOptions(opts) : setMatchingOptions(options)
+        setValidationError(validatingFuntion(e.target.value))
+        setValue(e.target.value)
+        inputRef.current.rows = 1
+        inputRef.current.rows = parseInt(inputRef.current.scrollHeight/19)
+    }
+    
     return (
-        <div style={{backgroundColor: "inherit"}}>
-            <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
-            <button id={_name} type="button" className="heading2 edit-tile-button" onClick={() => setOpen(!open)}>{currentState}</button>
-            {open && (
-                <ul className="edit-tile-dropdown no-select">
-                    {options.map((item, index) => {
-                        if (item === currentState) {
-                            return (<li key={index} onClick={handleSelect} className="edit-tile-dropdown-item-selected">{item}</li>)    
-                        }
-                        return (<li key={index} onClick={handleSelect}>{item}</li>)
-                    })}
-                </ul>
-            )}
+        <div ref={wrapperRef} className="ex-inputWrapper" role="button" onClick={handleClick}>
+            <label ref={labelRef} className="ex-inputTitle">{children}</label>
+            <div className="ex-inputInnerWrapper">
+                <div className="ex-textAreaWrapper">
+                    <input ref={inputRef} rows="1" className="ex-textInput" value={value} onChange={handleChange} onFocus={handleFocus}></input>
+                    <div ref={dropdown} className="ex-dropdownItemsContainer">
+                        {matchingOptions.map((item, index) => {
+                            return <span className="ex-dropdownItem" key={index} role="button" onClick={() => {setValue(item); handleOutFocus()}}>{item}</span>
+                        })}
+                    </div>
+                </div>
+                <div className="ex-svgWrapper">
+                    <img src={`${source}/static/Confirm.svg`} alt="Change me"/>
+                </div>
+            </div>
         </div>
     )
 }
+
+// export function DropdownInput({options, children, currentState, changeState, _name}) {
+//     const [open, setOpen] = useState(false);
+
+//     const handleSelect = (e) => {
+//         changeState(e.target.innerHTML)
+//         setOpen(!open)
+//     }
+
+//     return (
+//         <div style={{backgroundColor: "inherit"}}>
+//             <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
+//             <button id={_name} type="button" className="heading2 edit-tile-button" onClick={() => setOpen(!open)}>{currentState}</button>
+//             {open && (
+//                 <ul className="edit-tile-dropdown no-select">
+//                     {options.map((item, index) => {
+//                         if (item === currentState) {
+//                             return (<li key={index} onClick={handleSelect} className="edit-tile-dropdown-item-selected">{item}</li>)    
+//                         }
+//                         return (<li key={index} onClick={handleSelect}>{item}</li>)
+//                     })}
+//                 </ul>
+//             )}
+//         </div>
+//     )
+// }
 
 export function TextInputBigger({children, currentState, changeState, _name}) {
     return (
