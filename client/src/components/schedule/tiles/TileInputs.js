@@ -62,8 +62,18 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
     const [cursor, setCursor] = useState(0)
 
     useEffect(() => {
-        inputRef.current.selectionStart = cursor;
-        inputRef.current.selectionEnd = cursor;
+        let newPos = cursor;
+        if (previousSelection[0] < cursor) {
+            if (cursor === 2) newPos = 3
+            else if (cursor >= 5 && cursor <= 7) newPos = 8
+            else if (cursor === 10) newPos = 11
+        } else if (previousSelection[0] > cursor) {
+            if (cursor === 11) newPos = 10
+            else if (cursor >= 6 && cursor <= 8) newPos = 5
+            else if (cursor === 3) newPos = 2
+        }
+        inputRef.current.selectionStart = newPos;
+        inputRef.current.selectionEnd = newPos;
     }, [cursor, inputRef])
 
     const listeningFunction = () => {
@@ -298,7 +308,7 @@ export function WeekStartEndInput({children, inputRef, initVal, validatingFuntio
 
     return (
         <div ref={wrapperRef} className="ex-inputWrapper" role="button" onClick={handleClick} tabIndex={0} onFocus={handleClick}>
-            <label ref={labelRef} className="ex-inputTitle">Week start - end</label>
+            <label ref={labelRef} className="ex-inputTitle">{children}</label>
             <div className="ex-inputInnerWrapper">
                 <div className="ex-textAreaWrapper">
                     <input ref={inputRef} value={value} className="ex-textInput" style={{padding: "4px"}} disabled></input>
