@@ -62,31 +62,17 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
     const [cursor, setCursor] = useState(13)
 
     useEffect(() => {
-        let newPos = cursor;
-        if (previousSelection[0] < cursor) {
-            if (cursor === 2) newPos = 3
-            else if (cursor >= 5 && cursor <= 7) newPos = 8
-            else if (cursor === 10) newPos = 11
-        } else if (previousSelection[0] > cursor) {
-            if (cursor === 11) newPos = 10
-            else if (cursor >= 6 && cursor <= 8) newPos = 5
-            else if (cursor === 3) newPos = 2
-        }
-        inputRef.current.selectionStart = newPos;
-        inputRef.current.selectionEnd = newPos;
-    }, [cursor, inputRef])
-
-    useEffect(() => {
+        inputRef.current.selectionStart = cursor
+        inputRef.current.selectionEnd = cursor
         const listeningFunction = () => {
             setpreviousSelection([inputRef?.current?.selectionStart, inputRef?.current?.selectionEnd])
         }
-        document.addEventListener("selectionchange", listeningFunction);
+        document.addEventListener("selectionchange", listeningFunction)
         return () => {
-            document.removeEventListener("selectionchange", listeningFunction);
+            document.removeEventListener("selectionchange", listeningFunction)
         }
-    }, [startEnd, inputRef, cursor])
-
-
+    }, [cursor, inputRef])
+    
     const handleFocus = () => {
         wrapperRef.current.classList.add('ex-activeWrapper')
         labelRef.current.classList.add('ex-activeTitle')
@@ -98,7 +84,6 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
         labelRef.current.classList.remove('ex-activeTitle')
         inputRef.current.classList.remove('ex-activeInput')
     }
-
 
     // basically only allow digits to be changed
     const handleChange = (e) => {
@@ -143,9 +128,20 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
             out[unchangedBeggining.length + i] = diff[i]
         }
 
+        // adjust cursor position
+        let newPos = e.target.selectionEnd;
+        if (previousSelection[0] < e.target.selectionEnd) {
+            if (e.target.selectionEnd === 2) newPos = 3
+            else if (e.target.selectionEnd >= 5 && e.target.selectionEnd <= 7) newPos = 8
+            else if (e.target.selectionEnd === 10) newPos = 11
+        } else if (previousSelection[0] > e.target.selectionEnd) {
+            if (e.target.selectionEnd === 11) newPos = 10
+            else if (e.target.selectionEnd >= 6 && e.target.selectionEnd <= 8) newPos = 5
+            else if (e.target.selectionEnd === 3) newPos = 2
+        }
         setValidationError(validatingFuntion(e.target.value))
         setStartEnd(`${out[0]}${out[1]}:${out[2]}${out[3]} - ${out[4]}${out[5]}:${out[6]}${out[7]}`)
-        setCursor(e.target.selectionEnd)
+        setCursor(newPos)
     }
 
     return (
