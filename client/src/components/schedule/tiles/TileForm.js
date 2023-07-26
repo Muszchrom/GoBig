@@ -109,16 +109,10 @@ export default function TileForm({children, subject, manageData}) {
                 options={["Every week", "Odd weeks", "Even weeks"]} 
                 validatingFuntion={validate}>Week type</DropdownInput>
 
-            <WeekStartEndInput inputRef={weekStartEnd} initVal={"Start - End"}/>
-
             {/* Whatever integer,  */}
-            <TextInput inputRef={weekStart} initVal={subject?.weekStart || 0} validatingFuntion={validate}>
-                Week start
-            </TextInput>
-            
-            <TextInput inputRef={weekEnd} initVal={subject?.weekEnd || 0} validatingFuntion={validate}>
-                Week end
-            </TextInput>
+            <WeekStartEndInput inputRef={weekStartEnd} initVal={`${subject?.weekStart || 0} - ${subject?.weekEnd || 0}`}>
+                Week Start - End                    
+            </WeekStartEndInput>
 
             {/* Normal text, validation same as on API endpoint */}
             <TextInput inputRef={additionalInfo} initVal={subject?.additionalInfo || ""}  validatingFuntion={validate}> 
