@@ -1,5 +1,5 @@
-import { useRef, useState } from "react"
-import { DropdownInput, TextInput, StartEndInput } from "./TileInputs"
+import { useRef } from "react"
+import { DropdownInput, TextInput, StartEndInput, WeekStartEndInput} from "./TileInputs"
 import { source } from "../../../source"
 
 // renders form and children which might be buttons
@@ -17,6 +17,7 @@ export default function TileForm({children, subject, manageData}) {
     const weekEnd = useRef()
     const subjectType = useRef()
     const weekType = useRef()
+    const weekStartEnd = useRef()
     
 
     const validate = (value) => {
@@ -107,6 +108,8 @@ export default function TileForm({children, subject, manageData}) {
                 initVal={subject?.weekType || ""}
                 options={["Every week", "Odd weeks", "Even weeks"]} 
                 validatingFuntion={validate}>Week type</DropdownInput>
+
+            <WeekStartEndInput inputRef={weekStartEnd} initVal={"Start - End"}/>
 
             {/* Whatever integer,  */}
             <TextInput inputRef={weekStart} initVal={subject?.weekStart || 0} validatingFuntion={validate}>

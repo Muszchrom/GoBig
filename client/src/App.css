@@ -525,6 +525,7 @@ li img {
   display: none;
   overflow: auto;
   flex-direction: column;
+  padding: 0 8px;
 }
 .ex-dropdownItemsContainerActive {
   display: flex;

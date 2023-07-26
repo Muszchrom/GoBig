@@ -159,22 +159,27 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
     const dropdown = useRef()
 
     useEffect(() => {
-        // call handleOutFocus if conditions are met
+        // listening function, if event is triggered outside component then component changes to default
         const clickInDetector = (e) => {
             if ((wrapperRef.current && !wrapperRef.current.contains(e.target)) || e.key === "Tab") {
                 e.key === "Tab" & matchingOptions.length === 1 && setValue(matchingOptions[0])
-                handleOutFocus()
+                setFocused(false)
             }
         }
         if (focused) {
             document.addEventListener('mousedown', clickInDetector)
             document.addEventListener('keydown', clickInDetector)
+        } else {
+            wrapperRef.current.classList.remove('ex-activeWrapper')
+            labelRef.current.classList.remove('ex-activeTitle')
+            dropdown.current.classList.remove('ex-dropdownItemsContainerActive')
+            inputRef.current.classList.remove('ex-activeInput')
         }
         return () => {
             document.removeEventListener('mousedown', clickInDetector)
             document.removeEventListener('keydown', clickInDetector)
         }
-    }, [focused, value])
+    }, [focused, value, matchingOptions, inputRef])
 
     const handleClick = () => {
         if (!focused) inputRef.current.focus()
@@ -188,14 +193,6 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
         setFocused(true)
     }
     
-    const handleOutFocus = () => {
-        wrapperRef.current.classList.remove('ex-activeWrapper')
-        labelRef.current.classList.remove('ex-activeTitle')
-        dropdown.current.classList.remove('ex-dropdownItemsContainerActive')
-        inputRef.current.classList.remove('ex-activeInput')
-        setFocused(false)
-    }
-
     const handleChange = (e) => {
         const opts = []
         options.forEach(element => {
@@ -218,8 +215,105 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
                     <input ref={inputRef} rows="1" className="ex-textInput" value={value} onChange={handleChange} onFocus={handleFocus}></input>
                     <div ref={dropdown} className="ex-dropdownItemsContainer">
                         {matchingOptions.map((item, index) => {
-                            return <span className="ex-dropdownItem" key={index} role="button" onClick={() => {setValue(item); handleOutFocus()}}>{item}</span>
+                            return <span className="ex-dropdownItem" key={index} role="button" onClick={() => {setValue(item); setFocused(false)}}>{item}</span>
                         })}
+                    </div>
+                </div>
+                <div className="ex-svgWrapper">
+                    <img src={`${source}/static/${validationErrors.length ? "Warning.svg" : "Confirm.svg"}`} alt="Change me"/>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export function WeekStartEndInput({children, inputRef, initVal, validatingFuntion}) {
+    const [focused, setFocused] = useState(false)
+    const [value, setValue] = useState(initVal)
+
+    const wrapperRef = useRef()
+    const labelRef = useRef()
+    const dropdown = useRef()
+    const firstFocusable = useRef()
+    const lastFocusable = useRef()
+
+    useEffect(() => {
+        // call handleOutFocus if conditions are met
+        const clickInDetector = (e) => {
+            if ((wrapperRef.current && !wrapperRef.current.contains(e.target))) {
+                handleOutFocus()
+            }
+            if (lastFocusable.current === e.target && !e.shiftKey && e.key === 'Tab') {
+                handleOutFocus()
+            }
+            if (firstFocusable.current === e.target && e.shiftKey && e.key === 'Tab') {
+                console.log('HALO')
+                handleOutFocus()
+            }
+        }
+        // prevent multiple event listeners
+        if (focused) {
+            document.addEventListener('mousedown', clickInDetector)
+            document.addEventListener('keydown', clickInDetector)
+        } else {
+            wrapperRef.current.tabIndex = 0
+        }
+        return () => {
+            document.removeEventListener('mousedown', clickInDetector)
+            document.removeEventListener('keydown', clickInDetector)
+        }
+    }, [focused, value])
+
+    const handleClick = () => {
+        if (!focused) {
+            wrapperRef.current.removeAttribute('tabindex')
+            dropdown.current.classList.add('ex-dropdownItemsContainerActive')
+            firstFocusable.current.focus()
+        }
+    }
+    
+    const handleFocus = () => {
+        wrapperRef.current.classList.add('ex-activeWrapper')
+        labelRef.current.classList.add('ex-activeTitle')
+        setFocused(true)
+    }
+    
+    const handleOutFocus = () => {
+        wrapperRef.current.classList.remove('ex-activeWrapper')
+        labelRef.current.classList.remove('ex-activeTitle')
+        dropdown.current.classList.remove('ex-dropdownItemsContainerActive')
+        setFocused(false)
+    }
+
+
+    const handleValueChange = (e) => {
+        console.log(value)
+        let splittedLabel = value.split(" - ")
+        
+        if (e.target.name === "start") splittedLabel[0] = e.target.value
+        else splittedLabel[1] = e.target.value
+
+        setValue(splittedLabel.join(' - '))
+    }
+
+    return (
+        <div ref={wrapperRef} className="ex-inputWrapper" role="button" onClick={handleClick} tabIndex={0} onFocus={handleClick}>
+            <label ref={labelRef} className="ex-inputTitle">Week start - end</label>
+            <div className="ex-inputInnerWrapper">
+                <div className="ex-textAreaWrapper">
+                    <input ref={inputRef} value={value} className="ex-textInput" style={{padding: "4px"}} disabled></input>
+
+                    <div ref={dropdown} className="ex-dropdownItemsContainer" style={{maxHeight: "unset"}}>
+                        <label className="ex-inputTitle ex-activeTitle">Week start</label>
+                        <div style={{display: "flex", gap: "10px"}}>
+                            <input ref={firstFocusable} onFocus={handleFocus} onChange={handleValueChange} name="start" type="number" className="ex-textInput" style={{backgroundColor: "#FFFBF5", padding: "4px"}}></input>
+                            <button type="button" className="signInButton" style={{height: "auto", padding: "4px", borderRadius: "8px"}}>Custom</button>
+                        </div>
+                        <label className="ex-inputTitle ex-activeTitle">Week start</label>
+                        <div style={{display: "flex", gap: "10px"}}>
+                            <input name="end" type="number" className="ex-textInput" style={{backgroundColor: "#FFFBF5", padding: "4px"}} onChange={handleValueChange}></input>
+                            <button ref={lastFocusable} type="button" className="signInButton" style={{height: "auto", padding: "4px", borderRadius: "8px"}}>Custom</button>
+                        </div>
                     </div>
                 </div>
                 <div className="ex-svgWrapper">
