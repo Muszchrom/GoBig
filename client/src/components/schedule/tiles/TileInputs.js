@@ -58,8 +58,8 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
     const labelRef = useRef()
 
     const [startEnd, setStartEnd] = useState(initVal)
-    const [previousSelection, setpreviousSelection] = useState([0, 0])
-    const [cursor, setCursor] = useState(0)
+    const [previousSelection, setpreviousSelection] = useState([13, 13])
+    const [cursor, setCursor] = useState(13)
 
     useEffect(() => {
         let newPos = cursor;
@@ -76,18 +76,23 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
         inputRef.current.selectionEnd = newPos;
     }, [cursor, inputRef])
 
-    const listeningFunction = () => {
-        setpreviousSelection([inputRef?.current?.selectionStart, inputRef?.current?.selectionEnd])
-    }
+    useEffect(() => {
+        const listeningFunction = () => {
+            setpreviousSelection([inputRef?.current?.selectionStart, inputRef?.current?.selectionEnd])
+        }
+        document.addEventListener("selectionchange", listeningFunction);
+        return () => {
+            document.removeEventListener("selectionchange", listeningFunction);
+        }
+    }, [startEnd, inputRef, cursor])
+
 
     const handleFocus = () => {
         wrapperRef.current.classList.add('ex-activeWrapper')
         labelRef.current.classList.add('ex-activeTitle')
         inputRef.current.classList.add('ex-activeInput')
-        document.addEventListener("selectionchange", listeningFunction);
     }
     const handleOutFocus = () => {
-        document.removeEventListener("selectionchange", listeningFunction);
         if (validationErrors.length) console.log(validationErrors)
         wrapperRef.current.classList.remove('ex-activeWrapper')
         labelRef.current.classList.remove('ex-activeTitle')
