@@ -521,12 +521,12 @@ li img {
   background-color: #FFFBF5;
 }
 .ex-dropdownItemsContainer {
-  max-height: 0;
+  max-height: 93.6px;
+  display: none;
   overflow: auto;
   flex-direction: column;
 }
 .ex-dropdownItemsContainerActive {
-  max-height: 93.6px;
   display: flex;
 }
 .ex-dropdownItem {

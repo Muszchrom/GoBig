@@ -49,6 +49,9 @@ export function TextInput({children, inputRef, initVal, validatingFuntion}) {
 }
 
 // this needs refactoring
+// eventListeners doesnt unmount
+// memory leaks
+// basically tragic behavior, i might kill myself
 export function StartEndInput({children, inputRef, initVal, validatingFuntion}) {
     const [validationErrors, setValidationError] = useState([])
     const wrapperRef = useRef()
@@ -156,10 +159,9 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
     const dropdown = useRef()
 
     useEffect(() => {
+        // call handleOutFocus if conditions are met
         const clickInDetector = (e) => {
             if ((wrapperRef.current && !wrapperRef.current.contains(e.target)) || e.key === "Tab") {
-                document.removeEventListener('mousedown', clickInDetector)
-                document.removeEventListener('keydown', clickInDetector)
                 e.key === "Tab" & matchingOptions.length === 1 && setValue(matchingOptions[0])
                 handleOutFocus()
             }
@@ -228,31 +230,6 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
     )
 }
 
-// export function DropdownInput({options, children, currentState, changeState, _name}) {
-//     const [open, setOpen] = useState(false);
-
-//     const handleSelect = (e) => {
-//         changeState(e.target.innerHTML)
-//         setOpen(!open)
-//     }
-
-//     return (
-//         <div style={{backgroundColor: "inherit"}}>
-//             <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
-//             <button id={_name} type="button" className="heading2 edit-tile-button" onClick={() => setOpen(!open)}>{currentState}</button>
-//             {open && (
-//                 <ul className="edit-tile-dropdown no-select">
-//                     {options.map((item, index) => {
-//                         if (item === currentState) {
-//                             return (<li key={index} onClick={handleSelect} className="edit-tile-dropdown-item-selected">{item}</li>)    
-//                         }
-//                         return (<li key={index} onClick={handleSelect}>{item}</li>)
-//                     })}
-//                 </ul>
-//             )}
-//         </div>
-//     )
-// }
 
 export function TextInputBigger({children, currentState, changeState, _name}) {
     return (
@@ -262,15 +239,6 @@ export function TextInputBigger({children, currentState, changeState, _name}) {
         </div>
     )
 }
-
-// export function TextInput({children, currentState, changeState, _name}) {
-//     return (
-//         <div>
-//             <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
-//             <input id={_name} autoComplete="off" type="text" className="heading2 edit-tile-input" value={currentState} onChange={e => changeState(e.target.value)}></input>
-//         </div>
-//     )
-// }
 
 export function IconInput({currentState, changeState}) {
     // Styles logic was moved from css to js because webpack couldnt compile those.
