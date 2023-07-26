@@ -229,13 +229,3 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
         </div>
     )
 }
-
-
-export function TextInputBigger({children, currentState, changeState, _name}) {
-    return (
-        <div>
-            <label htmlFor={_name} className='edit-tile-input-label'>{children}</label><br></br>
-            <input id={_name} autoComplete="off" type="text" className="heading1 edit-tile-input" value={currentState} onChange={e => changeState(e.target.value)}></input>
-        </div>
-    )
-}
