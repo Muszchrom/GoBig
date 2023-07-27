@@ -3,7 +3,7 @@ import { source } from "../../../source"
 
 
 export function TextInput({children, inputRef, initVal, validatingFuntion}) {
-    const [validationErrors, setValidationError] = useState([])
+    const [validationError, setValidationError] = useState('')
     const [value, setValue] = useState(initVal)
     
     const wrapperRef = useRef()
@@ -21,9 +21,6 @@ export function TextInput({children, inputRef, initVal, validatingFuntion}) {
     }
     
     const handleOutFocus = () => {
-        if (validationErrors.length) {
-            console.log(validationErrors)
-        }
         wrapperRef.current.classList.remove('ex-activeWrapper')
         labelRef.current.classList.remove('ex-activeTitle')
         inputRef.current.classList.remove('ex-activeInput')
@@ -40,22 +37,20 @@ export function TextInput({children, inputRef, initVal, validatingFuntion}) {
             <label ref={labelRef} className="ex-inputTitle">{children}</label>
             <div className="ex-inputInnerWrapper">
                 <div className="ex-textAreaWrapper">
-                    <textarea ref={inputRef} rows="1" className="ex-textInput" value={value} onChange={calcRows} onFocus={handleFocus} onBlur={handleOutFocus}></textarea>
+                    <textarea ref={inputRef} inputMode="text" rows="1" className="ex-textInput" value={value} onChange={calcRows} onFocus={handleFocus} onBlur={handleOutFocus}></textarea>
                 </div>
                 <div className="ex-svgWrapper">
-                    <img src={`${source}/static/Confirm.svg`} alt="Change me"/>
+                    {validationError.length 
+                    ? <img src={`${source}/static/Close.svg`} alt="Invalid value icon"/>
+                    : <img src={`${source}/static/Confirm.svg`} alt="Valid value icon"/>}
                 </div>
             </div>
         </div>
     )
 }
 
-// this needs refactoring
-// eventListeners doesnt unmount
-// memory leaks
-// basically tragic behavior, i might kill myself
 export function StartEndInput({children, inputRef, initVal, validatingFuntion}) {
-    const [validationErrors, setValidationError] = useState([])
+    const [validationError, setValidationError] = useState("")
     const wrapperRef = useRef()
     const labelRef = useRef()
 
@@ -68,7 +63,9 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
         inputRef.current.selectionEnd = cursor
         // it needs listener for operations on more than one character
         const listeningFunction = () => {
-            setpreviousSelection([inputRef?.current?.selectionStart, inputRef?.current?.selectionEnd])
+            if (wrapperRef.current.classList.contains('ex-activeWrapper')) {
+                setpreviousSelection([inputRef?.current?.selectionStart, inputRef?.current?.selectionEnd])
+            }
         }
         document.addEventListener("selectionchange", listeningFunction)
         return () => {
@@ -82,7 +79,6 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
         inputRef.current.classList.add('ex-activeInput')
     }
     const handleOutFocus = () => {
-        if (validationErrors.length) console.log(validationErrors)
         wrapperRef.current.classList.remove('ex-activeWrapper')
         labelRef.current.classList.remove('ex-activeTitle')
         inputRef.current.classList.remove('ex-activeInput')
@@ -142,8 +138,9 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
             else if (e.target.selectionEnd >= 6 && e.target.selectionEnd <= 8) newPos = 5
             else if (e.target.selectionEnd === 3) newPos = 2
         }
-        setValidationError(validatingFuntion(e.target.value))
-        setStartEnd(`${out[0]}${out[1]}:${out[2]}${out[3]} - ${out[4]}${out[5]}:${out[6]}${out[7]}`)
+        const processedInput = `${out[0]}${out[1]}:${out[2]}${out[3]} - ${out[4]}${out[5]}:${out[6]}${out[7]}`
+        setValidationError(validatingFuntion(processedInput))
+        setStartEnd(processedInput)
         setCursor(newPos)
     }
 
@@ -152,10 +149,12 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
             <label ref={labelRef} className="ex-inputTitle">{children}</label>
             <div className="ex-inputInnerWrapper">
                 <div className="ex-textAreaWrapper">
-                    <textarea ref={inputRef} rows="1" className="ex-textInput" value={startEnd} onChange={handleChange} onFocus={handleFocus} onBlur={handleOutFocus}></textarea>
+                    <textarea ref={inputRef} rows="1" inputMode="numeric" className="ex-textInput" value={startEnd} onChange={handleChange} onFocus={handleFocus} onBlur={handleOutFocus}></textarea>
                 </div>
                 <div className="ex-svgWrapper">
-                    <img src={`${source}/static/Confirm.svg`} alt="Change me"/>
+                    {validationError.length 
+                    ? <img src={`${source}/static/Close.svg`} alt="Invalid value icon"/>
+                    : <img src={`${source}/static/Confirm.svg`} alt="Valid value icon"/>}
                 </div>
             </div>
         </div>
@@ -163,7 +162,7 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
 }
 
 export function DropdownInput({children, inputRef, initVal, options, validatingFuntion}) {
-    const [validationErrors, setValidationError] = useState([])
+    const [validationError, setValidationError] = useState('')
     const [matchingOptions, setMatchingOptions] = useState(options)
     const [value, setValue] = useState(initVal)
     const [focused, setFocused] = useState(false)
@@ -188,6 +187,7 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
             labelRef.current.classList.remove('ex-activeTitle')
             dropdown.current.classList.remove('ex-dropdownItemsContainerActive')
             inputRef.current.classList.remove('ex-activeInput')
+            setValidationError(validatingFuntion(value))
         }
         return () => {
             document.removeEventListener('mousedown', clickInDetector)
@@ -234,7 +234,9 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
                     </div>
                 </div>
                 <div className="ex-svgWrapper">
-                    <img src={`${source}/static/${validationErrors.length ? "Warning.svg" : "Confirm.svg"}`} alt="Change me"/>
+                    {validationError.length 
+                    ? <img src={`${source}/static/Close.svg`} alt="Invalid value icon"/>
+                    : <img src={`${source}/static/Confirm.svg`} alt="Valid value icon"/>}
                 </div>
             </div>
         </div>
@@ -242,6 +244,7 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
 }
 
 export function WeekStartEndInput({children, inputRef, initVal, validatingFuntion}) {
+    const [validationError, setValidationError] = useState('')
     const [focused, setFocused] = useState(false)
     const [value, setValue] = useState(initVal)
     const [startCustom, setStartCustom] = useState(parseInt(initVal.split(' - ')[0]) === -1)
@@ -319,6 +322,9 @@ export function WeekStartEndInput({children, inputRef, initVal, validatingFuntio
         let splittedLabel = value.split(" - ")
         if (e.target.name === "start") splittedLabel[0] = e.target.value
         else splittedLabel[1] = e.target.value
+        
+        let error = validatingFuntion(e.target.value)
+        setValidationError(error)
         setValue(splittedLabel.join(' - '))
     }
 
@@ -387,7 +393,9 @@ export function WeekStartEndInput({children, inputRef, initVal, validatingFuntio
                     </div>
                 </div>
                 <div className="ex-svgWrapper">
-                    <img src={`${source}/static/Confirm.svg`} alt="Change me"/>
+                    {validationError.length 
+                    ? <img src={`${source}/static/Close.svg`} alt="Invalid value icon"/>
+                    : <img src={`${source}/static/Confirm.svg`} alt="Valid value icon"/>}
                 </div>
             </div>
         </div>

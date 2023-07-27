@@ -1,12 +1,12 @@
 import { useRef } from "react"
 import { DropdownInput, TextInput, StartEndInput, WeekStartEndInput} from "./TileInputs"
 import { source } from "../../../source"
+import { validateTile } from "../../Requests"
 
 // renders form and children which might be buttons
 // initial values are taken from subject or hardcoded like below
 // submition passes form data to manageData() prop as object
 export default function TileForm({children, subject, manageData, _title}) {
-    
     const icon = subject?.icon || "Lektorat.svg"
     const subjectStartEnd = useRef()
     const subjectName = useRef()
@@ -54,12 +54,12 @@ export default function TileForm({children, subject, manageData, _title}) {
                 inputRef={subjectStartEnd} initVal={subject ? 
                     `${subject.start.slice(0, 2)}:${subject.start.slice(3, 5)} - ${subject.end.slice(0, 2)}:${subject.end.slice(3, 5)}` 
                     : "00:00 - 00:00"}
-                validatingFuntion={validate}>
+                validatingFuntion={validateTile.validateStartEnd}>
                 Start - end
             </StartEndInput>
 
             {/* Normal text, validation same as on API endpoint */}
-            <TextInput inputRef={subjectName} initVal={subject?.subjectName || ""} validatingFuntion={validate}>
+            <TextInput inputRef={subjectName} initVal={subject?.subjectName || ""} validatingFuntion={validateTile.validateSubjectName}>
                 Subject Name
             </TextInput>
             
@@ -68,17 +68,17 @@ export default function TileForm({children, subject, manageData, _title}) {
                 inputRef={teacher}
                 initVal={subject?.teacher || ""}
                 options={[]} 
-                validatingFuntion={validate}>Teacher</DropdownInput>
+                validatingFuntion={validateTile.validateTeacher}>Teacher</DropdownInput>
 
             {/* For validation only options from options array are available */}
             <DropdownInput 
                 inputRef={subjectType}
                 initVal={subject?.subjectType || ""}
                 options={["Laboratory", "Lecture", "Classes", "Project", "Foreign language course"]} 
-                validatingFuntion={validate}>Subject type</DropdownInput>
+                validatingFuntion={validateTile.validateSubjectType}>Subject type</DropdownInput>
 
             {/* Normal text, validation same as on API endpoint */}
-            <TextInput inputRef={hall} initVal={subject?.hall || ""}  validatingFuntion={validate}>
+            <TextInput inputRef={hall} initVal={subject?.hall || ""}  validatingFuntion={validateTile.validateHall}>
                 Hall
             </TextInput>
 
@@ -87,15 +87,15 @@ export default function TileForm({children, subject, manageData, _title}) {
                 inputRef={weekType}
                 initVal={["Every week", "Odd weeks", "Even weeks"][subject?.weekType] || ""}
                 options={["Every week", "Odd weeks", "Even weeks"]} 
-                validatingFuntion={validate}>Week type</DropdownInput>
+                validatingFuntion={validateTile.validateWeekType}>Week type</DropdownInput>
 
             {/* Whatever integer,  */}
-            <WeekStartEndInput inputRef={weekStartEnd} initVal={`${subject?.weekStart || 0} - ${subject?.weekEnd || 0}`}>
+            <WeekStartEndInput inputRef={weekStartEnd} initVal={`${subject?.weekStart || 0} - ${subject?.weekEnd || 0}`} validatingFuntion={validateTile.validateWeekStartEnd}>
                 Week Start - End                    
             </WeekStartEndInput>
 
             {/* Normal text, validation same as on API endpoint */}
-            <TextInput inputRef={additionalInfo} initVal={subject?.additionalInfo || ""}  validatingFuntion={validate}> 
+            <TextInput inputRef={additionalInfo} initVal={subject?.additionalInfo || ""}  validatingFuntion={validateTile.validateAdditionalInfo}> 
                 Additional Information
             </TextInput>
             
