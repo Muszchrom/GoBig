@@ -16,11 +16,6 @@ export default function TileForm({children, subject, manageData, _title}) {
     const subjectType = useRef()
     const weekType = useRef()
     const weekStartEnd = useRef()
-    
-
-    const validate = (value) => {
-        return []
-    }
 
     const handleSubmit = (e) => {
         e.preventDefault()
@@ -30,20 +25,33 @@ export default function TileForm({children, subject, manageData, _title}) {
             if (weekType.current.value === "Even weeks") return 2
         })()
         const [weekStart, weekEnd] = weekStartEnd.current.value.split(' - ')
-
-        manageData({
-            "start": subjectStartEnd.current.value.split(' - ')[0],
-            "end": subjectStartEnd.current.value.split(' - ')[1],
-            "subjectName": subjectName.current.value,
-            "subjectType": subjectType.current.value,
-            "hall": hall.current.value,
-            "teacher": teacher.current.value,
-            "icon": icon,
-            "additionalInfo": additionalInfo.current.value,
-            "weekStart": parseInt(weekStart),
-            "weekEnd": parseInt(weekEnd),
-            "weekType": weekTypeAsNumber,
-        })
+        const validationSuccessful = (() => {
+            if (validateTile.validateStartEnd(subjectStartEnd.current.value).length) return 0
+            if (validateTile.validateSubjectName(subjectName.current.value).length) return 0
+            if (validateTile.validateSubjectType(subjectType.current.value).length) return 0
+            if (validateTile.validateHall(hall.current.value).length) return 0
+            if (validateTile.validateTeacher(teacher.current.value).length) return 0
+            if (validateTile.validateAdditionalInfo(additionalInfo.current.value).length) return 0
+            if (validateTile.validateWeekStartEnd(weekStart.current.value).length) return 0
+            if (validateTile.validateWeekStartEnd(weekEnd.current.value).length) return 0
+            if (validateTile.validateWeekType(weekType.current.value).length) return 0
+            return 1
+        })()
+        if (validationSuccessful) {
+            manageData({
+                "start": subjectStartEnd.current.value.split(' - ')[0],
+                "end": subjectStartEnd.current.value.split(' - ')[1],
+                "subjectName": subjectName.current.value,
+                "subjectType": subjectType.current.value,
+                "hall": hall.current.value,
+                "teacher": teacher.current.value,
+                "icon": icon,
+                "additionalInfo": additionalInfo.current.value,
+                "weekStart": parseInt(weekStart),
+                "weekEnd": parseInt(weekEnd),
+                "weekType": weekTypeAsNumber,
+            })
+        }
     }
 
     return (

@@ -193,7 +193,7 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
             document.removeEventListener('mousedown', clickInDetector)
             document.removeEventListener('keydown', clickInDetector)
         }
-    }, [focused, value, matchingOptions, inputRef])
+    }, [focused, value, matchingOptions, inputRef, validatingFuntion])
 
     const handleClick = () => {
         if (!focused) inputRef.current.focus()
