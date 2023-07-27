@@ -35,6 +35,10 @@ export default function TileEdit({open, setOpen, subject, color, updateScheduleW
         setShowModal(!showModal)
     }
 
+    const handleSoftClose = () => {
+        setShowModal(!showModal)
+    }
+
     const handleClose = () => {
         setOpen(!open)
         if (uploadedSuccessfully) {
@@ -65,6 +69,7 @@ export default function TileEdit({open, setOpen, subject, color, updateScheduleW
             {showModal && 
                 <TileUploadModal color={color}
                                  handleClose={handleClose}
+                                 handleSoftClose={handleSoftClose}
                                  submitFunction={modalType === "UPDATE" ? handleUpdateSubject : handleDeleteSubject}>
                     {modalType === "UPDATE" ? "Update subject?" : "Delete subject?"}
                 </TileUploadModal>

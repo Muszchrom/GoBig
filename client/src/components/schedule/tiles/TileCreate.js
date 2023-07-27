@@ -34,6 +34,10 @@ export default function TileCreate({open, setOpen, color, updateScheduleWithoutA
         }
     }
 
+    const handleSoftClose = () => {
+        setShowModal(!showModal)
+    }
+
     const handleClose = () => {
         setOpen(!open)
         if (uploadedSuccessfully) {
@@ -47,6 +51,7 @@ export default function TileCreate({open, setOpen, color, updateScheduleWithoutA
 
             {showModal && <TileUploadModal color={color}
                                            handleClose={handleClose}
+                                           handleSoftClose={handleSoftClose}
                                            submitFunction={submitionFunction}>Upload subject?</TileUploadModal>}
             
         </Overlay>
