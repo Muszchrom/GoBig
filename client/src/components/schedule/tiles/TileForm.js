@@ -13,8 +13,6 @@ export default function TileForm({children, subject, manageData, _title}) {
     const hall = useRef()
     const additionalInfo = useRef()
     const teacher = useRef()
-    const weekStart = useRef()
-    const weekEnd = useRef()
     const subjectType = useRef()
     const weekType = useRef()
     const weekStartEnd = useRef()
@@ -31,39 +29,21 @@ export default function TileForm({children, subject, manageData, _title}) {
             if (weekType.current.value === "Odd weeks") return 1
             if (weekType.current.value === "Even weeks") return 2
         })()
+        const [weekStart, weekEnd] = weekStartEnd.current.value.split(' - ')
 
-        console.log({
+        manageData({
             "start": subjectStartEnd.current.value.split(' - ')[0],
             "end": subjectStartEnd.current.value.split(' - ')[1],
             "subjectName": subjectName.current.value,
-            "subjectType": subjectType,
+            "subjectType": subjectType.current.value,
             "hall": hall.current.value,
             "teacher": teacher.current.value,
             "icon": icon,
             "additionalInfo": additionalInfo.current.value,
-            "weekStart": parseInt(weekStart.current.vlaue),
-            "weekEnd": parseInt(weekEnd.current.vlaue),
+            "weekStart": parseInt(weekStart),
+            "weekEnd": parseInt(weekEnd),
             "weekType": weekTypeAsNumber,
         })
-        // const weekTypeAsNumber = (() => {
-        //     if (weekType === "Every week") return 0
-        //     if (weekType === "Odd weeks") return 1
-        //     if (weekType === "Even weeks") return 2
-        // })()
-
-        // manageData({
-        //     "start": subjectStartEnd.split(' - ')[0],
-        //     "end": subjectStartEnd.split(' - ')[1],
-        //     "subjectName": subjectName.current.value,
-        //     "subjectType": subjectType,
-        //     "hall": hall.current.value,
-        //     "teacher": teacher.current.value,
-        //     "icon": icon,
-        //     "additionalInfo": additionalInfo.current.value,
-        //     "weekStart": parseInt(weekStart),
-        //     "weekEnd": parseInt(weekEnd),
-        //     "weekType": weekTypeAsNumber,
-        // })
     }
 
     return (
@@ -105,7 +85,7 @@ export default function TileForm({children, subject, manageData, _title}) {
             {/* For validation only options from options array are available */}
             <DropdownInput 
                 inputRef={weekType}
-                initVal={subject?.weekType || ""}
+                initVal={["Every week", "Odd weeks", "Even weeks"][subject?.weekType] || ""}
                 options={["Every week", "Odd weeks", "Even weeks"]} 
                 validatingFuntion={validate}>Week type</DropdownInput>
 

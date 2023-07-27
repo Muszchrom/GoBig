@@ -4,6 +4,7 @@ import { source } from "../../../source"
 
 export function TextInput({children, inputRef, initVal, validatingFuntion}) {
     const [validationErrors, setValidationError] = useState([])
+    const [value, setValue] = useState(initVal)
     
     const wrapperRef = useRef()
     const labelRef = useRef()
@@ -31,6 +32,7 @@ export function TextInput({children, inputRef, initVal, validatingFuntion}) {
         setValidationError(validatingFuntion(e.target.value))
         inputRef.current.rows = 1
         inputRef.current.rows = parseInt(inputRef.current.scrollHeight/19)
+        setValue(e.target.value)
     }
 
     return (
@@ -38,7 +40,7 @@ export function TextInput({children, inputRef, initVal, validatingFuntion}) {
             <label ref={labelRef} className="ex-inputTitle">{children}</label>
             <div className="ex-inputInnerWrapper">
                 <div className="ex-textAreaWrapper">
-                    <textarea ref={inputRef} rows="1" className="ex-textInput" onChange={calcRows} onFocus={handleFocus} onBlur={handleOutFocus}></textarea>
+                    <textarea ref={inputRef} rows="1" className="ex-textInput" value={value} onChange={calcRows} onFocus={handleFocus} onBlur={handleOutFocus}></textarea>
                 </div>
                 <div className="ex-svgWrapper">
                     <img src={`${source}/static/Confirm.svg`} alt="Change me"/>
