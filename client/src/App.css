@@ -290,7 +290,9 @@ li img {
   flex-direction: column;
   gap: 8px;
 }
-
+.tile-form label {
+  pointer-events: none;
+}
 .create-tile {
   align-items: center;
   justify-content: center;
