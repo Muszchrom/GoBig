@@ -64,6 +64,7 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
     useEffect(() => {
         inputRef.current.selectionStart = cursor
         inputRef.current.selectionEnd = cursor
+        // it needs listener for operations on more than one character
         const listeningFunction = () => {
             setpreviousSelection([inputRef?.current?.selectionStart, inputRef?.current?.selectionEnd])
         }
@@ -241,12 +242,25 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
 export function WeekStartEndInput({children, inputRef, initVal, validatingFuntion}) {
     const [focused, setFocused] = useState(false)
     const [value, setValue] = useState(initVal)
+    const [startCustom, setStartCustom] = useState(parseInt(initVal.split(' - ')[0]) === -1)
+    const [endCustom, setEndCustom] = useState(parseInt(initVal.split(' - ')[1]) === -1)
 
     const wrapperRef = useRef()
     const labelRef = useRef()
     const dropdown = useRef()
-    const firstFocusable = useRef()
+    const firstInput = useRef()
+    const secondInput = useRef()
     const lastFocusable = useRef()
+
+    useEffect(() => {
+        let splittedValue = value.split(" - ")
+        parseInt(splittedValue[0]) === -1 
+        ?  firstInput.current.classList.remove('ex-activeInput')
+        :  firstInput.current.classList.add('ex-activeInput')
+        parseInt(splittedValue[1]) === -1 
+        ?  secondInput.current.classList.remove('ex-activeInput')
+        :  secondInput.current.classList.add('ex-activeInput')
+    }, [value])
 
     useEffect(() => {
         // call handleOutFocus if conditions are met
@@ -257,8 +271,7 @@ export function WeekStartEndInput({children, inputRef, initVal, validatingFuntio
             if (lastFocusable.current === e.target && !e.shiftKey && e.key === 'Tab') {
                 handleOutFocus()
             }
-            if (firstFocusable.current === e.target && e.shiftKey && e.key === 'Tab') {
-                console.log('HALO')
+            if (firstInput.current === e.target && e.shiftKey && e.key === 'Tab') {
                 handleOutFocus()
             }
         }
@@ -279,7 +292,10 @@ export function WeekStartEndInput({children, inputRef, initVal, validatingFuntio
         if (!focused) {
             wrapperRef.current.removeAttribute('tabindex')
             dropdown.current.classList.add('ex-dropdownItemsContainerActive')
-            firstFocusable.current.focus()
+            firstInput.current.disabled ? (() => {
+                lastFocusable.current.focus()
+                handleFocus()
+            })() : firstInput.current.focus()
         }
     }
     
@@ -298,13 +314,26 @@ export function WeekStartEndInput({children, inputRef, initVal, validatingFuntio
 
 
     const handleValueChange = (e) => {
-        console.log(value)
         let splittedLabel = value.split(" - ")
-        
         if (e.target.name === "start") splittedLabel[0] = e.target.value
         else splittedLabel[1] = e.target.value
-
         setValue(splittedLabel.join(' - '))
+    }
+
+    const handleButtons = (e) => {
+        const obj = {target: {name: "", value: 0}}
+        if (e.target.name === "startButton") {
+            obj.target.name = "start"
+            if (startCustom) obj.target.value = 0
+            else obj.target.value = -1
+            setStartCustom(!startCustom)
+        } else {
+            obj.target.name = "end"
+            if (endCustom) obj.target.value = 0
+            else obj.target.value = -1
+            setEndCustom(!endCustom)
+        }
+        handleValueChange(obj)
     }
 
     return (
@@ -312,18 +341,46 @@ export function WeekStartEndInput({children, inputRef, initVal, validatingFuntio
             <label ref={labelRef} className="ex-inputTitle">{children}</label>
             <div className="ex-inputInnerWrapper">
                 <div className="ex-textAreaWrapper">
-                    <input ref={inputRef} value={value} className="ex-textInput" style={{padding: "4px"}} disabled></input>
+                    <input ref={inputRef} value={value} className="ex-textInput ex-inactiveInput" disabled></input>
 
                     <div ref={dropdown} className="ex-dropdownItemsContainer" style={{maxHeight: "unset"}}>
                         <label className="ex-inputTitle ex-activeTitle">Week start</label>
-                        <div style={{display: "flex", gap: "10px"}}>
-                            <input ref={firstFocusable} onFocus={handleFocus} onChange={handleValueChange} name="start" type="number" className="ex-textInput" style={{backgroundColor: "#FFFBF5", padding: "4px"}}></input>
-                            <button type="button" className="signInButton" style={{height: "auto", padding: "4px", borderRadius: "8px"}}>Custom</button>
+                        <div className="ex-inputInnerWrapper">
+                            <input ref={firstInput} 
+                                   onFocus={handleFocus} 
+                                   onChange={handleValueChange}
+                                   value={value.split(' - ')[0]}
+                                   disabled={startCustom}
+                                   name="start" 
+                                   type="number" 
+                                   className="ex-textInput ex-activeInput">
+                            </input>
+                            <button onClick={handleButtons}
+                                    name="startButton" 
+                                    type="button" 
+                                    className="signInButton ex-button" 
+                                    style={{height: "auto", padding: "4px", borderRadius: "8px"}}>
+                                        {startCustom ? "Custom" : "Unset"}
+                            </button>
                         </div>
                         <label className="ex-inputTitle ex-activeTitle">Week start</label>
                         <div style={{display: "flex", gap: "10px"}}>
-                            <input name="end" type="number" className="ex-textInput" style={{backgroundColor: "#FFFBF5", padding: "4px"}} onChange={handleValueChange}></input>
-                            <button ref={lastFocusable} type="button" className="signInButton" style={{height: "auto", padding: "4px", borderRadius: "8px"}}>Custom</button>
+                            <input ref={secondInput}
+                                   onChange={handleValueChange}
+                                   value={value.split(' - ')[1]}
+                                   disabled={endCustom}
+                                   name="end" 
+                                   type="number" 
+                                   className="ex-textInput ex-activeInput">
+                            </input>
+                            <button onClick={handleButtons}
+                                    name="endButton" 
+                                    ref={lastFocusable} 
+                                    type="button"
+                                    className="signInButton" 
+                                    style={{height: "auto", padding: "4px", borderRadius: "8px"}}>
+                                        {endCustom ? "Custom" : "Unset"}
+                            </button>
                         </div>
                     </div>
                 </div>
