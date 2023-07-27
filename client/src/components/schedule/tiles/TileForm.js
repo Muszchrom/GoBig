@@ -5,7 +5,7 @@ import { source } from "../../../source"
 // renders form and children which might be buttons
 // initial values are taken from subject or hardcoded like below
 // submition passes form data to manageData() prop as object
-export default function TileForm({children, subject, manageData}) {
+export default function TileForm({children, subject, manageData, _title}) {
     
     const icon = subject?.icon || "Lektorat.svg"
     const subjectStartEnd = useRef()
@@ -68,7 +68,7 @@ export default function TileForm({children, subject, manageData}) {
 
     return (
         <form onSubmit={handleSubmit} className="tile-form">
-            <h1>PLACEHOLDER</h1>
+            <h1>{_title}</h1>
             {/* Need refactoring, its super bad written */}
             <StartEndInput 
                 inputRef={subjectStartEnd} initVal={subject ? 

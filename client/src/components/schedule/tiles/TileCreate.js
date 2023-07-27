@@ -43,7 +43,7 @@ export default function TileCreate({open, setOpen, color, updateScheduleWithoutA
 
     return (
         <Overlay backgroundColor={color} setOpen={setOpen} open={open}>
-            <TileForm manageData={handleCreateButtonClick}/>
+            <TileForm manageData={handleCreateButtonClick} _title="Create new subject"/>
 
             {showModal && <TileUploadModal color={color}
                                            handleClose={handleClose}
