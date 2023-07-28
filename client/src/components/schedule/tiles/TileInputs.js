@@ -2,13 +2,21 @@ import { useState, useRef, useEffect } from 'react';
 import { source } from "../../../source"
 
 
+function ValidationErrorMessage({errorMessage}) {
+    return (
+        <div className="ex-inputErrorMessage">
+            {errorMessage}
+        </div>
+    )
+}
+
 export function TextInput({children, inputRef, initVal, validatingFuntion}) {
     const [validationError, setValidationError] = useState('')
     const [value, setValue] = useState(initVal)
+    const [focused, setFocused] = useState(false)
     
     const wrapperRef = useRef()
     const labelRef = useRef()
-    // const inputRef = useRef()
 
     const handleClick = () => {
         inputRef.current.focus()
@@ -18,12 +26,14 @@ export function TextInput({children, inputRef, initVal, validatingFuntion}) {
         wrapperRef.current.classList.add('ex-activeWrapper')
         labelRef.current.classList.add('ex-activeTitle')
         inputRef.current.classList.add('ex-activeInput')
+        setFocused(true)
     }
     
     const handleOutFocus = () => {
         wrapperRef.current.classList.remove('ex-activeWrapper')
         labelRef.current.classList.remove('ex-activeTitle')
         inputRef.current.classList.remove('ex-activeInput')
+        setFocused(false)
     }
     const calcRows = (e) => {
         setValidationError(validatingFuntion(e.target.value))
@@ -41,7 +51,12 @@ export function TextInput({children, inputRef, initVal, validatingFuntion}) {
                 </div>
                 <div className="ex-svgWrapper">
                     {validationError.length 
-                    ? <img src={`${source}/static/Close.svg`} alt="Invalid value icon"/>
+                    ? (
+                        <>
+                            <img src={`${source}/static/Close - red.svg`} alt="Invalid value icon"/>
+                            {focused && <ValidationErrorMessage errorMessage={validationError}></ValidationErrorMessage>}
+                        </>
+                    )
                     : <img src={`${source}/static/Confirm.svg`} alt="Valid value icon"/>}
                 </div>
             </div>
@@ -57,6 +72,7 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
     const [startEnd, setStartEnd] = useState(initVal)
     const [previousSelection, setpreviousSelection] = useState([13, 13])
     const [cursor, setCursor] = useState(13)
+    const [focused, setFocused] = useState(false)
 
     useEffect(() => {
         inputRef.current.selectionStart = cursor
@@ -77,11 +93,13 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
         wrapperRef.current.classList.add('ex-activeWrapper')
         labelRef.current.classList.add('ex-activeTitle')
         inputRef.current.classList.add('ex-activeInput')
+        setFocused(true)
     }
     const handleOutFocus = () => {
         wrapperRef.current.classList.remove('ex-activeWrapper')
         labelRef.current.classList.remove('ex-activeTitle')
         inputRef.current.classList.remove('ex-activeInput')
+        setFocused(false)
     }
 
     // basically only allow digits to be changed
@@ -153,7 +171,12 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
                 </div>
                 <div className="ex-svgWrapper">
                     {validationError.length 
-                    ? <img src={`${source}/static/Close.svg`} alt="Invalid value icon"/>
+                    ? (
+                        <>
+                            <img src={`${source}/static/Close - red.svg`} alt="Invalid value icon"/>
+                            {focused && <ValidationErrorMessage errorMessage={validationError}></ValidationErrorMessage>}
+                        </>
+                    )
                     : <img src={`${source}/static/Confirm.svg`} alt="Valid value icon"/>}
                 </div>
             </div>
@@ -235,7 +258,12 @@ export function DropdownInput({children, inputRef, initVal, options, validatingF
                 </div>
                 <div className="ex-svgWrapper">
                     {validationError.length 
-                    ? <img src={`${source}/static/Close.svg`} alt="Invalid value icon"/>
+                    ? (
+                        <>
+                            <img src={`${source}/static/Close - red.svg`} alt="Invalid value icon"/>
+                            {focused && <ValidationErrorMessage errorMessage={validationError}></ValidationErrorMessage>}
+                        </>
+                    )
                     : <img src={`${source}/static/Confirm.svg`} alt="Valid value icon"/>}
                 </div>
             </div>
@@ -394,7 +422,12 @@ export function WeekStartEndInput({children, inputRef, initVal, validatingFuntio
                 </div>
                 <div className="ex-svgWrapper">
                     {validationError.length 
-                    ? <img src={`${source}/static/Close.svg`} alt="Invalid value icon"/>
+                    ? (
+                        <>
+                            <img src={`${source}/static/Close - red.svg`} alt="Invalid value icon"/>
+                            {focused && <ValidationErrorMessage errorMessage={validationError}></ValidationErrorMessage>}
+                        </>
+                    )
                     : <img src={`${source}/static/Confirm.svg`} alt="Valid value icon"/>}
                 </div>
             </div>

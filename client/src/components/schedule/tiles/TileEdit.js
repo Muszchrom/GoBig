@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Overlay } from "../../Overlay"
 import { updateSubject, deleteSubject } from "../../Requests"
 import { source } from "../../../source"
-
+import { CancelButton } from "../../Common"
 import TileUploadModal from "./TileUploadModal"
 import TileForm from "./TileForm"
 
@@ -60,11 +60,10 @@ export default function TileEdit({open, setOpen, subject, color, updateScheduleW
 
     return (
         <Overlay backgroundColor={color} setOpen={setOpen} open={open}>
-            <TileForm subject={subject} manageData={handleUploadButtonClick} _title="Edit this subject">
-                <div role="button" onClick={handleDeleteButtonClick} className="span-button heading1 error">
-                    <img className="span-button-icon" src={`${source}/static/Close - red.svg`} alt=""></img>
-                    <span className="error">Delete</span>
-                </div>
+            <TileForm color={color} subject={subject} manageData={handleUploadButtonClick} _title="Edit this subject">
+                <CancelButton handleClick={handleDeleteButtonClick}>
+                    Delete
+                </CancelButton>
             </TileForm>
             {showModal && 
                 <TileUploadModal color={color}

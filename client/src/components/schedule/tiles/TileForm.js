@@ -1,12 +1,14 @@
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { DropdownInput, TextInput, StartEndInput, WeekStartEndInput} from "./TileInputs"
-import { source } from "../../../source"
 import { validateTile } from "../../Requests"
+import { SubmitButton } from "../../Common"
+import { ErrorModal } from "./TileUploadModal"
 
 // renders form and children which might be buttons
 // initial values are taken from subject or hardcoded like below
 // submition passes form data to manageData() prop as object
-export default function TileForm({children, subject, manageData, _title}) {
+export default function TileForm({children, subject, manageData, _title, color}) {
+    const [showErrorModal, setShowErrorModal] = useState(false)
     const icon = subject?.icon || "Lektorat.svg"
     const subjectStartEnd = useRef()
     const subjectName = useRef()
@@ -32,8 +34,8 @@ export default function TileForm({children, subject, manageData, _title}) {
             if (validateTile.validateHall(hall.current.value).length) return 0
             if (validateTile.validateTeacher(teacher.current.value).length) return 0
             if (validateTile.validateAdditionalInfo(additionalInfo.current.value).length) return 0
-            if (validateTile.validateWeekStartEnd(weekStart.current.value).length) return 0
-            if (validateTile.validateWeekStartEnd(weekEnd.current.value).length) return 0
+            if (validateTile.validateWeekStartEnd(weekStart).length) return 0
+            if (validateTile.validateWeekStartEnd(weekEnd).length) return 0
             if (validateTile.validateWeekType(weekType.current.value).length) return 0
             return 1
         })()
@@ -51,12 +53,15 @@ export default function TileForm({children, subject, manageData, _title}) {
                 "weekEnd": parseInt(weekEnd),
                 "weekType": weekTypeAsNumber,
             })
+        } else {
+            setShowErrorModal(true)
         }
     }
 
     return (
         <form onSubmit={handleSubmit} className="tile-form">
             <h1>{_title}</h1>
+            {showErrorModal && <ErrorModal color={color} uploadErrors={["Correct mistakes and try again"]} handleSoftClose={() => {setShowErrorModal(false)}}/>} 
             {/* Need refactoring, its super bad written */}
             <StartEndInput 
                 inputRef={subjectStartEnd} initVal={subject ? 
@@ -107,12 +112,11 @@ export default function TileForm({children, subject, manageData, _title}) {
                 Additional Information
             </TextInput>
             
-            <div className='two-buttons-horizontal-container'>
+            <div className='two-buttons-horizontal-container two-buttons-horizontal-container-v2'>
                 {children}
-                <button type="submit" className="span-button heading1">
-                    <span>Save</span>
-                    <img className="span-button-icon" src={`${source}/static/Confirm.svg`} alt=""></img>
-                </button>
+                <SubmitButton waitingFor={false}>
+                    Save
+                </SubmitButton>
             </div>
         </form>
     )

@@ -66,3 +66,16 @@ export default function TileUploadModal({color, children, handleClose, handleSof
         </>
     )
 }
+export function ErrorModal({color, uploadErrors, handleSoftClose}) {
+    return (
+        <ModalWindow color={color}>
+            <span className="heading1">
+               Upload failure 
+            </span>
+            <ErrorList errors={uploadErrors}/>
+            <CancelButton handleClick={handleSoftClose}>
+                Close
+            </CancelButton>
+        </ModalWindow>
+    )
+}
