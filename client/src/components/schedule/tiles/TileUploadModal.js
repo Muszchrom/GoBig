@@ -2,7 +2,7 @@ import { SubmitButton, CancelButton, LoadingButtonAnimation, ErrorList } from ".
 import { ModalWindow } from "../../Overlay"
 import { useState } from "react"
 
-export default function TileUploadModal({color, children, handleClose, submitFunction}) {
+export default function TileUploadModal({color, children, handleClose, handleSoftClose, submitFunction}) {
     const [uploading, setUploading] = useState(false)
     const [uploadErrors, setUploadErrors] = useState([])
     const [uploadFinished, setUploadFinished] = useState(false)
@@ -24,7 +24,7 @@ export default function TileUploadModal({color, children, handleClose, submitFun
                             {children}
                         </span>
                         <div className="two-buttons-horizontal-container-v2">
-                            <CancelButton handleClick={handleClose}>
+                            <CancelButton handleClick={handleSoftClose}>
                                 Cancel
                             </CancelButton>
                             <SubmitButton waitingFor={false} handleClick={upload}>
@@ -47,7 +47,7 @@ export default function TileUploadModal({color, children, handleClose, submitFun
                             Upload failure!
                         </span>
                         <ErrorList errors={uploadErrors}/>
-                        <CancelButton handleClick={handleClose}>
+                        <CancelButton handleClick={handleSoftClose}>
                             Close
                         </CancelButton>
                     </>
@@ -64,5 +64,18 @@ export default function TileUploadModal({color, children, handleClose, submitFun
                 }
             </ModalWindow>
         </>
+    )
+}
+export function ErrorModal({color, uploadErrors, handleSoftClose}) {
+    return (
+        <ModalWindow color={color}>
+            <span className="heading1">
+               Upload failure 
+            </span>
+            <ErrorList errors={uploadErrors}/>
+            <CancelButton handleClick={handleSoftClose}>
+                Close
+            </CancelButton>
+        </ModalWindow>
     )
 }

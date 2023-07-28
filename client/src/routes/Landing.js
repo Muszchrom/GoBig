@@ -20,7 +20,7 @@ export default function Landing({signedIn, setSignedIn}) {
             </svg>
         </div>
         <div className="landingBackground">
-            <div className="content-wrapper funnycont">
+            <div className="container funnycont">
                 <div className="tile tile-landing">
                     <NavLink to={"/plan/monday"} className="tile-link">
                         PLAN LEKCJI 

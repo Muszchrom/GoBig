@@ -14,8 +14,14 @@ export function CommonTile({subject, editMode,  setEditMode, specialType, signed
         open ? document.querySelector('body').style.overflow = "hidden"
              : document.querySelector('body').style.overflow = "auto"
 
-        open && document.addEventListener("keydown", (e) => {
-            e.keyCode === 27 && setOpen(false)});
+        const lsitenForEscapeKey = (e) => {
+            e.key === "Escape" && setOpen(false)
+        }
+
+        open && document.addEventListener("keydown", lsitenForEscapeKey)
+        return () => {
+            document.removeEventListener("keydown", lsitenForEscapeKey)
+        }
     }, [open])
 
     useEffect(() => {

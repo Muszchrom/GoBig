@@ -1,73 +1,122 @@
-import { useState } from "react"
-import { StartEndInput, DropdownInput, TextInput, TextInputBigger, IconInput } from "./TileInputs"
-import { source } from "../../../source"
+import { useRef, useState } from "react"
+import { DropdownInput, TextInput, StartEndInput, WeekStartEndInput} from "./TileInputs"
+import { validateTile } from "../../Requests"
+import { SubmitButton } from "../../Common"
+import { ErrorModal } from "./TileUploadModal"
 
 // renders form and children which might be buttons
 // initial values are taken from subject or hardcoded like below
 // submition passes form data to manageData() prop as object
-export default function TileForm({children, subject, manageData}) {
-    const [subjectStartEnd, setSubjectStartEnd] = useState(subject 
-        ? `${subject.start.slice(0, 2)}:${subject.start.slice(3, 5)} - ${subject.end.slice(0, 2)}:${subject.end.slice(3, 5)}` 
-        : "00:00 - 00:00")
-    const [subjectName, setSubjectName] = useState(subject?.subjectName || "")
-    const [subjectType, setSubjectType] = useState(subject?.subjectType || ["Laboratory", "Lecture", "Classes", "Project", "Foreign language course"][0])
-    const [hall, setHall] = useState(subject?.hall || "")
-    const [teacher, setTeacher] = useState(subject?.teacher || "")
-    const [icon, setIcon] = useState(subject?.icon || "Lektorat.svg")
-    const [additionalInfo, setAdditionalInfo] = useState(subject?.additionalInfo || "")
-    const [weekType, setWeekType] = useState(['Every week', 'Odd weeks', 'Even weeks'][subject?.weekType || 0])
-    const [weekStart, setWeekStart] = useState(subject?.weekStart || 0)
-    const [weekEnd, setWeekEnd] = useState(subject?.weekEnd || 0)
+export default function TileForm({children, subject, manageData, _title, color}) {
+    const [showErrorModal, setShowErrorModal] = useState(false)
+    const icon = subject?.icon || "Lektorat.svg"
+    const subjectStartEnd = useRef()
+    const subjectName = useRef()
+    const hall = useRef()
+    const additionalInfo = useRef()
+    const teacher = useRef()
+    const subjectType = useRef()
+    const weekType = useRef()
+    const weekStartEnd = useRef()
 
     const handleSubmit = (e) => {
         e.preventDefault()
         const weekTypeAsNumber = (() => {
-            if (weekType === "Every week") return 0
-            if (weekType === "Odd weeks") return 1
-            if (weekType === "Even weeks") return 2
+            if (weekType.current.value === "Every week") return 0
+            if (weekType.current.value === "Odd weeks") return 1
+            if (weekType.current.value === "Even weeks") return 2
         })()
-
-        manageData({
-            "start": subjectStartEnd.split(' - ')[0],
-            "end": subjectStartEnd.split(' - ')[1],
-            "subjectName": subjectName,
-            "subjectType": subjectType,
-            "hall": hall,
-            "teacher": teacher,
-            "icon": icon,
-            "additionalInfo": additionalInfo,
-            "weekStart": parseInt(weekStart),
-            "weekEnd": parseInt(weekEnd),
-            "weekType": weekTypeAsNumber,
-        })
+        const [weekStart, weekEnd] = weekStartEnd.current.value.split(' - ')
+        const validationSuccessful = (() => {
+            if (validateTile.validateStartEnd(subjectStartEnd.current.value).length) return 0
+            if (validateTile.validateSubjectName(subjectName.current.value).length) return 0
+            if (validateTile.validateSubjectType(subjectType.current.value).length) return 0
+            if (validateTile.validateHall(hall.current.value).length) return 0
+            if (validateTile.validateTeacher(teacher.current.value).length) return 0
+            if (validateTile.validateAdditionalInfo(additionalInfo.current.value).length) return 0
+            if (validateTile.validateWeekStartEnd(weekStart).length) return 0
+            if (validateTile.validateWeekStartEnd(weekEnd).length) return 0
+            if (validateTile.validateWeekType(weekType.current.value).length) return 0
+            return 1
+        })()
+        if (validationSuccessful) {
+            manageData({
+                "start": subjectStartEnd.current.value.split(' - ')[0],
+                "end": subjectStartEnd.current.value.split(' - ')[1],
+                "subjectName": subjectName.current.value,
+                "subjectType": subjectType.current.value,
+                "hall": hall.current.value,
+                "teacher": teacher.current.value,
+                "icon": icon,
+                "additionalInfo": additionalInfo.current.value,
+                "weekStart": parseInt(weekStart),
+                "weekEnd": parseInt(weekEnd),
+                "weekType": weekTypeAsNumber,
+            })
+        } else {
+            setShowErrorModal(true)
+        }
     }
 
     return (
         <form onSubmit={handleSubmit} className="tile-form">
-            <StartEndInput _name="start-end" removeMe={setIcon} start={subjectStartEnd.split(' - ')[0]} end={subjectStartEnd.split(' - ')[1]} startEnd={subjectStartEnd} setStartEnd={setSubjectStartEnd}>Start - End</StartEndInput>
-            <TextInputBigger _name="subject-name" currentState={subjectName} changeState={setSubjectName}>Subject name</TextInputBigger>
-            <TextInput _name="teacher" currentState={teacher} changeState={setTeacher}>Teacher</TextInput>
+            <h1>{_title}</h1>
+            {showErrorModal && <ErrorModal color={color} uploadErrors={["Correct mistakes and try again"]} handleSoftClose={() => {setShowErrorModal(false)}}/>} 
+            {/* Need refactoring, its super bad written */}
+            <StartEndInput 
+                inputRef={subjectStartEnd} initVal={subject ? 
+                    `${subject.start.slice(0, 2)}:${subject.start.slice(3, 5)} - ${subject.end.slice(0, 2)}:${subject.end.slice(3, 5)}` 
+                    : "00:00 - 00:00"}
+                validatingFuntion={validateTile.validateStartEnd}>
+                Start - end
+            </StartEndInput>
+
+            {/* Normal text, validation same as on API endpoint */}
+            <TextInput inputRef={subjectName} initVal={subject?.subjectName || ""} validatingFuntion={validateTile.validateSubjectName}>
+                Subject Name
+            </TextInput>
+            
+            {/* Normal text, optionally one of options array option */}
             <DropdownInput 
-                _name="subject-type"
+                inputRef={teacher}
+                initVal={subject?.teacher || ""}
+                options={[]} 
+                validatingFuntion={validateTile.validateTeacher}>Teacher</DropdownInput>
+
+            {/* For validation only options from options array are available */}
+            <DropdownInput 
+                inputRef={subjectType}
+                initVal={subject?.subjectType || ""}
                 options={["Laboratory", "Lecture", "Classes", "Project", "Foreign language course"]} 
-                currentState={subjectType}
-                changeState={setSubjectType}>Subject type</DropdownInput>
-            <TextInput _name="hall" currentState={hall} changeState={setHall}>Hall</TextInput>
-            <TextInput _name="additional-info" currentState={additionalInfo} changeState={setAdditionalInfo}>Additional information</TextInput>
+                validatingFuntion={validateTile.validateSubjectType}>Subject type</DropdownInput>
+
+            {/* Normal text, validation same as on API endpoint */}
+            <TextInput inputRef={hall} initVal={subject?.hall || ""}  validatingFuntion={validateTile.validateHall}>
+                Hall
+            </TextInput>
+
+            {/* For validation only options from options array are available */}
             <DropdownInput 
-                _name="week-type"
-                options={['Every week', 'Odd weeks', 'Even weeks']} 
-                currentState={weekType}
-                changeState={setWeekType}>Week type</DropdownInput>
-            <TextInput _name="week-start" currentState={weekStart} changeState={setWeekStart}>Week start</TextInput>
-            <TextInput _name="week-end" currentState={weekEnd} changeState={setWeekEnd}>Week end</TextInput>
-            <IconInput currentState={icon} changeState={setIcon}/>
-            <div className='two-buttons-horizontal-container'>
+                inputRef={weekType}
+                initVal={["Every week", "Odd weeks", "Even weeks"][subject?.weekType] || ""}
+                options={["Every week", "Odd weeks", "Even weeks"]} 
+                validatingFuntion={validateTile.validateWeekType}>Week type</DropdownInput>
+
+            {/* Whatever integer,  */}
+            <WeekStartEndInput inputRef={weekStartEnd} initVal={`${subject?.weekStart || 0} - ${subject?.weekEnd || 0}`} validatingFuntion={validateTile.validateWeekStartEnd}>
+                Week Start - End                    
+            </WeekStartEndInput>
+
+            {/* Normal text, validation same as on API endpoint */}
+            <TextInput inputRef={additionalInfo} initVal={subject?.additionalInfo || ""}  validatingFuntion={validateTile.validateAdditionalInfo}> 
+                Additional Information
+            </TextInput>
+            
+            <div className='two-buttons-horizontal-container two-buttons-horizontal-container-v2'>
                 {children}
-                <button type="submit" className="span-button heading1">
-                    <span>Save</span>
-                    <img className="span-button-icon" src={`${source}/static/Confirm.svg`} alt=""></img>
-                </button>
+                <SubmitButton waitingFor={false}>
+                    Save
+                </SubmitButton>
             </div>
         </form>
     )

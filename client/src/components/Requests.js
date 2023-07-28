@@ -163,3 +163,76 @@ export const fetchProtected = async () => {
     data = await data.json()
     return data.message
 }
+
+export const validateTile = {
+    validateDay: (day) => {
+        day = parseInt(day)
+        if (!Number.isInteger(day)) return "Value for day is not an integer"
+        if (0 <= day && day <=6) return ""
+        return "Value for day should be >= 0 and <=6"
+    },
+    validateStartEnd: (startEnd) => {
+        if (!startEnd.match(/^[0-2][0-9]:[0-6][0-9] - [0-2][0-9]:[0-6][0-9]$/)) return "Time is invalid"
+
+        const [start, end] = startEnd.split(' - ')
+        let [hourS, minuteS] = start.split(':')
+        let [hourE, minuteE] = end.split(':')
+        hourS = parseInt(hourS)
+        minuteS = parseInt(minuteS)
+        hourE = parseInt(hourE)
+        minuteE = parseInt(minuteE)
+
+        // this should never happend btw
+        if (!Number.isInteger(hourS) ||
+            !Number.isInteger(minuteS) ||
+            !Number.isInteger(hourE) ||
+            !Number.isInteger(minuteE)) return "Values must be integers"
+
+        if (0 <= hourS && hourS <= 24 &&
+            0 <= hourE && hourE <= 24 &&
+            0 <= minuteS && minuteS <= 60 &&
+            0 <= minuteE && minuteE <= 60) return ""
+
+        return "Eneterd time doesn't exist"
+    },
+    validateSubjectName: (subjectName) => {
+        if (!subjectName.match(/^[a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ \.\,\-\_]+$/)) return "Subject name contains forbidden characters" // eslint-disable-line
+        if (2 > subjectName.length) return "Subject name is too short"
+        if (subjectName.length > 100) return "Subject name is too long"
+        return ""
+    },
+    validateSubjectType: (subjectType) => {
+        const options = ['Laboratory', 'Lecture', 'Classes', 'Project', 'Foreign language course']
+        if (options.includes(subjectType)) return ""
+        return "Provided subject type didn't match any options"
+    },
+    validateHall: (hall) => {
+        if (!hall.match(/^[a-zA-Z0-9\- ]+$/)) return "Hall contains forbidden characters"
+        if (2 > hall.length) return "Hall name is too short"
+        if (hall.length > 100) return "Hall name is too long"
+        return ""
+    },
+    validateTeacher: (teacher) => {
+        if (!teacher.match(/^[a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ \.\,]+$/)) return "Teacher's name contains forbidden characters" // eslint-disable-line
+        if (2 > teacher.length) return "Teacher's name is too short"
+        if (teacher.length > 100) return "Teacher's name is too long"
+        return ""
+    },
+    validateAdditionalInfo: (info) => {
+        if (!info.match(/^[a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ \.\,\-\_\n]*$/)) return "The text contains forbidden characters" // eslint-disable-line
+        if (info.length > 250) return "The text is too long"
+        return ""
+    },
+    validateWeekStartEnd: (weekNumber) => {
+        weekNumber = parseInt(weekNumber)
+        if (!Number.isInteger(weekNumber)) return "Week must be integer"
+        if (-1 > weekNumber) return "Week should be greater than that"
+        if (20 < weekNumber) return "Week should be smaller than that"
+        return ""
+    },
+    validateWeekType: (weekType) => {
+        const options = ["Every week", "Odd weeks", "Even weeks"]
+        if (!options.includes(weekType)) return "Week type didn't match any options"
+        return ""
+    }
+}
