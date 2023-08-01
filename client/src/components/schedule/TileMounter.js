@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { CommonTile, WaitingTile, CreateTile } from './Tiles'
 import AdditionalInfo from './AdditionalInfo'
-import { NavigateBackTo } from '../Common';
+import { NavigateBackTo } from '../Common'
 
 export default function TileMounter({signedIn, currentWeek, scheduleForTheDay, updateScheduleWithoutApiCall}) {
   const [editMode, setEditMode] = useState(false)
@@ -42,7 +42,7 @@ export default function TileMounter({signedIn, currentWeek, scheduleForTheDay, u
           <WaitingTile></WaitingTile>
         </>
       )}
-        <div style={{display: "flex", justifyContent: "space-between", padding: "0 1em", position: "sticky", bottom: "2em"}}>
+        <div style={{display: "flex", justifyContent: "space-between", padding: "0 1em", position: "sticky", height: "0", bottom: "5em"}}>
           <NavigateBackTo path="/"/>
           <AdditionalInfo/>
         </div>

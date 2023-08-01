@@ -105,6 +105,7 @@ li img {
   width: 50%;
   max-width: 200px;
   text-align: center;
+  cursor: pointer;
 }
 .week-nav-button {
   border-radius: 6px;
@@ -530,7 +531,7 @@ li img {
   right: 1em;
   bottom: 50%;
   width: 200px;
-  /* opacity: .5; */
+  opacity: .2;
   transform: rotateZ(-10deg);
 }
 
@@ -806,4 +807,53 @@ li img {
   width: 60%;
   margin: 0;
   padding: 0;
+}
+
+
+/* ------------------------------------- */
+/* Calendar/Semester ------------------- */
+/* ------------------------------------- */
+
+.monthHeader {
+  width: 50%;
+  background-color: var(--Lightcoral);
+  font-size: 16px;
+  font-weight: bold;
+  padding: 4px 4px 2px 4px;
+  border-radius: 12px 12px 0 0;
+}
+.monthSemesterName {
+  width: 50%;
+  font-size: 16px;
+  font-weight: bold;
+  pad: 4px 4px 2px 4px;
+}
+.calendarTable {
+  width: 100%;
+  box-shadow: var(--Shadow);
+}
+.calendarRow {
+  text-align: center;
+  display: flex;
+}
+.calendarRow th,
+.calendarRow td {
+  flex: 1;
+  padding: 4px;
+}
+.calendarRow td {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  cursor: pointer;
+}
+.cellDisabled {
+  color: #999 !important;
+  cursor: default !important;
+}
+.cellActive {
+  outline: 2px solid var(--Lightcoral);
+  outline-offset: -2px;
+  box-shadow: 0 0 4px var(--Lightcoral) inset;
 }

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-
+import Semester from '../Semester';
 import FocusTrap from 'focus-trap-react';
 
 export default function Header(props) {
   const [open, setOpen] = useState(false);
   const [dayName, setDayName] = useState("")
+  const [showCalendar, setShowCalendar] = useState(false)
 
   let location = useLocation()
 
@@ -47,10 +48,11 @@ export default function Header(props) {
         </ul>
       <div className="week-info">
         <button type="button" className="week-nav-button" onClick={() => props.handleWeekChange(props.currentWeek.number-1)}>{"<<"}</button>
-        <span className="week-info-txt">Week &#x2116; {props.currentWeek.number}, Is {props.currentWeek.isOdd ? "Odd" : "Even"}</span>
+        <span className="week-info-txt" onClick={() => setShowCalendar(true)}>Week &#x2116; {props.currentWeek.number}, Is {props.currentWeek.isOdd ? "Odd" : "Even"}</span>
         <button type="button" className="week-nav-button" onClick={() => props.handleWeekChange(props.currentWeek.number+1)}>{">>"}</button>
       </div>
       </div>
+      {showCalendar && <Semester handleClose={() => setShowCalendar(false)}></Semester>}
     </header>
   );
 }

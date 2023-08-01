@@ -83,6 +83,17 @@ export default function Schedule({signedIn}) {
                 const bufferArray = [[], [], [], [], [], [], []]
                 fetchedSchedule.forEach((subject) => {
                     subject['onClient_color'] = createRandomColor()
+                    subject.icon = [
+                        'Labo.svg', 
+                        'Lecture.svg', 
+                        'Exercises.svg', 
+                        'Default.svg', 
+                        'Lektorat.svg'][[
+                            'Laboratory', 
+                            'Lecture', 
+                            'Classes', 
+                            'Project', 
+                            'Foreign language course'].indexOf(subject.subjectType)]
                     bufferArray[subject.day].push(subject)
                 })
                 setSchedule(bufferArray)

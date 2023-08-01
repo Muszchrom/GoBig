@@ -60,7 +60,7 @@ export default function TileForm({children, subject, manageData, _title, color})
 
     return (
         <form onSubmit={handleSubmit} className="tile-form">
-            <h1>{_title}</h1>
+            <h1 style={{marginTop: "7px"}}>{_title}</h1>
             {showErrorModal && <ErrorModal color={color} uploadErrors={["Correct mistakes and try again"]} handleSoftClose={() => {setShowErrorModal(false)}}/>} 
             {/* Need refactoring, its super bad written */}
             <StartEndInput 

@@ -2,7 +2,7 @@ import { useState } from "react"
 import { NavLink, Navigate, useNavigate } from 'react-router-dom'
 
 import {signUp} from '../components/Requests'
-import { UsernameInput, PasswordInput, ConfirmPasswordInput, ErrorList, SubmitButton } from '../components/Common'
+import { UsernameInput, PasswordInput, ConfirmPasswordInput, ErrorList, SubmitButton, NavigateBackTo } from '../components/Common'
 
 export default function SignUp({signedIn, setSignedIn}) {
     const [username, setUsername] = useState("")
@@ -49,7 +49,9 @@ export default function SignUp({signedIn, setSignedIn}) {
                     Sign in
                 </NavLink>
             </div>
-            <button onClick={() => {navigate("/", {replace: true})}} className="absolute-button">{"<-"}</button>
+            <div style={{width: "100%", padding: "0 1em", marginTop: "auto", marginBottom: "2em"}}>
+                <NavigateBackTo path="/"/>
+            </div>
     </div>
     ) : (
         <Navigate to="/" replace={true}></Navigate>
