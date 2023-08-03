@@ -3,9 +3,8 @@ const sqlite3 = require('sqlite3').verbose();
 const { body, validationResult } = require('express-validator');
 
 const {verifyToken} = require('./auth');
-
+d=b
 const router = express.Router();
-// q = d
 
 const db = new sqlite3.Database('./database/calendar.db', sqlite3.OPEN_READWRITE, (err, result) => {
     if (err) {
@@ -212,7 +211,7 @@ const serverErrorHandler = (err, res) => {
 }
 
 // name is self explanatory
-const createConstructorForUser = (req, res, next) => {
+const createConstructorForUser = async (req, res, next) => {
     let dateStart = req.body.dateStart
     let dateEnd = req.body.dateEnd
 
@@ -284,16 +283,76 @@ const createConstructorForUser = (req, res, next) => {
 const constructorForUserNotPresent = (req, res, next) => {
     getConstructorRowsForUserId(res.locals.userId)
         .then((rows) => {
-            if (rows === undefined) next();
+            console.log(rows);
+            if (rows === undefined || rows.length === 0) next();
             else return res.status(400).json({message: "Constructor was already created", errors: ["Constructor was already created"]});
         })
         .catch((err) => {
             return serverErrorHandler(err, res);
         })
 }
+
+// dateStart dateEnd validation is in createConstructorForUser()
+const validationChain = [
+    body('weekId')
+        .isInt({min: 1, max: 50})
+        .withMessage('weekId should be an integer and its value in range 1 to 50 inclusive'),
+    body('weekType')
+        .isInt({min: 0, max: 99})
+        .withMessage('weekType should be an integer and its value in range 0 to 99 inclusive'),
+    body('day')
+        .isInt({min: 1, max: 31})
+        .withMessage('day should be an integer and its value in range 1 to 36 inclusive'),
+    body('dayType')
+        .isIn(['', 'dayoff', 'test', 'exam'])
+        .withMessage('dayType should be one of options [dayoff, test, exam]'),
+    body('message')
+        .matches(/^[a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ? \.\,\-\_]+$/)
+        .withMessage('Subject name should match ^[a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ \.\,\-\_]+$ format'),
+    body('emoji')
+        .matches(/^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])$/)
+        .withMessage('Emoji should be an emoji'),
+]
+
+const validators = {
+    constructorPatch: async (req, res, next) => {
+        await validationChain[0].run(req);
+        await validationChain[1].run(req);
+        return next();
+    },
+    detailsPostPatch: async (req, res, next) => {
+        await validationChain[0].run(req);
+        await validationChain[2].run(req);
+        await validationChain[3].run(req);
+        await validationChain[4].run(req);
+        await validationChain[5].run(req);
+        return next();
+    },
+    detailsDelete: async (req, res, next) => {
+        await validationChain[0].run(req);
+        await validationChain[2].run(req);
+        return next();
+    }
+}
+
+const responseToValidation = (req, res, next) => {
+    const errors = validationResult(req);
+    if (errors.isEmpty()) {
+        return next();
+    }
+    const errorMessages = errors.array().map(error => error.msg);
+    return res.status(400).json({
+        message: "Validation error(s) occured, check errors for more info", 
+        errors: errorMessages
+    });
+}
+
 /* -------------------------------------------------------
 ######################### Routes #########################
 ------------------------------------------------------- */
+
+// !!! Schedule can be set up to 300 days
+// various limits are set in createConstructorForUser(), validationChain and in router.post('/details')
 
 // body {dateStart: "month day year", dateEnd: "month day year"}
 router.post('/constructor', verifyToken, constructorForUserNotPresent, createConstructorForUser, (req, res) => {
@@ -327,7 +386,7 @@ router.delete('/constructor', verifyToken, (req, res) => {
         });
 })
 // body {weekId: int, weekType: int}
-router.patch('/constructor', verifyToken, (req, res) => {
+router.patch('/constructor', verifyToken, validators.constructorPatch, responseToValidation, (req, res) => {
     if (!Number.isInteger(req.body.weekId)) return res.status(400).json({message: "weekId must be an integer", errors: ["weekId must be an integer"]});
     if (!Number.isInteger(req.body.weekType)) return res.status(400).json({message: "weekType must be an integer", errors: ["weekType must be an integer"]});
     
@@ -342,7 +401,7 @@ router.patch('/constructor', verifyToken, (req, res) => {
 })
 
 // body {weekId: int, day: int, dayType: string, message: string, emoji: string}
-router.post('/details', verifyToken, (req, res) => {
+router.post('/details', verifyToken, validators.detailsPostPatch, responseToValidation, (req, res) => {
     const valuesObject = {
         weekId: req.body.weekId,
         userId: res.locals.userId,
@@ -378,7 +437,7 @@ router.get('/details', verifyToken, (req, res) => {
         
 });
 // body {weekId: int, day: int}
-router.delete('/details', verifyToken, (req, res) => {
+router.delete('/details', verifyToken, validators.detailsDelete, responseToValidation, (req, res) => {
     deleteDetailsRow({userId: res.locals.userId, weekId: req.body.weekId, day: req.body.day})
         .then((result) => {
             if (result === 0) return res.status(400).json({message: "No row has been deleted", errors: ["No row has been deleted"]});
@@ -394,7 +453,7 @@ router.delete('/details', verifyToken, (req, res) => {
         })
 });
 // body {weekId: int, day: int, dayType: string, message: string, emoji: string}
-router.patch('/details', verifyToken, (req, res) => {
+router.patch('/details', verifyToken, validators.detailsPostPatch, responseToValidation, (req, res) => {
     const valuesObject = {
         userId: res.locals.userId, 
         weekId: req.body.weekId, 
