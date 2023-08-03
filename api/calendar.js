@@ -3,7 +3,7 @@ const sqlite3 = require('sqlite3').verbose();
 const { body, validationResult } = require('express-validator');
 
 const {verifyToken} = require('./auth');
-d=b
+
 const router = express.Router();
 
 const db = new sqlite3.Database('./database/calendar.db', sqlite3.OPEN_READWRITE, (err, result) => {
