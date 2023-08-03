@@ -6,5 +6,6 @@ nginx/certbot
 outdatedfile
 api/database/schedule.db
 api/database/users.db
+api/database/calendar.db
 docker-compose.dev.yml
 nginx/nginx/conf/default.conf
