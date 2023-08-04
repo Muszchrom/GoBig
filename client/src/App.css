@@ -826,7 +826,7 @@ li img {
   width: 50%;
   font-size: 16px;
   font-weight: bold;
-  pad: 4px 4px 2px 4px;
+  padding: 4px 4px 2px 4px;
 }
 .calendarTable {
   width: 100%;
@@ -856,4 +856,50 @@ li img {
   outline: 2px solid var(--Lightcoral);
   outline-offset: -2px;
   box-shadow: 0 0 4px var(--Lightcoral) inset;
+}
+.contextWindow {
+  position: fixed;
+  box-shadow: var(--Shadow);
+  border-radius: 12px;
+  width: 50vw;
+  height: 50vw;
+  max-width: 200px;
+  max-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+.contextWindowHeader {
+  border-radius: 12px 12px 0 0;
+  background-color: var(--Lightcoral);
+  display: flex;
+  font-weight: bold;
+}
+.contextWindowMessage {
+  width: 100%;
+  padding: 8px;
+  background-color: var(--Background);
+  border: 2px solid var(--Lightcoral);
+  border-top: none;
+  flex-grow: 1;
+  border-radius: 0 0 12px 12px;
+  text-align: left;
+}
+.contextWindowText {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  cursor: grab;
+}
+.contextWindowButton {
+  width: 42px;
+  height: 42px;
+  background-color: var(--Lightcoral);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  bottom: 6px;
+  right: 6px
 }

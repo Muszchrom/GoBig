@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Overlay } from "./Overlay"
-
+import { getSemesterWeeks, getSemesterDays } from "./Requests"
+import Draggable from 'react-draggable';
+import { source } from "../source";
 // Dont use state in this component, re rendering is super costly
 /*
 dates = [
@@ -31,237 +33,126 @@ dates = [
     ...
 ]
 */
+
 export default function Semester({handleClose}) {
-    // week numbering is relative to semester start
-    const semesterStartEnd = ["10 1 2023", "2 31 2024"]
-    
-    const monthSkeleton = (startingDate, functionState) => {
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-        let currentMonth = startingDate.getMonth()
-        let arrayOfWeeks = []
-        let firstDayOfWeekIsNotMonday = false
-
-        // this object helps figure out week in which we are at next funciton call
-        const newFunctionState = {
-            maxWeekId: functionState.maxWeekId,
-            incrementFirstWeekId: true
-        }
-
-        // shift date back to make first array of dates 7 elements long
-        if (startingDate.getDay() !== 1) {
-            firstDayOfWeekIsNotMonday = true
-            if (startingDate.getDay() === 0) {
-                startingDate = new Date(startingDate.setDate(startingDate.getDate() - 6))
-            } else {
-                startingDate = new Date(startingDate.setDate(startingDate.getDate() - startingDate.getDay() + 1))
-            }
-        }
-
-        // create first row/week of the month
-        let arrayOfDays = []
-        for (let i=1; i<8; i++) {
-            arrayOfDays.push({
-                date: new Date(startingDate.setDate(startingDate.getDate() - startingDate.getDay() + i)).getDate(),
-                gray: false
+    const [fetchedData, setFetchedData] = useState({})
+    useEffect(() => {
+        (async () => {
+            let data = await fetch(`${source}/calendar/yhym`, {
+                method: "GET",
+                credentials: "include"
             })
-        }
-
-        // mark days of previous month in first row
-        if (firstDayOfWeekIsNotMonday) {
-            for (let i=0; i<arrayOfDays.length; i+=1) {
-                if (arrayOfDays[i].date < arrayOfDays[i+1].date) {
-                    arrayOfDays[i].gray = true
-                } else {
-                    arrayOfDays[i].gray = true
-                    break
-                }
-            }
-        }
-        newFunctionState.maxWeekId = functionState.incrementFirstWeekId ? functionState.maxWeekId + 1 : functionState.maxWeekId
-        
-        arrayOfWeeks.push({
-            weekId: newFunctionState.maxWeekId,
-            weekDates: arrayOfDays
-        })
-
-        // create remaining rows of the month
-        while(currentMonth === new Date(new Date(startingDate).setDate(startingDate.getDate() - startingDate.getDay() + 1)).getMonth()) {
-            arrayOfDays = []
-            for (let i=1; i<8; i++) {
-                arrayOfDays.push({
-                    date: new Date(startingDate.setDate(startingDate.getDate() - startingDate.getDay() + i)).getDate(),
-                    gray: false
-                })
-            }
-            newFunctionState.maxWeekId += 1
-            arrayOfWeeks.push({
-                weekId: newFunctionState.maxWeekId,
-                weekDates: arrayOfDays
-            })
-        }
-
-        // mark days of the next month
-        if (arrayOfWeeks[arrayOfWeeks.length-1].weekDates[6].date < 8) {
-            newFunctionState.incrementFirstWeekId = false // next function call will not increment week id on the first row, because it will exist both in the current week and the next one
-            for (let i=arrayOfWeeks[arrayOfWeeks.length-1].weekDates.length-1; i>0; i-=1) {
-                if (arrayOfWeeks[arrayOfWeeks.length-1].weekDates[i].date > arrayOfWeeks[arrayOfWeeks.length-1].weekDates[i-1].date) {
-                    arrayOfWeeks[arrayOfWeeks.length-1].weekDates[i].gray = true
-                } else {
-                    arrayOfWeeks[arrayOfWeeks.length-1].weekDates[i].gray = true
-                    break
-                }
-            }
-        }
-
-        return [newFunctionState, {
-            monthId: currentMonth,
-            monthName: monthNames[currentMonth],
-            arrayOfWeeks: arrayOfWeeks,
-            semesterType: "Winter semester"
-        }]
-    }
-    
-    // create object for every month in date range
-    const dates = (() => {
-        let dateStart = new Date(semesterStartEnd[0])
-        const dateEnd = new Date(semesterStartEnd[1])
-        let d = []
-
-        let monthSkeletonState = {
-            maxWeekId: 0,
-            incrementFirstWeekId: true
-        }
-
-        while (dateStart < dateEnd) {
-            const returnedVal = monthSkeleton(new Date(dateStart), monthSkeletonState) // create copy of dateStart
-            monthSkeletonState = returnedVal[0]
-            d.push(returnedVal[1])
-            dateStart = new Date(dateStart.setMonth(dateStart.getMonth() + 1))
-        }
-        return d
-    })()
-
-    console.log(dates)
-
+            data = await data.json()
+            setFetchedData(data)
+        })()
+    }, [])
     return (
         <Overlay backgroundColor={"var(--Background)"} setOpen={handleClose} open={true}>
-            <h1 style={{marginTop: "7px"}}>Semester schedule</h1>
-            {dates.map((month) => {
-                return <SemestersMonth monthsObject={month} key={month.monthId}/>
-            })}
-            <Interactions />
+            <h1 style={{marginTop: "7px", width: "90%"}}>Semester schedule</h1>
+            {fetchedData.data && !!Object.keys(fetchedData).length 
+                ? fetchedData.data.map((item, index) => {
+                    return (
+                        <div key={`1${index}`} style={{minWidth: "fit-content", margin: "0 -1em"}}>
+                            <div style={{display: "flex", textAlign: "center"}}>
+                                <div className="monthHeader">
+                                    {["January", "February", "March", "April", "May", "June",
+                                    "July", "August", "September", "October", "November", "December"][new Date(item.month).getMonth()]}
+                                </div>
+                                <div className="monthSemesterName">
+                                    "Placeholder"
+                                </div>
+                            </div>
+
+                            <div style={{borderTop: "2px solid var(--Lightcoral)", borderTopRightRadius: "2px"}}>
+                                <CalendarTable weeks={item.weeks}/>
+                            </div>  
+                        </div>
+                    )
+                })
+                : <></>
+            }
         </Overlay>
     )
 }
 
-function Interactions() {
-    const [open, setOpen] = useState(false)
-    const [data, setData] = useState('')
+function CalendarTable({weeks}) {
+    return (
+        <table className="calendarTable">
+            <tbody>
+                {weeks.map((week, index) => {
+                    return <MonthsRow key={`2${index}`} week={week}/>
+                })}
+            </tbody>
+        </table>
+    )
+}
 
-    useEffect(() => {
-        const el = document.getElementById(data)
-        if (el) {
-            el.classList.add("cellActive")
-        }
-        return () => {
-            const el = document.getElementById(data)
-            if (el) {
-                el.classList.remove("cellActive")
-            }
-        }
-    }, [data])
+function MonthsRow({week}) {
+    return (
+        <tr className="calendarRow">
+            <WeekType weekNum={week.week} weekType={week.type}/>
+            {week.days.map((item, index) => {
+                return <DayComponent key={`3${index}`} day={item}/>
+            })}
+        </tr>
+    )
+}
 
-    useEffect(() => {
-        const listeningFunction = (e) => {
-            console.log(e.target.id)
-            console.log(typeof(e.target.id))
-            if (e.target.id.match(/^[0-9]/)) {
-                setOpen(true)
-                setData(e.target.id)
-            }
-        }
-        document.addEventListener('mousedown', listeningFunction)
-        return () => {
-            document.removeEventListener('mousedown', listeningFunction)
-        }
-    }, [])
+function WeekType({weekNum, weekType}) {
+    const type = (() => {
+        if (weekType === 0) return ""
+        if (weekType === 1) return "I"
+        if (weekType === 2) return "II"
+        return "Err"
+    })()
+    return <SingleCell>{type}</SingleCell>
+}
 
-    const styles = {
-        backgroundColor: "var(--Background)",
-        position: "fixed",
-        border: "2px solid var(--Lightcoral)",
-        boxShadow: "var(--Shadow)",
-        borderRadius: "12px",
-        width: "50vw",
-        height: "50vw",
-        maxWidth: "200px",
-        maxHeight: "200px"
-    }
+function DayComponent({day}) {
+    const date = new Date(day.day).getDate()
+    return <SingleCell type={day.type}>{date}</SingleCell>
+}
+
+function SingleCell({children, type}) {
+    const [show, setShow] = useState(false)
+
+    const styles = (() => {
+        if (type === 0) return {opacity: 0.5}
+        if (type === 2) return {background: "linear-gradient(43deg, rgba(233,43,43,0.6530987394957983) 2%, rgba(18,199,191,0) 58%)"}
+        if (type === 3) return {background: "linear-gradient(43deg, rgba(225,43,233,0.6530987394957983) 2%, rgba(18,199,191,0) 58%)"}
+        return {}
+    })()
+
     return (
         <>
-        {
-            open && (
-                <div style={styles}>
-                    <div style={{padding: "4px", borderRadius: "6px 6px 0 0", backgroundColor: "var(--Lightcoral)", display: "flex", justifyContent: "space-between"}}>
-                        <span>{data}</span>
-                        <button onClick={() => setOpen(false)} style={{backgroundColor: "transparent", border: "none", outline: "none"}}>X</button>
-                    </div>
-                    <div style={{width: "100%", height: "100%", padding: "4px"}}>
-                        <span>Hello</span>
-                    </div>
-                </div>
-            )
-        }
+            <td onClick={() => setShow(true)} style={styles}>
+                {children}
+            {show && <ContextWindow handleClose={setShow} data={{title: "19 nov 2023", message: "Hello world!"}}/>}
+            </td>
         </>
     )
 }
 
-function SemestersMonth({monthsObject}) {
+function ContextWindow({handleClose, data}) {
+    const nodeRef = useRef(null)
     return (
-        <div style={{minWidth: "fit-content"}} id={monthsObject.monthId}>
-            <div style={{display: "flex", textAlign: "center"}}>
-                <div className="monthHeader">
-                    {monthsObject.monthName}
+        <Draggable handle="#handle" nodeRef={nodeRef}>
+            <div ref={nodeRef} className="contextWindow">
+                <div className="contextWindowHeader">
+                    <div id="handle" className="contextWindowText">
+                        <span>{data.title}</span>
+                    </div>
+                    <button onClick={(e) => {e.stopPropagation(); handleClose(false)}} style={{backgroundColor: "transparent", border: "none", outline: "none", fontWeight: "bold", fontSize: "24px", width: "36px", height: "36px"}}>X</button>
                 </div>
-                <div className="monthSemesterName">
-                    {monthsObject.semesterType}
+                <div className="contextWindowMessage">
+                    <span>{data.message}</span>
+                    <div className="contextWindowButton">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4.5 15L3 20.5L8.5 19M4.5 15L13.5 6M4.5 15C5.33333 14.8333 7 14.9 7 16.5M8.5 19L17.5 10M8.5 19C8.66667 18.1667 8.6 16.5 7 16.5M13.5 6L16.5 3L20.5 7L17.5 10M13.5 6L15.5 8M17.5 10L15.5 8M15.5 8L7 16.5" strokeWidth="1.5" stroke="#322F2B" strokeLinejoin="round"/>
+                        </svg>
+                    </div>
                 </div>
             </div>
-
-            <div style={{borderTop: "2px solid var(--Lightcoral)", borderTopRightRadius: "2px"}}>
-                <table className="calendarTable">
-                    <thead>
-                        <tr className="calendarRow">
-                            <th>Type</th>
-                            <th>Mon</th>
-                            <th>Tue</th>
-                            <th>Wed</th>
-                            <th>Thu</th>
-                            <th>Fri</th>
-                            <th>Sat</th>
-                            <th>Sun</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {monthsObject.arrayOfWeeks.map((week, index) => {
-                            return <MonthsRow week={week} monthId={monthsObject.monthId} key={`${index}${monthsObject.monthId}`}/>
-                        })}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    )
-}
-
-function MonthsRow({week, monthId}) {
-    return (
-        <tr className="calendarRow" id={`${monthId}-${week.weekId}`}>
-            <td>I</td>
-            {week.weekDates.map((day) => {
-                return day.gray 
-                    ? <td className="cellDisabled" key={`${monthId}-${week.weekId}-${day.date}-gray`}>{day.date}</td>
-                    : <td id={`${monthId}-${week.weekId}-${day.date}`} key={`${monthId}-${week.weekId}-${day.date}`}>{day.date}</td>
-            })}
-        </tr>
+        </Draggable>
     )
 }
