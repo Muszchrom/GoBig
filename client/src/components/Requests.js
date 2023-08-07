@@ -1,5 +1,4 @@
 import {source} from "../source"
-// export const source = "http://192.168.100.3:5000"
 
 const validateUsername = (username) => {
     if (username.length < 4 || username.length > 12) return false
@@ -66,7 +65,6 @@ export const updateSubject = async (requestBody) => {
 }
 
 export const createSubject = async (requestBody) => {
-    // validate this request on client
     let errors = []
 
     let data = await fetch(`${source}/schedule`, {

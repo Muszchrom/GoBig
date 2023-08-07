@@ -14,327 +14,338 @@ const db = new sqlite3.Database('./database/calendar.db', sqlite3.OPEN_READWRITE
 });
 db.run(`PRAGMA foreign_keys = ON`)
 
-db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='constructor'`, (err, table) => {
+db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='months'`, (err, table) => {
     if (err) {
         console.warn(err);
         return;
     }
     if (!table) {
-        console.log('Creating Table constructor for calendar')
-        db.run(`CREATE TABLE constructor(
+        console.log('Creating Table months for calendar')
+        db.run(`CREATE TABLE months(
             id INTEGER,
             userId INTEGER NOT NULL,
-            monthId INTEGER NOT NULL,
-            weekId  INTEGER NOT NULL,
-            weekType INTEGER NOT NULL,
+            month INTEGER NOT NULL,
             PRIMARY KEY(id),
-            UNIQUE (userId, weekId)
+            UNIQUE(userId, month)
         )`);
     }
 });
 
-db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='details'`, (err, table) => {
+db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='weeks'`, (err, table) => {
     if (err) {
         console.warn(err);
         return;
     }
     if (!table) {
-        console.log('Creating Table details for calendar')
-        db.run(`CREATE TABLE details(
-            id INTEGER NOT NULL,
-            userId INTEGER NOT NULL,
-            day INTEGER NOT NULL,
-            dayType TEXT,
-            message TEXT,
-            emoji TEXT,
-            UNIQUE(id, day),
-            FOREIGN KEY(id) REFERENCES constructor(id) ON DELETE CASCADE
+        console.log('Creating Table weeks for calendar')
+        db.run(`CREATE TABLE weeks(
+            monthId INTEGER NOT NULL,
+            id INTEGER,
+            week INTEGER NOT NULL,
+            type INTEGER NOT NULL,
+            PRIMARY KEY(id),
+            UNIQUE(monthId, week),
+            FOREIGN KEY(monthId) REFERENCES months(id) ON DELETE CASCADE
         )`);
     }
 });
+
+db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='days'`, (err, table) => {
+    if (err) {
+        console.warn(err);
+        return;
+    }
+    if (!table) {
+        console.log('Creating Table days for calendar')
+        db.run(`CREATE TABLE days(
+            weekId INTEGER NOT NULL,
+            id INTEGER,
+            day INTEGER NOT NULL,
+            type INTEGER NOT NULL,
+            message TEXT,
+            PRIMARY KEY(id),
+            UNIQUE(id, day),
+            FOREIGN KEY(weekId) REFERENCES weeks(id) ON DELETE CASCADE
+        )`);
+    }
+});
+
 /* -------------------------------------------------------
 ########################## SQL ###########################
 ------------------------------------------------------- */
 
-// constructor table
-const createConstructorRow = (valuesArray) => {
-    const sql = `INSERT INTO constructor(userId, monthId, weekId, weekType) VALUES (?, ?, ?, ?)`;
-    
+// needed for creation
+const insertIntoMonths = ({userId, month}) => {
+    const sql = "INSERT INTO months(userId, month) VALUES (?, ?)";
     return new Promise((resolve, reject) => {
-        db.run(sql, valuesArray, (err) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(true);
-        })
+        db.run(sql, [userId, month], (err) => {
+            if (err) reject(err);
+            else resolve(true);
+        });
     });
 }
-// constructor table
-const getConstructorRowsForUserId = (userId) => {
-    const sql = `SELECT * FROM constructor WHERE userId=? ORDER BY weekId`;
+// needed for creation
+const insertIntoWeeks = ({monthId, week, type}) => {
+    const sql = "INSERT INTO weeks(monthId, week, type) VALUES (?, ?, ?)";
+    return new Promise((resolve, reject) => {
+        db.run(sql, [monthId, week, type], (err) => {
+            if (err) reject(err);
+            else resolve(true);
+        });
+    });
+}
+// needed for creation
+const insertIntoDays = ({weekId, day, type, message}) => {
+    const sql = "INSERT INTO days(weekId, day, type, message) VALUES (?, ?, ?, ?)";
+    return new Promise((resolve, reject) => {
+        db.run(sql, [weekId, day, type, message], (err) => {
+            if (err) reject(err);
+            else resolve(true);
+        });
+    });
+}
+// needed for creation
+const selectIdFromMonths = ({userId, month}) => {
+    const sql = `SELECT id FROM months WHERE userId=? AND month=?`;
+    return new Promise((resolve, reject) => {
+        db.get(sql, [userId, month], (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+        });
+    });
+}
+// needed for creation
+const selectIdFromWeeks = ({monthId, week}) => {
+    const sql = `SELECT id FROM weeks WHERE monthId=? AND week=?`;
+    return new Promise((resolve, reject) => {
+        db.get(sql, [monthId, week], (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+        });
+    });
+}
+// get all rows from all tables where userId is matching
+const selectRowsWhereUserId = ({userId}) => {
+    const sql = `SELECT months.month, weeks.week, weeks.type as wtype, days.day, days.type as dtype, days.message 
+                 FROM months INNER JOIN weeks ON months.id = weeks.monthId INNER JOIN days ON days.weekId = weeks.id 
+                 WHERE userId=? 
+                 ORDER BY months.month, weeks.week, days.day`;
 
     return new Promise((resolve, reject) => {
-        db.all(sql, userId, (err, rows) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(rows);
+        db.all(sql, [userId], (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+        });
+    });
+}
+// self explanatory
+const updateDay = ({userId, month, day, type, message}) => {
+    const sql = `UPDATE days 
+                 SET type=?, message=? 
+                 WHERE id=(SELECT days.id FROM days INNER JOIN weeks ON days.weekId = weeks.id INNER JOIN months ON months.id = weeks.monthId WHERE userId=? AND months.month=? AND days.day=?)`
+
+    return new Promise((resolve, reject) => {
+        db.run(sql, [type, message, userId, month, day], function(err) {
+            if (err) reject(err)
+            else resolve(this.changes)
         })
     })
 }
-// constructor table
-const deleteAllConstructorRecordsForUserId = (userId) => {
-    const sql = `DELETE FROM constructor WHERE userId=?`
+const updateWeekType = ({userId, week, type}) => {
+    const sql = `UPDATE weeks 
+                 SET type=? 
+                 WHERE week=(SELECT weeks.week FROM weeks INNER JOIN months ON months.id = weeks.monthId WHERE userId=? AND week=?)`
 
     return new Promise((resolve, reject) => {
-        db.run(sql, userId, (err) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(true);
-        })
-    });
-}
-// constructor table
-const updateConstructorWeekType = (weekType, userId, weekId) => {
-    const sql = `UPDATE constructor SET weekType=? WHERE userId=? AND weekId=?`;
-
-    return new Promise((resolve, reject) => {
-        db.run(sql, [weekType, userId, weekId], function(err, row) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(Boolean(this.changes));
-        })
-    });
-}
-// details table
-const createDetailsRow = (valuesObject) => {
-    const valuesArray = [
-        valuesObject.weekId,
-        valuesObject.userId,
-        valuesObject.userId,
-        valuesObject.day,
-        valuesObject.dayType,
-        valuesObject.message,
-        valuesObject.emoji
-    ]
-    const sql = `INSERT INTO details(id, userId, day, dayType, message, emoji) 
-                VALUES ((SELECT id FROM constructor WHERE weekId=? AND userId=?), ?, ?, ?, ?, ?)`;
-    
-    return new Promise((resolve, reject) => {
-        db.run(sql, valuesArray, (err) => {
-            if (err) {
-                console.log("an error ocured here")
-                reject(err);
-                return;
-            }
-            resolve(true);
-        })
-    });
-}
-// details table - get number of rows for provided userId and weekId
-const getNumOfDetailsRows = (valuesObject) => {
-    const sql = `SELECT Count(*) FROM details WHERE id=(SELECT id FROM constructor WHERE weekId=? AND userId=?)`;
-    
-    return new Promise((resolve, reject) => {
-        db.all(sql, [valuesObject.weekId, valuesObject.userId], (err, rows) => {
-            if (err) {
-                console.log("an error ocured here")
-                reject(err);
-                return;
-            }
-            resolve(rows);
-        })
-    });
-}
-// details table
-const getDetailsRowsForUserId = (userId) => {
-    const sql = `SELECT monthId, weekId, weekType, day, dayType, message, emoji 
-                FROM (SELECT * FROM constructor WHERE userId=?) AS C 
-                INNER JOIN details ON C.id = details.id`;
-
-    return new Promise((resolve, reject) => {
-        db.all(sql, userId, (err, rows) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(rows);
+        db.run(sql, [type, userId, week], function(err) {
+            if (err) reject(err)
+            else resolve(this.changes)
         })
     })
 }
-// details table
-const deleteDetailsRow = (valuesObject) => {
-    const sql = `DELETE FROM details 
-                 WHERE id=(SELECT id FROM constructor WHERE userId=? AND weekId=?) AND day=?`
+// needed for creating new months linked to userId's
+const selectFromMonthWhereUserId = ({userId}) => {
+    const sql = `SELECT * FROM months WHERE userId=? LIMIT 1`;
 
-    const valuesArray = [valuesObject.userId, valuesObject.weekId, valuesObject.day]
     return new Promise((resolve, reject) => {
-        db.run(sql, valuesArray, function(err) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(this.changes);
+        db.get(sql, [userId], function(err, row) {
+            if (err) reject(err)
+            else resolve(row)
         })
-    });
+    })
 }
-const updateDetailsRow = (valuesObject) => {
-    const sql = `UPDATE details
-                 SET dayType=?, message=?, emoji=? 
-                 WHERE id=(SELECT id FROM constructor WHERE userId=? AND weekId=?) AND day=?`
+// delete everything related to userId
+const deleteFromMonthsWhereUserId = ({userId}) => {
+    const sql = `DELETE FROM months WHERE userId=?`
 
-    const valuesArray = [valuesObject.dayType, valuesObject.message, valuesObject.emoji, valuesObject.userId, valuesObject.weekId, valuesObject.day]
     return new Promise((resolve, reject) => {
-        db.run(sql, valuesArray, function(err) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(this.changes);
+        db.run(sql, [userId], function(err) {
+            if (err) reject(err)
+            else resolve(this.changes)
         })
-    });
+    })
 }
+
 /* -------------------------------------------------------
 ####################### Middleware #######################
 ------------------------------------------------------- */
+// hella slow holy fuck i've actually never experienced something like that before
+const createDatesObject = (dateStart, dateEnd) => {
+    const createMonthObject = (date, widx) => {
+        const workingMonth = new Date(date).getMonth();
+        // shitft date to monday of first day of the month
+        date = new Date(date.setDate(date.getDate() - date.getDate() + 1));
+        if (date.getDay() === 0) date.setDate(date.getDate() - 6);
+        else date.setDate(date.getDate() - date.getDay() +  1);
 
-// default handler for unhandled errors
-const serverErrorHandler = (err, res) => {
-    console.warn(err);
-    return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]})
+        let weeks = [],
+            days = [],
+            weeksIndex = widx;
+
+        while (!(workingMonth !== date.getMonth() && date.getDay() === 1 && weeks.length > 0)) {
+            days.push({
+                day: new Date(`${date.getMonth() + 1} ${date.getDate()} ${date.getFullYear()}`).getTime(),
+                type: workingMonth === date.getMonth() ? 1 : 0,
+                message: ""
+            });
+            if (days.length === 7) {
+                if (weeks.length === 0 && days[0].type === 1) weeksIndex += 1;
+                weeks.push({
+                    week: weeksIndex,
+                    type: 1,
+                    days: days
+                });
+                weeksIndex += 1;
+                days = [];
+            }
+            date.setDate(date.getDate() + 1);
+        }
+
+        return [weeks, weeksIndex];
+    }
+
+    let weeksIndex = 2;
+    const data = [];
+
+    while (!(dateStart.getFullYear() > dateEnd.getFullYear() || 
+          (dateStart.getFullYear() === dateEnd.getFullYear() && dateStart.getMonth() > dateEnd.getMonth()))) {
+        const retVal = createMonthObject(dateStart, weeksIndex - 1);
+        weeksIndex = retVal[1];
+        data.push({
+            month: new Date(`${dateStart.getMonth() + 1} 1 ${dateStart.getFullYear()}`).getTime(),
+            weeks: retVal[0]
+        });
+        dateStart.setMonth(dateStart.getMonth() + 1);
+    }
+
+    return data;
 }
-
-// name is self explanatory
-const createConstructorForUser = async (req, res, next) => {
-    let dateStart = req.body.dateStart
-    let dateEnd = req.body.dateEnd
+// hella slow holy fuck i've actually never experienced something like that before
+const saveDatesObject = (req, res, next) => {
+    let dateStart = req.body.dateStart;
+    let dateEnd = req.body.dateEnd;
 
     // check if date is valid
     if (isNaN(Date.parse(dateStart))) return res.status(400).json({message: "Invalid dateStart", errors: ["Invalid dateStart"]});
     if (isNaN(Date.parse(dateEnd))) return res.status(400).json({message: "Invalid dateEnd", errors: ["Invalid dateEnd"]});
 
-    dateStart = new Date(dateStart)
-    dateEnd = new Date(dateEnd)
+    dateStart = new Date(dateStart);
+    dateEnd = new Date(dateEnd);
 
-    if (dateStart - dateEnd > 0) return res.status(400).json({message: "dateStart dateEnd mismatch", errors: ["dateStart dateEnd mismatch"]})
-    if ((dateEnd - dateStart)/(1000*60*60*24) > 300) return res.status(400).json({message: "Difference between dates must not exceed 300 days", errors: ["Difference between dates must not exceed 300 days"]}) 
+    if (dateStart - dateEnd > 0) return res.status(400).json({message: "dateStart dateEnd mismatch", errors: ["dateStart dateEnd mismatch"]});
+    if ((dateEnd - dateStart)/(1000*60*60*24) > 300) return res.status(400).json({message: "Difference between dates must not exceed 300 days", errors: ["Difference between dates must not exceed 300 days"]});
     
-    const userId = res.locals.userId
-    console.log(userId)
+    const userId = res.locals.userId;
+    const data = createDatesObject(dateStart, dateEnd);
 
-    // create first weeks object
-    let weekId = 1
-    const dates = [{
-        userId: userId,
-        monthId: dateStart.getMonth(),
-        weekId: weekId,
-        weekType: 1
-    }]
+    const promises = []
 
-    // shift date to monday
-    if (dateStart.getDay() !== 1) {
-        if (dateStart.getDay() === 0) dateStart.setDate(dateStart.getDate() - 6)
-        else dateStart.setDate(dateStart.getDate() - dateStart.getDay() +  1)
-    }
-
-    // create weeks till end date
-    while (new Date(new Date(dateStart).setDate(dateStart.getDate() + 7)) <= dateEnd) {
-        weekId += 1;
-        const d = new Date(dateStart.setDate(dateStart.getDate() + 7))
-        dates.push({
-            userId: userId,
-            monthId: d.getMonth(),
-            weekId: weekId,
-            weekType: 1,
+    const saveDays = (weekId, days) => {
+        return new Promise((resolve, reject) => {
+            const promises = []
+            days.forEach((day) => {
+                promises.push(insertIntoDays({weekId: weekId, day: day.day, type: day.type, message: day.message}))
+            })
+            Promise.all(promises).then(() => resolve(true)).catch((err) => reject(err))
         })
     }
-    // fill in the last month
-    while (new Date(new Date(dateStart).setDate(dateStart.getDate() + 7)).getMonth() === dateEnd.getMonth()) {
-        weekId += 1;
-        const d = new Date(dateStart.setDate(dateStart.getDate() + 7))
-        dates.push({
-            userId: userId,
-            monthId: d.getMonth(),
-            weekId: weekId,
-            weekType: 1,
+
+    const saveWeeks = (monthId, weeks) => {
+        return new Promise((resolve, reject) => {
+            const promises = []
+            weeks.forEach((week) => {
+                promises.push(
+                    insertIntoWeeks({monthId: monthId, week: week.week, type: week.type})
+                        .then(() => selectIdFromWeeks({monthId: monthId, week: week.week}))
+                        .then((weekId) => saveDays(weekId.id, week.days)))
+            })
+            Promise.all(promises).then(() => resolve(true)).catch((err) => reject(err))
         })
     }
-    
-    const promises = [];
-    dates.forEach((item) => {
-        promises.push(createConstructorRow([item.userId, item.monthId, item.weekId, item.weekType]));
+
+    data.forEach((month) => {
+        promises.push(
+            insertIntoMonths({userId: userId, month: month.month})
+                .then(() => selectIdFromMonths({userId: userId, month: month.month}))
+                .then(({id}) => {
+                    const monthId = id
+                    return saveWeeks(monthId, month.weeks)
+                })
+        )
     })
     Promise.all(promises)
         .then((val) => {
+            console.log(val)
             return next();
         })
         .catch((err) => {
             return serverErrorHandler(err, res);
         });
 }
-
-// table::constructor - call next if rows === undefined for userId
+// default handler for unhandled server errors
+const serverErrorHandler = (err, res) => {
+    console.warn(err);
+    return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]})
+}
+// call next if rows === undefined for userId
 const constructorForUserNotPresent = (req, res, next) => {
-    getConstructorRowsForUserId(res.locals.userId)
-        .then((rows) => {
-            console.log(rows);
-            if (rows === undefined || rows.length === 0) next();
-            else return res.status(400).json({message: "Constructor was already created", errors: ["Constructor was already created"]});
+    console.log(res.locals.userId)
+    selectFromMonthWhereUserId({userId: res.locals.userId})
+        .then((row) => {
+            console.log(row)
+            if (row === undefined) next()
+            else return res.status(400).json({message: "Constructor is already created", errors: ["Constructor is already created"]});
         })
         .catch((err) => {
             return serverErrorHandler(err, res);
         })
 }
-
-// dateStart dateEnd validation is in createConstructorForUser()
+// dateStart dateEnd validation is in saveDatesObject()
 const validationChain = [
-    body('weekId')
-        .isInt({min: 1, max: 50})
-        .withMessage('weekId should be an integer and its value in range 1 to 50 inclusive'),
-    body('weekType')
-        .isInt({min: 0, max: 99})
-        .withMessage('weekType should be an integer and its value in range 0 to 99 inclusive'),
+    body('month')
+        .isInt({min: 0, max: 9999999999999})
+        .withMessage('month should be an integer and its value in range 0 to 9999999999999 inclusive'),
     body('day')
-        .isInt({min: 1, max: 31})
-        .withMessage('day should be an integer and its value in range 1 to 36 inclusive'),
-    body('dayType')
-        .isIn(['', 'dayoff', 'test', 'exam'])
-        .withMessage('dayType should be one of options [dayoff, test, exam]'),
+        .isInt({min: 0, max: 9999999999999})
+        .withMessage('day should be an integer and its value in range 0 to 9999999999999 inclusive'),
+    body('type')
+        .isInt({min: 0, max: 99})
+        .withMessage('type should be an integer and its value in range from 0 to 99 inclusive'),
     body('message')
         .matches(/^[a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ? \.\,\-\_]+$/)
-        .withMessage('Subject name should match ^[a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ \.\,\-\_]+$ format'),
-    body('emoji')
-        .matches(/^(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])$/)
-        .withMessage('Emoji should be an emoji'),
+        .withMessage('message should match ^[a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ \.\,\-\_]+$ format')
+        .isByteLength({min: 0, max: 250})
+        .withMessage('message should be up to 250 bytes long')
 ]
-
-const validators = {
-    constructorPatch: async (req, res, next) => {
-        await validationChain[0].run(req);
-        await validationChain[1].run(req);
-        return next();
-    },
-    detailsPostPatch: async (req, res, next) => {
-        await validationChain[0].run(req);
-        await validationChain[2].run(req);
-        await validationChain[3].run(req);
-        await validationChain[4].run(req);
-        await validationChain[5].run(req);
-        return next();
-    },
-    detailsDelete: async (req, res, next) => {
-        await validationChain[0].run(req);
-        await validationChain[2].run(req);
-        return next();
-    }
-}
-
+const validationChain2 = [
+    body('week')
+        .isInt({min: 0, max: 50})
+        .withMessage('week should be an integer and its value in range 0 to 50 inclusive'),
+    body('type')
+        .isInt({min: 0, max: 99})
+        .withMessage('type should be an integer and its value in range from 0 to 99 inclusive'),
+]
+// check if validationChain error messages were created
 const responseToValidation = (req, res, next) => {
     const errors = validationResult(req);
     if (errors.isEmpty()) {
@@ -351,130 +362,110 @@ const responseToValidation = (req, res, next) => {
 ######################### Routes #########################
 ------------------------------------------------------- */
 
-// !!! Schedule can be set up to 300 days
-// various limits are set in createConstructorForUser(), validationChain and in router.post('/details')
-
-// body {dateStart: "month day year", dateEnd: "month day year"}
-router.post('/constructor', verifyToken, constructorForUserNotPresent, createConstructorForUser, (req, res) => {
-    getConstructorRowsForUserId(res.locals.userId)
-        .then((rows) => {
-            if (rows) return res.status(200).json({message: "Rows were created successfully", rows: rows})
-            return res.status(500).json({message: "Rows were not found after creation (its most likely server error)", errors: ["Rows were not found after creation (its most likely server error)"]})
-        })
-        .catch((err) => {
-            return serverErrorHandler(err, res)
-        })
-})
-router.get('/constructor', verifyToken, (req, res) => {
-    getConstructorRowsForUserId(res.locals.userId)
-        .then((rows) => {
-            if (rows) return res.status(200).json({message: "Rows selected successfully", rows: rows})
-            return res.status(404).json({message: "Rows were not found", errors: ["Rows were not found"]})
-        })
-        .catch((err) => {
-            return serverErrorHandler(err, res)
-        })
-})
-router.delete('/constructor', verifyToken, (req, res) => {
-    deleteAllConstructorRecordsForUserId(res.locals.userId)
-        .then((result) => {
-            if (result) return res.status(200).json({message: "Rows deleted successfully"});
-            serverErrorHandler("Result is false at router.delete('/constructor')");
-        })
-        .catch((err) => {
-            serverErrorHandler(err, res);
-        });
-})
-// body {weekId: int, weekType: int}
-router.patch('/constructor', verifyToken, validators.constructorPatch, responseToValidation, (req, res) => {
-    if (!Number.isInteger(req.body.weekId)) return res.status(400).json({message: "weekId must be an integer", errors: ["weekId must be an integer"]});
-    if (!Number.isInteger(req.body.weekType)) return res.status(400).json({message: "weekType must be an integer", errors: ["weekType must be an integer"]});
-    
-    updateConstructorWeekType(req.body.weekType, res.locals.userId, req.body.weekId)
-        .then((result) => {
-            if (result) return res.status(200).json({message: "Rows updated successfully"});
-            else return res.status(400).json({message: "Unable to change rows, weekId is most likely invalid", errors: ["Unable to change rows, weekId is most likely invalid"]})
-        })
-        .catch((err) => {
-            serverErrorHandler(err, res);
-        });
+// hella slow holy fuck i've actually never experienced something like that before
+router.post('/', verifyToken, constructorForUserNotPresent, saveDatesObject, (req, res) => {
+    res.status(200).json({
+        message: "hello"
+    })
 })
 
-// body {weekId: int, day: int, dayType: string, message: string, emoji: string}
-router.post('/details', verifyToken, validators.detailsPostPatch, responseToValidation, (req, res) => {
-    const valuesObject = {
-        weekId: req.body.weekId,
-        userId: res.locals.userId,
-        day: req.body.day,
-        dayType: req.body.dayType,
-        message: req.body.message,
-        emoji: req.body.emoji
-    }
-    getNumOfDetailsRows({weekId: req.body.weekId, userId: res.locals.userId})
+router.get('/', verifyToken, (req, res) => {
+    selectRowsWhereUserId({userId: res.locals.userId})
         .then((rows) => {
-            if (rows[0]["Count(*)"] >=7) throw new Error("max_exceded")
-            return createDetailsRow(valuesObject);
-        })
-        .then((result) => {
-            if (result) return res.status(200).json({message: "Rows inserted successfully"})
-            return serverErrorHandler("Result is false at router.post('/details')");
+            if (rows.length === 0 || rows === undefined) return res.status(400).json({message: "You need to post date start and date end first", errors: ["You need to post date start and date end first"]})
+            const data = {
+                translations: {
+                    weekType: ["unset","odd","even"],
+                    dayType: ["unset","message","dayoff","test","exam"]
+                }, dates: []
+            }
+                
+            let currentMonthIdx = 0,
+                curretnWeekIdx = 0,
+                weeks = [],
+                days = [];
+            
+            for (let i=0; i<rows.length; i++) {
+                if (rows[currentMonthIdx].month !== rows[i].month) {
+                    weeks.push({
+                        type: rows[curretnWeekIdx].wtype,
+                        week: rows[curretnWeekIdx].week,
+                        days: days
+                    });
+                    curretnWeekIdx = i;
+                    days = [];
+
+                    data.dates.push({
+                        month: rows[currentMonthIdx].month, 
+                        weeks: weeks
+                    });
+                    currentMonthIdx = i;
+                    weeks = [];
+                }
+                if (rows[curretnWeekIdx].week !== rows[i].week) {
+                    weeks.push({
+                        type: rows[curretnWeekIdx].wtype,
+                        week: rows[curretnWeekIdx].week,
+                        days: days
+                    });
+                    curretnWeekIdx = i;
+                    days = [];
+                }
+                days.push({
+                    day: rows[i].day,
+                    type: rows[i].dtype,
+                    message: rows[i].message,
+                });
+            }
+            // add last row
+            weeks.push({
+                type: rows[curretnWeekIdx].wtype,
+                week: rows[curretnWeekIdx].week,
+                days: days
+            });
+            data.dates.push({
+                month: rows[currentMonthIdx].month,
+                weeks: weeks
+            });
+
+            return res.status(200).json({message: "Successfully selected n of rows", data: data});
+    })
+    .catch((err) => {
+        return serverErrorHandler(err, res);
+    })
+})
+
+router.patch('/day', verifyToken, validationChain, responseToValidation, (req, res) => {
+    updateDay({userId: res.locals.userId, month: req.body.month, day: req.body.day, type: req.body.type, message: req.body.message})
+        .then((changes) => {
+            if (changes === 0) return res.status(200).json({message: "Did not found any rows related to values provided, nothing was edited"});
+            else return res.status(200).json({message: "Edited all rows related to values provided"});
         })
         .catch((err) => {
-            console.log(err)
-            if (err.message === "max_exceded") return res.status(400).json({message: "Number of days exceeds maximum for weekId", errors: ["Number of days exceeds maximum for weekId"]})
-            if (err.errno === 19) return res.status(400).json({message: "One or more errors occured, check errors array for clues", errors: ["weekId is not correct", "weekId and day already exist when this combination must be uniqe"]});
             return serverErrorHandler(err, res);
-        })
-});
-router.get('/details', verifyToken, (req, res) => {
-    getDetailsRowsForUserId(res.locals.userId)
-        .then((rows) => {
-            return res.status(200).json({message: "Rows selected successfully", rows: rows});
-        })
-        .catch((err) => {
-            serverErrorHandler(err);
         });
-        
-});
-// body {weekId: int, day: int}
-router.delete('/details', verifyToken, validators.detailsDelete, responseToValidation, (req, res) => {
-    deleteDetailsRow({userId: res.locals.userId, weekId: req.body.weekId, day: req.body.day})
-        .then((result) => {
-            if (result === 0) return res.status(400).json({message: "No row has been deleted", errors: ["No row has been deleted"]});
-            if (result === 1) return res.status(200).json({message: "Row deleted successfully"});
-            if (result !== 1) {
-                console.warn("Deleted too much rows at delete/details");
-                return res.status(500).json({message: "Deleted too much rows, this is most likely server error", errors: ["Deleted too much rows, this is most likely server error"]});
-            }
-            throw new Error("Result is not defined");
-        })
-        .catch((err) => {
-            serverErrorHandler(err, res);
-        })
-});
-// body {weekId: int, day: int, dayType: string, message: string, emoji: string}
-router.patch('/details', verifyToken, validators.detailsPostPatch, responseToValidation, (req, res) => {
-    const valuesObject = {
-        userId: res.locals.userId, 
-        weekId: req.body.weekId, 
-        day: req.body.day,
-        dayType: req.body.dayType, 
-        message: req.body.message, 
-        emoji: req.body.emoji
-    }
+})
 
-    updateDetailsRow(valuesObject)
-        .then((result) => {
-            if (result === 0) return res.status(400).json({message: "No row has been updated", errors: ["No row has been updated"]});
-            if (result === 1) return res.status(200).json({message: "Row updated successfully"});
-            if (result !== 1) {
-                console.warn("Updated too much rows at patch/details");
-                return res.status(500).json({message: "Updated too much rows, this is most likely server error", errors: ["Updated too much rows, this is most likely server error"]});
-            }
-            throw new Error("Result is not defined");
+router.patch('/week', verifyToken, validationChain2, responseToValidation, (req, res) => {
+    updateWeekType({userId: res.locals.userId, week: req.body.week, type: req.body.type})
+        .then((changes) => {
+            if (changes === 0) return res.status(200).json({message: "Did not found any rows related to values provided, nothing was edited"});
+            else return res.status(200).json({message: "Edited all rows related to values provided"});
         })
         .catch((err) => {
-            serverErrorHandler(err, res);
+            return serverErrorHandler(err, res);
+        });
+})
+
+router.delete('/', verifyToken, (req, res) => {
+    deleteFromMonthsWhereUserId({userId: res.locals.userId})
+        .then((changes) => {
+            if (changes === 0) return res.status(200).json({message: "Did not found any rows related to your user id, nothing was deleted"});
+            else return res.status(200).json({message: "Removed all rows related to your user id"});
         })
-});
+        .catch((err) => {
+            return serverErrorHandler(err, res);
+        });
+})
+
 module.exports = {calendarRouter: router};
