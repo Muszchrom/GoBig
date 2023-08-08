@@ -332,7 +332,7 @@ const validationChain = [
         .isInt({min: 0, max: 99})
         .withMessage('type should be an integer and its value in range from 0 to 99 inclusive'),
     body('message')
-        .matches(/^[a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ? \.\,\-\_]+$/)
+        .matches(/^[a-zA-Z0-9żźćńółęąśŻŹĆĄŚĘŁÓŃ? \.\,\-\_]*$/)
         .withMessage('message should match ^[a-zA-ZżźćńółęąśŻŹĆĄŚĘŁÓŃ \.\,\-\_]+$ format')
         .isByteLength({min: 0, max: 250})
         .withMessage('message should be up to 250 bytes long')
@@ -376,7 +376,7 @@ router.get('/', verifyToken, (req, res) => {
             const data = {
                 translations: {
                     weekType: ["unset","odd","even"],
-                    dayType: ["unset","message","dayoff","test","exam"]
+                    dayType: ["inactive", "unset","message","dayoff","test","exam"]
                 }, dates: []
             }
                 
@@ -438,7 +438,7 @@ router.get('/', verifyToken, (req, res) => {
 router.patch('/day', verifyToken, validationChain, responseToValidation, (req, res) => {
     updateDay({userId: res.locals.userId, month: req.body.month, day: req.body.day, type: req.body.type, message: req.body.message})
         .then((changes) => {
-            if (changes === 0) return res.status(200).json({message: "Did not found any rows related to values provided, nothing was edited"});
+            if (changes === 0) return res.status(404).json({message: "Did not found any rows related to values provided, nothing was edited"});
             else return res.status(200).json({message: "Edited all rows related to values provided"});
         })
         .catch((err) => {
@@ -449,7 +449,7 @@ router.patch('/day', verifyToken, validationChain, responseToValidation, (req, r
 router.patch('/week', verifyToken, validationChain2, responseToValidation, (req, res) => {
     updateWeekType({userId: res.locals.userId, week: req.body.week, type: req.body.type})
         .then((changes) => {
-            if (changes === 0) return res.status(200).json({message: "Did not found any rows related to values provided, nothing was edited"});
+            if (changes === 0) return res.status(404).json({message: "Did not found any rows related to values provided, nothing was edited"});
             else return res.status(200).json({message: "Edited all rows related to values provided"});
         })
         .catch((err) => {
