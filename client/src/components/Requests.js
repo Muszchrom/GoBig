@@ -234,3 +234,49 @@ export const validateTile = {
         return ""
     }
 }
+
+export const semesterSchedule = async () => {
+    let data = await fetch(`${source}/calendar/`, {
+                method: "GET",
+                credentials: "include"
+            })
+    const status = data.status
+    data = await data.json()
+    return {dates: data?.data?.dates, status: status}
+}
+
+export const patchSemesterScheduleDay = async (requestBody) => {
+    let errors = []
+
+    let data = await fetch(`${source}/calendar/day`, {
+        method: "PATCH",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify(requestBody)
+    })
+    
+    const status = data.status
+    data = await data.json()
+    if (status === 200) return []
+    if (status === 404) return [data.message]
+    if (data.errors?.length) return data.errors
+    else return errors.push(`Status code: ${status}`)
+}
+
+export const patchSemesterScheduleWeek = async (requestBody) => {
+    let errors = []
+
+    let data = await fetch(`${source}/calendar/week`, {
+        method: "PATCH",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify(requestBody)
+    })
+    
+    const status = data.status
+    data = await data.json()
+    if (status === 200) return []
+    if (status === 404) return [data.message]
+    if (data.errors?.length) return data.errors
+    else return errors.push(`Status code: ${status}`)
+}
