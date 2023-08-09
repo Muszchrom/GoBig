@@ -186,6 +186,17 @@ const deleteFromMonthsWhereUserId = ({userId}) => {
     })
 }
 
+const selectWeeksAndWeekTypesForUserId = ({userId}) => {
+    const sql = "SELECT DISTINCT weeks.week, weeks.type FROM weeks INNER JOIN months ON weeks.monthId = months.id WHERE userId=?"
+
+    return new Promise((resolve, reject) => {
+        db.get(sql, [userId], function(err, row) {
+            if (err) reject(err)
+            else resolve(row)
+        })
+    })
+}
+
 /* -------------------------------------------------------
 ####################### Middleware #######################
 ------------------------------------------------------- */
@@ -433,6 +444,16 @@ router.get('/', verifyToken, (req, res) => {
     .catch((err) => {
         return serverErrorHandler(err, res);
     })
+})
+
+router.get('/weeks', verifyToken, (req, res) => {
+    selectWeeksAndWeekTypesForUserId(res.locals.userId)
+        .then((rows) => {
+            return res.status(200).json({message: "Selected rows successfully", data: rows})
+        })
+        .catch((err) => {
+            return serverErrorHandler(err, res);
+        });
 })
 
 router.patch('/day', verifyToken, validationChain, responseToValidation, (req, res) => {
