@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, Children } from "react"
 import { Overlay } from "./Overlay"
 import Draggable from 'react-draggable'
 import { semesterSchedule, patchSemesterScheduleDay, patchSemesterScheduleWeek } from "./Requests"
@@ -123,10 +123,10 @@ function DayComponent({day, monthId}) {
 
     const styles = (() => {
         if (dayState.type === 0) return {opacity: 0.5}
-        if (dayState.type === 3) return {background: "linear-gradient(43deg, rgba(128,128,128,0.6530987394957983) 2%, rgba(18,199,191,0) 58%)"}
-        if (dayState.type === 4) return {background: "linear-gradient(43deg, rgba(233,43,43,0.6530987394957983) 2%, rgba(18,199,191,0) 58%)"}
-        if (dayState.type === 5) return {background: "linear-gradient(43deg, rgba(225,43,233,0.6530987394957983) 2%, rgba(18,199,191,0) 58%)"}
-        if (dayState.type === 2 || dayState.message.length > 0) return {background: "linear-gradient(43deg, rgba(0,0,128,0.6530987394957983) 2%, rgba(18,199,191,0) 58%)"}
+        if (dayState.type === 3) return {backgroundColor: "var(--Color8)"}
+        if (dayState.type === 4) return {backgroundColor: "var(--Color5)"}
+        if (dayState.type === 5) return {backgroundColor: "var(--Color7)"}
+        if (dayState.type === 2 || dayState.message.length > 0) return {backgroundColor: "var(--Color1)"}
         return {}
     })()
 
@@ -149,10 +149,10 @@ function DayComponent({day, monthId}) {
         }
         return errors
     }
-    
+
     return (
         <>
-            <td onClick={day.type !== 0 ? () => setShow(true) : null} style={styles}>
+            <td onClick={day.type !== 0 ? () => setShow(true) : null} style={styles} className={dayState.type !== 0 && dayState.type !== 1 || dayState.message.length ? "cellOfType" : ""}>
                 {date.getDate()}
                 {show && <ContextWindow handleClose={setShow} data={{title: dateTitle, message: dayState.message, type: dayState.type}} submitFunction={prepareUploadStates}/>}
                 {showUplaodModal && <TileUploadModal 

@@ -348,9 +348,6 @@ li img {
   align-items: center;
 }
 
-
-
-
 .ex-inputWrapper,
 .ex-textInput,
 .ex-inputTitle {
@@ -360,7 +357,7 @@ li img {
   display: flex;
   flex-direction: column;
   background-color: var(--Background);
-  border: 2px solid var(--Text);
+  border: 2px solid var(--Background);
   box-shadow: var(--Shadow);
   padding: 12px;
   border-radius: 12px;
@@ -835,6 +832,8 @@ li img {
 .calendarRow {
   text-align: center;
   display: flex;
+  gap: 4px;
+  margin: 4px 0;
 }
 .calendarRow th,
 .calendarRow td {
@@ -856,6 +855,15 @@ li img {
   outline: 2px solid var(--Lightcoral);
   outline-offset: -2px;
   box-shadow: 0 0 4px var(--Lightcoral) inset;
+}
+.cellOfType {
+  color: var(--Background);
+  font-weight: bold;
+  text-shadow: 0 0 4px var(--Text);
+  border-radius: 8px;
+}
+.cellOfType > * {
+  text-shadow: none;
 }
 .contextWindow {
   position: absolute;
