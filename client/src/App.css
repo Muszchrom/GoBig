@@ -861,6 +861,7 @@ li img {
   font-weight: bold;
   text-shadow: 0 0 4px var(--Text);
   border-radius: 8px;
+  box-shadow: var(--Shadow);
 }
 .cellOfType > * {
   text-shadow: none;

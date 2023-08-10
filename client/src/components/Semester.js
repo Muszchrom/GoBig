@@ -50,16 +50,16 @@ function CalendarTable({weeks, monthId}) {
         <table className="calendarTable">
             <tbody>
                 {weeks.map((week, index) => {
-                    return <MonthsRow key={`2${index}`} week={week} monthId={monthId}/>
+                    return <MonthsRow key={`2${index}`} week={week} monthId={monthId} style={{backgroundColor: index%2 ? "var(--Color4)" : "var(--Color3)"}}/>
                 })}
             </tbody>
         </table>
     )
 }
 
-function MonthsRow({week, monthId}) {
+function MonthsRow({week, monthId, style}) {
     return (
-        <tr className="calendarRow">
+        <tr className="calendarRow" style={style}>
             <WeekType weekNum={week.week} weekType={week.type}/>
             {week.days.map((item, index) => {
                 return <DayComponent key={`3${index}`} day={item} monthId={monthId}/>
