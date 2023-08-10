@@ -221,6 +221,11 @@ router.post('/signin', validationChain, validateCredentials("sign_in"), (req, re
 
 })
 
+router.get('/signout', (req, res) => {
+    res.clearCookie('token');
+    res.end();
+})
+
 // delete user
 router.delete('/temp', verifyToken, validationChain, validateCredentials("sign_in"), (req, res) => {
     if (!res.locals.userId) {

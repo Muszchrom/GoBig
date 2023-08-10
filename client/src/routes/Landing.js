@@ -2,11 +2,13 @@ import React from "react";
 
 import { NavLink } from 'react-router-dom';
 
+import TileUploadModal from "../components/schedule/tiles/TileUploadModal";
+import { signOut } from "../components/Requests";
+import { useState } from "react";
+
 export default function Landing({signedIn, setSignedIn}) {
-    const signOut = () => {
-        document.cookie = "";
-        setSignedIn(false);
-    }
+    const [show, setShow] = useState(false)
+
     return(
         <>
         <div className="jumbo" style={{position: "fixed", zIndex: "-1"}}>
@@ -38,7 +40,16 @@ export default function Landing({signedIn, setSignedIn}) {
                 </div>
                 <div className="tile tile-landing">
                     {signedIn ? (
-                        <span className="tile-link" onClick={signOut}  style={{backgroundColor: "var(--Color4)"}}>SIGN OUT</span>
+                        <div className="tile-link" onClick={() => setShow(true)} style={{backgroundColor: "var(--Color4)"}}>
+                            SIGN OUT
+                            {show && (<TileUploadModal 
+                                        color="var(--Color4)" 
+                                        handleClose={(e) => {e.stopPropagation();setShow(false); setSignedIn(false)}} 
+                                        handleSoftClose={(e) => {e.stopPropagation(); setShow(false)}} 
+                                        submitFunction={signOut}>
+                                            Are you sure?
+                                    </TileUploadModal>)}
+                        </div>
                     ) : (
                     <NavLink to={"/signin"} className="tile-link" style={{backgroundColor: "var(--Color4)"}}>
                         SIGN IN{true && signedIn}

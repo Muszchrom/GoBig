@@ -126,6 +126,16 @@ export const signIn = async (username, password) => {
     else return ["An internal server error occured"]
 }
 
+export const signOut = async () => {
+    let data = await fetch(`${source}/auth/signout`, {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+    })
+    if (data.status === 200) return []
+    else return ["An error occured"]
+}
+
 export const signUp = async (username, password, confirmPassword) => {
     let errors = []
     // Validation on users
