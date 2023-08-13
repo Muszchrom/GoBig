@@ -190,11 +190,21 @@ const selectWeeksAndWeekTypesForUserId = ({userId}) => {
     const sql = "SELECT DISTINCT weeks.week, weeks.type FROM weeks INNER JOIN months ON weeks.monthId = months.id WHERE userId=?"
 
     return new Promise((resolve, reject) => {
-        db.get(sql, [userId], function(err, row) {
+        db.all(sql, [userId], function(err, rows) {
             if (err) reject(err)
-            else resolve(row)
+            else resolve(rows)
         })
     })
+}
+
+const selectMonthForUserId = ({userId}) => {
+    const sql = `SELECT month FROM months WHERE userId=? ORDER BY month LIMIT 1`;
+    return new Promise((resolve, reject) => {
+        db.get(sql, [userId], (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+        });
+    });
 }
 
 /* -------------------------------------------------------
@@ -447,13 +457,16 @@ router.get('/', verifyToken, (req, res) => {
 })
 
 router.get('/weeks', verifyToken, (req, res) => {
-    selectWeeksAndWeekTypesForUserId(res.locals.userId)
-        .then((rows) => {
-            return res.status(200).json({message: "Selected rows successfully", data: rows})
-        })
-        .catch((err) => {
-            return serverErrorHandler(err, res);
-        });
+    Promise.all([
+        selectWeeksAndWeekTypesForUserId({userId: res.locals.userId}), 
+        selectMonthForUserId({userId: res.locals.userId})
+    ])
+    .then((result) => {
+        return res.status(200).json({message: "Selected rows successfully", firstMonth: result[1], data: result[0]})
+    })
+    .catch((err) => {
+        return serverErrorHandler(err, res)
+    })
 })
 
 router.patch('/day', verifyToken, validationChain, responseToValidation, (req, res) => {

@@ -23,6 +23,67 @@ export const isTokenValid = async () => {
     }
 }
 
+export const signIn = async (username, password) => {
+    let errors = []
+    if (!validateUsername(username)) errors.push("Invalid username")
+    if (!validatePassword(password)) errors.push("Invalid password")
+
+    if (errors.length) return errors
+
+    let data = await fetch(`${source}/auth/signin`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify({
+                username,
+                password
+            })
+    })
+
+    const status = data.status
+
+    if (status === 201) return []
+    else if (status === 401) return ["Invalid username and/or password"]
+    else return ["An internal server error occured"]
+}
+
+export const signOut = async () => {
+    let data = await fetch(`${source}/auth/signout`, {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+    })
+    if (data.status === 200) return []
+    else return ["An error occured"]
+}
+
+export const signUp = async (username, password, confirmPassword) => {
+    let errors = []
+    // Validation on users
+    if (!validateUsername(username)) errors.push("Username should be 4 to 12 characters long")
+    if (!validatePassword(password)) errors.push("Password should be 8 to 72 bytes long and contain lower and uppercase letters")
+    if (password !== confirmPassword) errors.push("Passwords dont match")
+
+    if (errors.length) return errors
+
+    // fetch if no errors
+    let data = await fetch(`${source}/auth/signup`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+                username,
+                password,
+                confirmPassword
+            })
+    })
+    
+    const status = data.status
+    data = await data.json()
+    if (status === 201) return []
+    if (data.errors?.length) return data.errors
+    else return errors.push(`Status code: ${status}`)
+}
+
 export const getSchedule = async () => {
     let data = await fetch(`${source}/schedule/`, {
         method: "GET",
@@ -31,6 +92,18 @@ export const getSchedule = async () => {
     const status = data.status
     data = await data.json()
     if (status === 200) return data.rows
+    else return undefined
+}
+
+export const getWeeks = async () => {
+    let data = await fetch(`${source}/calendar/weeks`, {
+        method: "GET",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include"
+    })
+    const status = data.status
+    data = await data.json()
+    if (status === 200) return {firstMonth: data.firstMonth.month, weeks: data.data}
     else return undefined
 }
 
@@ -100,76 +173,6 @@ export const deleteSubject = async (requestBody) => {
     } catch (err) {
         console.log(err)
     }
-}
-
-export const signIn = async (username, password) => {
-    let errors = []
-    if (!validateUsername(username)) errors.push("Invalid username")
-    if (!validatePassword(password)) errors.push("Invalid password")
-
-    if (errors.length) return errors
-
-    let data = await fetch(`${source}/auth/signin`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-        body: JSON.stringify({
-                username,
-                password
-            })
-    })
-
-    const status = data.status
-
-    if (status === 201) return []
-    else if (status === 401) return ["Invalid username and/or password"]
-    else return ["An internal server error occured"]
-}
-
-export const signOut = async () => {
-    let data = await fetch(`${source}/auth/signout`, {
-        method: "GET",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-    })
-    if (data.status === 200) return []
-    else return ["An error occured"]
-}
-
-export const signUp = async (username, password, confirmPassword) => {
-    let errors = []
-    // Validation on users
-    if (!validateUsername(username)) errors.push("Username should be 4 to 12 characters long")
-    if (!validatePassword(password)) errors.push("Password should be 8 to 72 bytes long and contain lower and uppercase letters")
-    if (password !== confirmPassword) errors.push("Passwords dont match")
-
-    if (errors.length) return errors
-
-    // fetch if no errors
-    let data = await fetch(`${source}/auth/signup`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-                username,
-                password,
-                confirmPassword
-            })
-    })
-    
-    const status = data.status
-    data = await data.json()
-    if (status === 201) return []
-    if (data.errors?.length) return data.errors
-    else return errors.push(`Status code: ${status}`)
-}
-
-export const fetchProtected = async () => {
-    let data = await fetch(`${source}/auth/protected`, {
-        credentials: "include",
-        method: "GET",
-    })
-    data = await data.json()
-    return data.message
 }
 
 export const validateTile = {

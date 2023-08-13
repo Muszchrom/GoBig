@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import Semester from '../Semester';
 import FocusTrap from 'focus-trap-react';
 
-export default function Header(props) {
+export default function Header({getCurrentDay, currentWeek, handleWeekChange, getAndSetCurrentWeek}) {
   const [open, setOpen] = useState(false);
   const [dayName, setDayName] = useState("")
   const [showCalendar, setShowCalendar] = useState(false)
@@ -44,12 +44,12 @@ export default function Header(props) {
             </div>
           )}
         <ul className="buttons-wrapper">
-          <NavButton getAndSetCurrentWeek={props.getAndSetCurrentWeek} getCurrentDay={props.getCurrentDay}/>
+          <NavButton getAndSetCurrentWeek={getAndSetCurrentWeek} getCurrentDay={getCurrentDay}/>
         </ul>
       <div className="week-info">
-        <button type="button" className="week-nav-button" onClick={() => props.handleWeekChange(props.currentWeek.number-1)}>{"<<"}</button>
-        <span className="week-info-txt" onClick={() => setShowCalendar(true)}>Week &#x2116; {props.currentWeek.number}, Is {props.currentWeek.isOdd ? "Odd" : "Even"}</span>
-        <button type="button" className="week-nav-button" onClick={() => props.handleWeekChange(props.currentWeek.number+1)}>{">>"}</button>
+        <button type="button" className="week-nav-button" onClick={() => handleWeekChange(-1)}>{"<<"}</button>
+        <span className="week-info-txt" onClick={() => setShowCalendar(true)}>Week &#x2116; {currentWeek.week}, Is {currentWeek.type === 1 ? "Odd" : "Even"}</span>
+        <button type="button" className="week-nav-button" onClick={() => handleWeekChange(1)}>{">>"}</button>
       </div>
       </div>
       {showCalendar && <Semester handleClose={() => setShowCalendar(false)}></Semester>}

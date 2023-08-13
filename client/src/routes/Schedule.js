@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 
 import NotFound from './NotFound'
-import { semesterBlueprint } from '../components/data.js' // change it later
 import Header from '../components/schedule/Header'
 import TileMounter from '../components/schedule/TileMounter'
-import { getSchedule } from '../components/Requests'
+import { getSchedule, getWeeks } from '../components/Requests'
 
 export default function Schedule({signedIn}) {
-    const [currentWeek, setCurrentWeek] = useState(semesterBlueprint.weeks[0])
     const daysOfTheWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
     const [schedule, setSchedule] = useState([])
+    const [weeks, setWeeks] = useState([])
+    const [currentWeek, setCurrentWeek] = useState({})
 
     const createRandomColor = () => {
         const availableColors = [
@@ -75,10 +75,9 @@ export default function Schedule({signedIn}) {
         setSchedule(schedule.slice())
     }
 
-    useEffect(() => {getAndSetCurrentWeek()}, [])
     useEffect(() => {
         (async () => {
-            const fetchedSchedule = await getSchedule()
+            const [fetchedSchedule, fetchedWeeks] = await Promise.all([getSchedule(), getWeeks()])
             if (fetchedSchedule) {
                 const bufferArray = [[], [], [], [], [], [], []]
                 fetchedSchedule.forEach((subject) => {
@@ -98,24 +97,35 @@ export default function Schedule({signedIn}) {
                 })
                 setSchedule(bufferArray)
             }
+            if (fetchedWeeks) {
+                // shift day to monday
+                const firstMonthAsDate = new Date(fetchedWeeks.firstMonth)
+                if (firstMonthAsDate.getDay() === 0) fetchedWeeks.firstMonth = firstMonthAsDate.setDate(firstMonthAsDate.getDate() - 6)
+                else fetchedWeeks.firstMonth = firstMonthAsDate.setDate(firstMonthAsDate.getDate() - firstMonthAsDate.getDay() + 1)
+                setWeeks(fetchedWeeks)
+                getAndSetCurrentWeek(fetchedWeeks)
+            }
         })()
     }, [])
     
-    const getCurrentDay = () => {return daysOfTheWeek[new Date().getDay()]}
+    const getCurrentDay = () => daysOfTheWeek[new Date().getDay()]
 
-    const getAndSetCurrentWeek = () => {
-        let i = 0
-        const studiesWeek = new Date(semesterBlueprint.weeks[i].start + "T00:00")
-        for (i; i<semesterBlueprint.weeks.length-1; i++) {
-            const aWeekBack = new Date(new Date().setDate(new Date().getDate() - 7))
-            if (aWeekBack < studiesWeek) break
-        }
-        i !== 0 && setCurrentWeek(semesterBlueprint.weeks[i])
+    const getAndSetCurrentWeek = (weeksObjet=weeks) => {
+        if (!weeksObjet.weeks || !weeksObjet.firstMonth) return
+        const timeDiff = new Date().getTime() - weeksObjet.firstMonth
+        const weekDiff = timeDiff/(1000*60*60*24*7)
+        // if weekDiff is in range <0, 1) where 1 is not inclusive, then it means we're in the same week
+        if (weekDiff < 1) return setCurrentWeek(weeksObjet.weeks[0])
+        if (weeksObjet.weeks.length > weekDiff) return setCurrentWeek(weeksObjet.weeks[Math.floor(weekDiff)])
+        else return setCurrentWeek(weeksObjet.weeks[weeksObjet.weeks.length - 1])
     }
-
-    const handleWeekChange = (s) => {
-        if (s < 1 || s > semesterBlueprint.weeks.length) return
-        setCurrentWeek(semesterBlueprint.weeks[s-1])
+    // shiftDirection should be -1 or 1
+    const handleWeekChange = (shiftDirection) => {
+        // prevent shifting outside weeks array
+        if (currentWeek.week + shiftDirection < 1) return
+        if (currentWeek.week + shiftDirection > weeks.weeks[weeks.weeks.length - 1].week) return
+        // shift current week
+        setCurrentWeek(weeks.weeks[currentWeek.week - 1 + shiftDirection])        
     }
 
     return (
