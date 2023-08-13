@@ -99,8 +99,8 @@ function WeekType({weekNum, weekType}) {
 
     return (<>
         <td onClick={type !== 0 ? (() => setShow(true)) : null}>
-            {`${type} ${weekNum}`}
-            {show && <ContextWindowForWeekType handleClose={setShow} data={{title: `№ ${weekNum}, ${type === 1 ? "Odd" : (type === 2 ? "Even" : "Unset")}`, type: typeState}} submitFunction={prepareUploadStates}/>}
+            {type}
+            {show && <ContextWindowForWeekType handleClose={setShow} data={{title: `Week № ${weekNum}, ${typeState === 1 ? "Odd" : (typeState === 2 ? "Even" : "Unset")}`, type: typeState}} submitFunction={prepareUploadStates}/>}
             {showUplaodModal && <TileUploadModal 
                                         color="var(--Background)" 
                                         handleClose={() => setShowuploadModal(false)} 
