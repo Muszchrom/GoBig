@@ -25,7 +25,7 @@ export default function Semester({handleClose}) {
                                     "July", "August", "September", "October", "November", "December"][new Date(item.month).getMonth()]}
                                 </div>
                                 <div className="monthSemesterName">
-                                    "Placeholder"
+                                    {new Date(item.month).getFullYear()}
                                 </div>
                             </div>
 
