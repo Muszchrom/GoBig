@@ -385,6 +385,8 @@ li img {
   background-color: var(--Background);
   border-radius: 4px;
   caret-color: var(--Lightcoral);
+  -webkit-text-fill-color: var(--Text); /* required for ios (cringe)*/
+  opacity: 1; /* required for ios (cringe)*/
   color: var(--Text);
   font-family: "Varela Round";
   font-size: 16px;
@@ -848,6 +850,7 @@ li img {
   justify-content: center;
   padding: 4px;
   cursor: pointer;
+  border-radius: 8px;
 }
 .cellDisabled {
   color: #999 !important;
@@ -862,7 +865,6 @@ li img {
   color: var(--Background);
   font-weight: bold;
   text-shadow: 0 0 4px var(--Text);
-  border-radius: 8px;
   box-shadow: var(--Shadow);
 }
 .cellOfType > * {

@@ -152,9 +152,19 @@ function DayComponent({day, monthId}) {
 
     return (
         <>
-            <td onClick={day.type !== 0 ? () => setShow(true) : null} style={styles} className={dayState.type !== 0 && dayState.type !== 1 || dayState.message.length ? "cellOfType" : ""}>
+            <td onClick={day.type !== 0 
+                         ? () => setShow(true) 
+                         : null} 
+                style={styles} 
+                className={`${dayState.type !== 0 
+                            && dayState.type !== 1 
+                            || dayState.message.length 
+                            ? "cellOfType" : ""}
+                            ${show && "cellActive"}`}>
                 {date.getDate()}
-                {show && <ContextWindow handleClose={setShow} data={{title: dateTitle, message: dayState.message, type: dayState.type}} submitFunction={prepareUploadStates}/>}
+                {show && <ContextWindow handleClose={setShow} 
+                                        data={{title: dateTitle, message: dayState.message, type: dayState.type}} 
+                                        submitFunction={prepareUploadStates}/>}
                 {showUplaodModal && <TileUploadModal 
                                         color="var(--Background)" 
                                         handleClose={() => setShowuploadModal(false)} 
