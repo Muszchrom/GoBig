@@ -380,7 +380,7 @@ export function WeekStartEndInput({children, inputRef, initVal, validatingFuntio
                     <input ref={inputRef} value={value} className="ex-textInput ex-inactiveInput" disabled></input>
 
                     <div ref={dropdown} className="ex-dropdownItemsContainer" style={{maxHeight: "unset"}}>
-                        <label className="ex-inputTitle ex-activeTitle">Week start</label>
+                        <label className="ex-inputTitle ex-activeTitle">Start</label>
                         <div className="ex-inputInnerWrapper">
                             <input ref={firstInput} 
                                    onFocus={handleFocus} 
@@ -399,7 +399,7 @@ export function WeekStartEndInput({children, inputRef, initVal, validatingFuntio
                                         {startCustom ? "Custom" : "Unset"}
                             </button>
                         </div>
-                        <label className="ex-inputTitle ex-activeTitle">Week start</label>
+                        <label className="ex-inputTitle ex-activeTitle">End</label>
                         <div style={{display: "flex", gap: "10px"}}>
                             <input ref={secondInput}
                                    onChange={handleValueChange}
