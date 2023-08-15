@@ -159,8 +159,7 @@ function DayComponent({day, monthId}) {
                 className={`${dayState.type !== 0 
                             && dayState.type !== 1 
                             || dayState.message.length 
-                            ? "cellOfType" : ""}
-                            ${show && "cellActive"}`}>
+                            ? "cellOfType" : ""}${show ? " cellActive" : ""}`}>
                 {date.getDate()}
                 {show && <ContextWindow handleClose={setShow} 
                                         data={{title: dateTitle, message: dayState.message, type: dayState.type}} 
