@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, Children } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Overlay } from "./Overlay"
 import Draggable from 'react-draggable'
 import { semesterSchedule, patchSemesterScheduleDay, patchSemesterScheduleWeek } from "./Requests"
@@ -156,9 +156,9 @@ function DayComponent({day, monthId}) {
                          ? () => setShow(true) 
                          : null} 
                 style={styles} 
-                className={`${dayState.type !== 0 
-                            && dayState.type !== 1 
-                            || dayState.message.length 
+                className={`${((dayState.type !== 0 
+                            && dayState.type !== 1) 
+                            || dayState.message.length) 
                             ? "cellOfType" : ""}${show ? " cellActive" : ""}`}>
                 {date.getDate()}
                 {show && <ContextWindow handleClose={setShow} 

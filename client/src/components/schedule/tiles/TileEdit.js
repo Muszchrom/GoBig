@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { Overlay } from "../../Overlay"
 import { updateSubject, deleteSubject } from "../../Requests"
-import { source } from "../../../source"
 import { CancelButton } from "../../Common"
 import TileUploadModal from "./TileUploadModal"
 import TileForm from "./TileForm"
