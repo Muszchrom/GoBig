@@ -69,10 +69,10 @@ function MonthsRow({week, monthId, style}) {
 }
 
 function WeekType({weekNum, weekType}) {
-    const [show, setShow] = useState(false)
-    const [showUplaodModal, setShowuploadModal] = useState(false)
     const [typeState, setTypeState] = useState(weekType)
     const [tempTypeState, setTempTypeState] = useState(0)
+    const [show, setShow] = useState([false, 0, 0, 0, 0])
+    const [showUplaodModal, setShowuploadModal] = useState(false)
 
     const type = (() => {
         if (typeState === 0) return ""
@@ -97,10 +97,31 @@ function WeekType({weekNum, weekType}) {
         return errors
     }
 
+    const handleCellClick = (e) => {
+        setShow([
+            true, 
+            e.clientX, 
+            e.clientY, 
+            e.target.getBoundingClientRect().width, 
+            e.target.getBoundingClientRect().height
+        ])
+    }
+
+    const handleCloseContext = () => {
+        setShow([false, show[1], show[2], show[3], show[4]])
+    }
+
     return (<>
-        <td onClick={type !== 0 ? (() => setShow(true)) : null}>
+        <td onClick={type !== 0 ? handleCellClick : null} className={show[0] ? " cellActive" : ""}>
             {type}
-            {show && <ContextWindowForWeekType handleClose={setShow} data={{title: `Week № ${weekNum}, ${typeState === 1 ? "Odd" : (typeState === 2 ? "Even" : "Unset")}`, type: typeState}} submitFunction={prepareUploadStates}/>}
+            {show[0] && <ContextWindowForWeekType handleClose={handleCloseContext} 
+                                                  data={{
+                                                    title: `Week № ${weekNum}, ${typeState === 1 ? "Odd" : (typeState === 2 ? "Even" : "Unset")}`, 
+                                                    type: typeState
+                                                  }}
+                                                  pos={{x: show[1], y: show[2]}}
+                                                  parentSize={{x: show[3], y: show[4]}}
+                                                  submitFunction={prepareUploadStates}/>}
             {showUplaodModal && <TileUploadModal 
                                         color="var(--Background)" 
                                         handleClose={() => setShowuploadModal(false)} 
@@ -115,7 +136,7 @@ function WeekType({weekNum, weekType}) {
 function DayComponent({day, monthId}) {
     const [dayState, setDayState] = useState(day)
     const [tempDayState, setTempDayState] = useState({}) // changes only when prepareUploadStates is executed, no big deal
-    const [show, setShow] = useState(false) // this one changes quite a lot
+    const [show, setShow] = useState([false, 0, 0, 0, 0]) // this one changes quite a lot
     const [showUplaodModal, setShowuploadModal] = useState(false) // changes after prepareUploadStates so not big deal
 
     const date = new Date(day.day)
@@ -150,33 +171,47 @@ function DayComponent({day, monthId}) {
         return errors
     }
 
+    const handleCellClick = (e) => {
+        setShow([
+            true, 
+            e.clientX, 
+            e.clientY, 
+            e.target.getBoundingClientRect().width, 
+            e.target.getBoundingClientRect().height
+        ])
+    }
+
+    const handleCloseContext = () => {
+        setShow([false, show[1], show[2], show[3], show[4]])
+    }
+
     return (
-        <>
-            <td onClick={day.type !== 0 
-                         ? () => setShow(true) 
-                         : null} 
-                style={styles} 
-                className={`${((dayState.type !== 0 
-                            && dayState.type !== 1) 
-                            || dayState.message.length) 
-                            ? "cellOfType" : ""}${show ? " cellActive" : ""}`}>
-                {date.getDate()}
-                {show && <ContextWindow handleClose={setShow} 
-                                        data={{title: dateTitle, message: dayState.message, type: dayState.type}} 
-                                        submitFunction={prepareUploadStates}/>}
-                {showUplaodModal && <TileUploadModal 
-                                        color="var(--Background)" 
-                                        handleClose={() => setShowuploadModal(false)} 
-                                        handleSoftClose={() => setShowuploadModal(false)} 
-                                        submitFunction={uploadChangesToApi}>
-                                            Upload changes?
-                                    </TileUploadModal>}
-            </td>
-        </>
+        <td onClick={day.type !== 0 
+                        ? handleCellClick  
+                        : null} 
+            style={styles} 
+            className={`${((dayState.type !== 0 
+                        && dayState.type !== 1) 
+                        || dayState.message.length) 
+                        ? "cellOfType" : ""}${show[0] ? " cellActive" : ""}`}>
+            {date.getDate()}
+            {show[0] && <ContextWindow handleClose={handleCloseContext} 
+                                    data={{title: dateTitle, message: dayState.message, type: dayState.type}}
+                                    pos={{x: show[1], y: show[2]}}
+                                    parentSize={{x: show[3], y: show[4]}}
+                                    submitFunction={prepareUploadStates}/>}
+            {showUplaodModal && <TileUploadModal 
+                                    color="var(--Background)" 
+                                    handleClose={() => setShowuploadModal(false)} 
+                                    handleSoftClose={() => setShowuploadModal(false)} 
+                                    submitFunction={uploadChangesToApi}>
+                                        Upload changes?
+                                </TileUploadModal>}
+        </td>
     )
 }
 
-function ContextWindow({handleClose, data, submitFunction}) {
+function ContextWindow({handleClose, data, submitFunction, pos, parentSize}) {
     const [editMode, setEditMode] = useState(false)
     const [dataState, setDataState] = useState(data)
 
@@ -197,15 +232,19 @@ function ContextWindow({handleClose, data, submitFunction}) {
         submitFunction({message: dataState.message, type: dataState.type})
     }
 
+    const calcPosition = (() => {
+        const windowDimensions = {x: window.innerWidth, y: window.innerHeight}
+        let positionX = Math.min(100, windowDimensions.x / 2 / 2) + parentSize.x / 2
+        let positionY = Math.min(100, windowDimensions.x / 2 / 2) + parentSize.y / 2
+        if (!(windowDimensions.x - pos.x > pos.x)) positionX = -positionX
+        if (!(windowDimensions.y - pos.y > pos.y)) positionY = -positionY
+        return {x: positionX, y: positionY}
+    })()
+
     return (
-        <Draggable handle="#handle" nodeRef={nodeRef}>
+        <Draggable handle="#handle" nodeRef={nodeRef} defaultPosition={calcPosition}>
             <div ref={nodeRef} className="contextWindow">
-                <div className="contextWindowHeader">
-                    <div id="handle" className="contextWindowText">
-                        <span>{data.title}</span>
-                    </div>
-                    <button onClick={(e) => {e.stopPropagation(); handleClose(false)}} style={{backgroundColor: "transparent", border: "none", outline: "none", fontWeight: "bold", fontSize: "24px", width: "36px", height: "36px"}}>X</button>
-                </div>
+                <ContextWindowHeader handleClose={handleClose}>{data.title}</ContextWindowHeader>
                 <div className="contextWindowMessage">
                     {editMode
                         ? <textarea value={dataState.message} onChange={(e) => {dataState.message = e.target.value; setDataState({...dataState})}} className="ex-textInput ex-activeInput" style={{height: "100%"}}></textarea>
@@ -243,7 +282,7 @@ function ContextWindow({handleClose, data, submitFunction}) {
     )
 }
 
-function ContextWindowForWeekType({handleClose, data, submitFunction}) {
+function ContextWindowForWeekType({handleClose, data, submitFunction, pos, parentSize}) {
     const [editMode, setEditMode] = useState(false)
     const [type, setType] = useState(data.type)
 
@@ -260,15 +299,19 @@ function ContextWindowForWeekType({handleClose, data, submitFunction}) {
         submitFunction(type)
     }
 
+    const calcPosition = (() => {
+        const windowDimensions = {x: window.innerWidth, y: window.innerHeight}
+        let positionX = Math.min(100, windowDimensions.x / 2 / 2) + parentSize.x / 2
+        let positionY = Math.min(48, windowDimensions.x / 2 / 2) + parentSize.y / 2
+        if (!(windowDimensions.x - pos.x > pos.x)) positionX = -positionX
+        if (!(windowDimensions.y - pos.y > pos.y)) positionY = -positionY
+        return {x: positionX, y: positionY}
+    })()
+
     return (
-        <Draggable handle="#handle" nodeRef={nodeRef}>
+        <Draggable handle="#handle" nodeRef={nodeRef} defaultPosition={calcPosition}>
             <div ref={nodeRef} className="contextWindow" style={{height: "unset"}}>
-                <div className="contextWindowHeader">
-                    <div id="handle" className="contextWindowText">
-                        <span>{data.title}</span>
-                    </div>
-                    <button onClick={(e) => {e.stopPropagation(); handleClose(false)}} style={{backgroundColor: "transparent", border: "none", outline: "none", fontWeight: "bold", fontSize: "24px", width: "36px", height: "36px"}}>X</button>
-                </div>
+                <ContextWindowHeader handleClose={handleClose}>{data.title}</ContextWindowHeader>
                 <div className="contextWindowMessage">
                     <div className="contextWindowButtonsWrapper">
                         {editMode 
@@ -300,7 +343,7 @@ function ContextWindowForWeekType({handleClose, data, submitFunction}) {
                                                     <Svgs whichOne={2}/>
                                                 </>))}
                                 </div>
-                                <button title="Edit day" onClick={() => setEditMode(!editMode)} className="contextWindowButton">
+                                <button title="Edit week" onClick={() => setEditMode(!editMode)} className="contextWindowButton">
                                     <Svgs whichOne={0}/>
                                 </button>
                             </>)}
@@ -308,6 +351,25 @@ function ContextWindowForWeekType({handleClose, data, submitFunction}) {
                 </div>
             </div>
         </Draggable>
+    )
+}
+
+function ContextWindowHeader({children, handleClose}) {
+    return (
+        <div className="contextWindowHeader">
+            <div id="handle" className="contextWindowText">
+                <span>{children}</span>
+            </div>
+            <button onClick={(e) => {e.stopPropagation(); handleClose()}} 
+                    style={{
+                        backgroundColor: "transparent", 
+                        border: "none", 
+                        outline: "none", 
+                        fontWeight: "bold", 
+                        fontSize: "24px", 
+                        width: "36px", 
+                        height: "36px"}}>X</button>
+        </div>
     )
 }
 
