@@ -927,7 +927,7 @@ li img {
 .contextWindowButtonsWrapper {
   display: flex;
   gap: 8px;
-  justify-content: end;
+  justify-content: flex-end;
 }
 .contextWindowButtonWide {
   flex: 1;

@@ -2,7 +2,7 @@ import React from "react";
 
 import { NavLink } from 'react-router-dom';
 
-import TileUploadModal from "../components/schedule/tiles/TileUploadModal";
+import UploadModal from "../components/UploadModal";
 import { signOut } from "../components/Requests";
 import { useState } from "react";
 
@@ -42,13 +42,13 @@ export default function Landing({signedIn, setSignedIn}) {
                     {signedIn ? (
                         <div className="tile-link" onClick={() => setShow(true)} style={{backgroundColor: "var(--Color4)"}}>
                             SIGN OUT
-                            {show && (<TileUploadModal 
+                            {show && (<UploadModal 
                                         color="var(--Color4)" 
                                         handleClose={(e) => {e.stopPropagation();setShow(false); setSignedIn(false)}} 
                                         handleSoftClose={(e) => {e.stopPropagation(); setShow(false)}} 
                                         submitFunction={signOut}>
                                             Are you sure?
-                                    </TileUploadModal>)}
+                                    </UploadModal>)}
                         </div>
                     ) : (
                     <NavLink to={"/signin"} className="tile-link" style={{backgroundColor: "var(--Color4)"}}>

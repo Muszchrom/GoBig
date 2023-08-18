@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Overlay } from "../../Overlay"
 import { updateSubject, deleteSubject } from "../../Requests"
 import { CancelButton } from "../../Common"
-import TileUploadModal from "./TileUploadModal"
+import UploadModal from "../../UploadModal"
 import TileForm from "./TileForm"
 
 export default function TileEdit({open, setOpen, subject, color, updateScheduleWithoutApiCall, uniqueKey}) {
@@ -65,12 +65,12 @@ export default function TileEdit({open, setOpen, subject, color, updateScheduleW
                 </CancelButton>
             </TileForm>
             {showModal && 
-                <TileUploadModal color={color}
+                <UploadModal color={color}
                                  handleClose={handleClose}
                                  handleSoftClose={handleSoftClose}
                                  submitFunction={modalType === "UPDATE" ? handleUpdateSubject : handleDeleteSubject}>
                     {modalType === "UPDATE" ? "Update subject?" : "Delete subject?"}
-                </TileUploadModal>
+                </UploadModal>
             }
         </Overlay>
     )

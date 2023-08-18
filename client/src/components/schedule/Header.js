@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import Semester from '../Semester';
+import Calendar from './Calendar';
 import FocusTrap from 'focus-trap-react';
 
 export default function Header({getCurrentDay, currentWeek, handleWeekChange, getAndSetCurrentWeek}) {
@@ -52,7 +52,7 @@ export default function Header({getCurrentDay, currentWeek, handleWeekChange, ge
         <button type="button" className="week-nav-button" onClick={() => handleWeekChange(1)}>{">>"}</button>
       </div>
       </div>
-      {showCalendar && <Semester handleClose={() => setShowCalendar(false)}></Semester>}
+      {showCalendar && <Calendar handleClose={() => setShowCalendar(false)}></Calendar>}
     </header>
   );
 }

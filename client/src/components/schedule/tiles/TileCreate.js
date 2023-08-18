@@ -3,7 +3,7 @@ import { Overlay } from "../../Overlay"
 import { createSubject } from "../../Requests"
 
 import { useLocation } from 'react-router-dom';
-import TileUploadModal from "./TileUploadModal"
+import UploadModal from "../../UploadModal";
 import TileForm from "./TileForm";
 
 export default function TileCreate({open, setOpen, color, updateScheduleWithoutApiCall}) {
@@ -49,10 +49,10 @@ export default function TileCreate({open, setOpen, color, updateScheduleWithoutA
         <Overlay backgroundColor={color} setOpen={setOpen} open={open}>
             <TileForm color={color} manageData={handleCreateButtonClick} _title="Create new subject"/>
 
-            {showModal && <TileUploadModal color={color}
+            {showModal && <UploadModal color={color}
                                            handleClose={handleClose}
                                            handleSoftClose={handleSoftClose}
-                                           submitFunction={submitionFunction}>Upload subject?</TileUploadModal>}
+                                           submitFunction={submitionFunction}>Upload subject?</UploadModal>}
             
         </Overlay>
     )

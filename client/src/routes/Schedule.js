@@ -103,7 +103,15 @@ export default function Schedule({signedIn}) {
                 if (firstMonthAsDate.getDay() === 0) fetchedWeeks.firstMonth = firstMonthAsDate.setDate(firstMonthAsDate.getDate() - 6)
                 else fetchedWeeks.firstMonth = firstMonthAsDate.setDate(firstMonthAsDate.getDate() - firstMonthAsDate.getDay() + 1)
                 setWeeks(fetchedWeeks)
-                getAndSetCurrentWeek(fetchedWeeks)
+
+                // eslint was crying about default parameter of getAndSetCurrentWeek being state
+                if (!fetchedWeeks.weeks || !fetchedWeeks.firstMonth) return
+                const timeDiff = new Date().getTime() - fetchedWeeks.firstMonth
+                const weekDiff = timeDiff/(1000*60*60*24*7)
+                // if weekDiff is in range <0, 1) where 1 is not inclusive, then it means we're in the same week
+                if (weekDiff < 1) return setCurrentWeek(fetchedWeeks.weeks[0])
+                if (fetchedWeeks.weeks.length > weekDiff) return setCurrentWeek(fetchedWeeks.weeks[Math.floor(weekDiff)])
+                else return setCurrentWeek(fetchedWeeks.weeks[fetchedWeeks.weeks.length - 1])
             }
         })()
     }, [])

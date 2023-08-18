@@ -1,5 +1,5 @@
-import { SubmitButton, CancelButton, LoadingButtonAnimation, ErrorList } from "../../Common"
-import { ModalWindow } from "../../Overlay"
+import { SubmitButton, CancelButton, LoadingButtonAnimation, ErrorList } from "./Common"
+import { ModalWindow } from "./Overlay"
 import { useState } from "react"
 
 /**
@@ -9,7 +9,7 @@ import { useState } from "react"
  * @param {function} handleSoftClose - Ran on every cancel button click
  * @param {function} submitFunction - Must return an array. If this array is empty then upload is considered successfull
  */
-export default function TileUploadModal({color, children, handleClose, handleSoftClose, submitFunction}) {
+export default function UploadModal({color, children, handleClose, handleSoftClose, submitFunction}) {
     const [uploading, setUploading] = useState(false)
     const [uploadErrors, setUploadErrors] = useState([])
     const [uploadFinished, setUploadFinished] = useState(false)

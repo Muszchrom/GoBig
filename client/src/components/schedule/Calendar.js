@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from "react"
-import { Overlay } from "./Overlay"
+import { Overlay } from "../Overlay"
 import Draggable from 'react-draggable'
-import { semesterSchedule, patchSemesterScheduleDay, patchSemesterScheduleWeek } from "./Requests"
-import TileUploadModal from "./schedule/tiles/TileUploadModal"
+import { semesterSchedule, patchSemesterScheduleDay, patchSemesterScheduleWeek } from "../Requests"
+import UploadModal from "../UploadModal"
 
-export default function Semester({handleClose}) {
+export default function Calendar({handleClose}) {
     const [fetchedData, setFetchedData] = useState({status: -1})
     useEffect(() => {
         (async () => {
@@ -137,13 +137,13 @@ function WeekType({weekNum, weekType}) {
                                                   pos={{x: show[1], y: show[2]}}
                                                   parentSize={{x: show[3], y: show[4]}}
                                                   submitFunction={prepareUploadStates}/>}
-            {showUplaodModal && <TileUploadModal 
+            {showUplaodModal && <UploadModal 
                                         color="var(--Background)" 
                                         handleClose={() => setShowuploadModal(false)} 
                                         handleSoftClose={() => setShowuploadModal(false)} 
                                         submitFunction={uploadChangesToApi}>
                                             Upload changes?
-                                    </TileUploadModal>}
+                                    </UploadModal>}
         </td>
     </>)
 }
@@ -215,13 +215,13 @@ function DayComponent({day, monthId}) {
                                     pos={{x: show[1], y: show[2]}}
                                     parentSize={{x: show[3], y: show[4]}}
                                     submitFunction={prepareUploadStates}/>}
-            {showUplaodModal && <TileUploadModal 
+            {showUplaodModal && <UploadModal 
                                     color="var(--Background)" 
                                     handleClose={() => setShowuploadModal(false)} 
                                     handleSoftClose={() => setShowuploadModal(false)} 
                                     submitFunction={uploadChangesToApi}>
                                         Upload changes?
-                                </TileUploadModal>}
+                                </UploadModal>}
         </td>
     )
 }
