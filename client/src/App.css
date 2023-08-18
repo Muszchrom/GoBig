@@ -583,6 +583,22 @@ li img {
 		background-position: -50% 50%;
 	}
 }
+.animated-background-lightcoral {
+  background: linear-gradient(-45deg, var(--Lightcoral) 30%, #fa9393, var(--Lightcoral) 70%);
+	background-size: 200% 200%;
+	animation: LightcoralLoadingAnimation 1.6s ease infinite;
+}
+@keyframes LightcoralLoadingAnimation {
+  0% {
+		background-position: -50% 50%;
+	}
+	50% {
+		background-position: 150% 50%;
+	}
+  100% {
+		background-position: -50% 50%;
+	}
+}
 /* ------------------------------------- */
 /* Landing page ------------------------ */
 /* ------------------------------------- */

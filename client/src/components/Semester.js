@@ -5,7 +5,7 @@ import { semesterSchedule, patchSemesterScheduleDay, patchSemesterScheduleWeek }
 import TileUploadModal from "./schedule/tiles/TileUploadModal"
 
 export default function Semester({handleClose}) {
-    const [fetchedData, setFetchedData] = useState({})
+    const [fetchedData, setFetchedData] = useState({status: -1})
     useEffect(() => {
         (async () => {
             const data = await semesterSchedule()
@@ -36,9 +36,24 @@ export default function Semester({handleClose}) {
                     )
                 })
                 : (
-                    fetchedData.status === 401 
-                        ? <>you need to be logged in</>
-                        : <>nothing to show yet</>
+                    fetchedData.status === -1 ? (
+                            <div style={{minWidth: "fit-content", margin: "0 -1em"}}>
+                                <div style={{display: "flex", textAlign: "center"}}>
+                                    <div className="monthHeader animated-background-lightcoral">
+                                        &nbsp;
+                                    </div>
+                                    <div className="monthSemesterName">
+                                        {""}
+                                    </div>
+                                </div>
+                
+                                <div className="animated-background calendarTable" style={{height: "200px", borderTop: "2px solid var(--Lightcoral)", borderTopRightRadius: "2px"}}>
+                                    {/* <CalendarTable weeks={item.weeks} monthId={item.month}/> */}
+                                </div>  
+                            </div>
+                        ) : (fetchedData.status === 401 
+                            ? <>you need to be logged in</>
+                            : <>nothing to show yet</>)
                 )
             }
         </Overlay>
