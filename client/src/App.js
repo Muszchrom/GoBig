@@ -29,7 +29,7 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
-          <Route path="/plan/*" element={<Schedule signedIn={signedIn}/>} />
+          <Route path="/schedule/*" element={<Schedule signedIn={signedIn}/>} />
           <Route path="/signin" element={<SignIn type="signIn" signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
           <Route path="/signup" element={<SignUp type="signUp"/>}/>
           <Route exact path="/" element={<Landing signedIn={signedIn} setSignedIn={setSignedIn} />}/>

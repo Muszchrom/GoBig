@@ -24,17 +24,17 @@ export default function Landing({signedIn, setSignedIn}) {
         <div className="landingBackground">
             <div className="container funnycont">
                 <div className="tile tile-landing">
-                    <NavLink to={"/plan/monday"} className="tile-link" style={{backgroundColor: "var(--Color1)"}}>
+                    <NavLink to={"/schedule/monday"} className="tile-link" style={{backgroundColor: "var(--Color1)"}}>
                         SCHEDULE
                     </NavLink>
                 </div>
                 <div className="tile tile-landing">
-                    <NavLink to={"/plan/monday"} className="tile-link" style={{backgroundColor: "var(--Color2)"}}>
+                    <NavLink to={"/schedule/monday"} className="tile-link" style={{backgroundColor: "var(--Color2)"}}>
                          QUIZZES
                     </NavLink>
                 </div>
                 <div className="tile tile-landing">
-                    <NavLink to={"/plan/monday"} className="tile-link" style={{backgroundColor: "var(--Color3)"}}>
+                    <NavLink to={"/schedule/monday"} className="tile-link" style={{backgroundColor: "var(--Color3)"}}>
                         FILES 
                     </NavLink>
                 </div>
