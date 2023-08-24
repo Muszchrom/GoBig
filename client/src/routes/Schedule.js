@@ -78,6 +78,9 @@ export default function Schedule({signedIn}) {
     useEffect(() => {
         (async () => {
             const [fetchedSchedule, fetchedWeeks] = await Promise.all([getSchedule(), getWeeks()])
+            if (fetchedWeeks.notFound) {
+                return setWeeks([false])
+            }
             if (fetchedSchedule) {
                 const bufferArray = [[], [], [], [], [], [], []]
                 fetchedSchedule.forEach((subject) => {
@@ -138,6 +141,7 @@ export default function Schedule({signedIn}) {
 
     return (
     <>
+        {weeks[0] === false && <Navigate to="/schedule/create" replace={true}/>}
         <Header 
             getCurrentDay={getCurrentDay} 
             currentWeek={currentWeek} 

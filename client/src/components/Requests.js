@@ -103,8 +103,24 @@ export const getWeeks = async () => {
     })
     const status = data.status
     data = await data.json()
-    if (status === 200) return {firstMonth: data.firstMonth.month, weeks: data.data}
+    if (status === 200 && !data.data.length) return {notFound: true}
+    if (status === 200 && data.data.length) return {firstMonth: data.firstMonth.month, weeks: data.data}
     else return undefined
+}
+
+export const createSchedule = async ({dateStart, dateEnd}) => {
+    let data = await fetch(`${source}/calendar`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify({dateStart: dateStart, dateEnd: dateEnd})
+    })
+    
+    const status = data.status
+    data = await data.json()
+    if (status === 201) return []
+    if (data.errors?.length) return data.errors
+    else return [`Status code: ${status}`]
 }
 
 export const getScheduleForDay = async (day) => {

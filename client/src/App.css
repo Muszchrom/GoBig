@@ -364,6 +364,7 @@ li img {
   padding: 12px;
   border-radius: 12px;
   cursor: pointer;
+  width: 100%;
 }
 .ex-inputTitle {
   color: var(--Text);
