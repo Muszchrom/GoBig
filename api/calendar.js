@@ -385,7 +385,7 @@ const responseToValidation = (req, res, next) => {
 
 // hella slow holy fuck i've actually never experienced something like that before
 router.post('/', verifyToken, constructorForUserNotPresent, saveDatesObject, (req, res) => {
-    res.status(200).json({
+    res.status(201).json({
         message: "hello"
     })
 })
