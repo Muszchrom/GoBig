@@ -49,7 +49,7 @@ export default function SignUp({signedIn, setSignedIn}) {
                     Sign in
                 </NavLink>
             </div>
-            <div style={{width: "100%", padding: "0 1em", marginTop: "auto", marginBottom: "2em"}}>
+            <div style={{display: "flex", width: "100%", padding: "0 1em", height: "0"}}>
                 <NavigateBackTo path="/"/>
             </div>
     </div>

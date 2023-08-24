@@ -31,7 +31,7 @@ export default function SignIn({signedIn, setSignedIn}) {
     }
 
     return(!signedIn ? (
-        <div className="signInWrapper">
+        <div className="signInWrapper" style={{position: "relative"}}>
             <h1>Sign In</h1>
             <form onSubmit={formSubmition} className="signInForm">
                 <UsernameInput inputValue={username} handleChange={setUsername}/>
@@ -47,7 +47,7 @@ export default function SignIn({signedIn, setSignedIn}) {
                     Sign up
                 </NavLink>
             </div>
-            <div style={{width: "100%", padding: "0 1em", marginTop: "auto", marginBottom: "2em"}}>
+            <div style={{display: "flex", width: "100%", padding: "0 1em", height: "0"}}>
                 <NavigateBackTo path="/"/>
             </div>
         </div>
