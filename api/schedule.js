@@ -33,7 +33,8 @@ db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='schedule'`, 
             additionalInfo TEXT, 
             weekStart INTEGER NOT NULL, 
             weekEnd INTEGER NOT NULL, 
-            weekType INTEGER NOT NULL)`);
+            weekType INTEGER NOT NULL
+            userId INTEGER NOT NULL)`);
     }
 });
 
@@ -42,7 +43,7 @@ db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='schedule'`, 
 ------------------------------------------------------- */
 
 const createSubject = (valuesArray) => {
-    const sql = `INSERT INTO schedule(day, start, end, subjectName, subjectType, hall, teacher, icon, additionalInfo, weekStart, weekEnd, weekType) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    const sql = `INSERT INTO schedule(day, start, end, subjectName, subjectType, hall, teacher, icon, additionalInfo, weekStart, weekEnd, weekType, userId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
     return new Promise((resolve, reject) => {
         db.run(sql, valuesArray, (err) => {
@@ -56,7 +57,7 @@ const createSubject = (valuesArray) => {
 }
 
 const getSubjectsByData = (valuesArray) => {
-    const sql = `SELECT * FROM schedule WHERE day=? AND start=? AND end=? AND subjectName=? AND subjectType=? AND hall=? AND teacher=? AND icon=? AND additionalInfo=? AND weekStart=? AND weekEnd=? AND weekType=?`
+    const sql = `SELECT * FROM schedule WHERE day=? AND start=? AND end=? AND subjectName=? AND subjectType=? AND hall=? AND teacher=? AND icon=? AND additionalInfo=? AND weekStart=? AND weekEnd=? AND weekType=? AND userId=?`
 
     return new Promise((resolve, reject) => {
         db.all(sql, valuesArray, (err, rows) => {
@@ -69,11 +70,11 @@ const getSubjectsByData = (valuesArray) => {
     });
 }
 
-const getSubjectsByDay = (day) => {
-    const sql = `SELECT * FROM schedule WHERE day=? ORDER BY start`
+const getSubjectsByDay = (day, userId) => {
+    const sql = `SELECT * FROM schedule WHERE day=? AND userId=? ORDER BY start`
 
     return new Promise((resolve, reject) => {
-        db.all(sql, day, (err, rows) => {
+        db.all(sql, [day, userId], (err, rows) => {
             if (err) {
                 reject(err);
                 return;
@@ -83,11 +84,11 @@ const getSubjectsByDay = (day) => {
     });
 }
 
-const getSchedule = () => {
-    const sql = `SELECT * FROM schedule ORDER BY day, start`
+const getSchedule = (userId) => {
+    const sql = `SELECT * FROM schedule WHERE userId=? ORDER BY day, start`
 
     return new Promise((resolve, reject) => {
-        db.all(sql, (err, rows) => {
+        db.all(sql, userId, (err, rows) => {
             if (err) {
                 reject(err)
                 return
@@ -112,11 +113,11 @@ const updateSubject = (id, queryFields, values) => {
     });
 }
 
-const deleteSubject = (id) => {
-    const sql = `DELETE FROM schedule WHERE id=?`
+const deleteSubject = (id, userId) => {
+    const sql = `DELETE FROM schedule WHERE id=? AND userId=?`
 
     return new Promise((resolve, reject) => {
-        db.run(sql, id, function (err, rows) {
+        db.run(sql, [id, userId], function (err, rows) {
             if (err) {
                 reject(err);
                 return;
@@ -238,8 +239,8 @@ const validateUpdate = async (req, res, next) => {
 ######################### Routes #########################
 ------------------------------------------------------- */
 
-router.get('/', (req, res) => {
-    getSchedule()
+router.get('/', verifyToken, (req, res) => {
+    getSchedule(res.locals.userId)
         .then((rows) => {
             res.status(200).json({message: "Rows selected successfully!", rows: rows})
         })
@@ -250,7 +251,7 @@ router.get('/', (req, res) => {
 })
 
 // Get schedule for given day
-router.get('/:day', (req, res) => {
+router.get('/:day', verifyToken, (req, res) => {
     const day = parseInt(req.params.day);
     if (isNaN(day)) return res.status(400).json({message: "Day is not a valid number or was not provided", erros: ["Day is not a valid number or was not provided"]})
     
@@ -260,7 +261,7 @@ router.get('/:day', (req, res) => {
             errors: ["Day should be an integer greater or equal than 0 and less or equal than 6"]
         });
     }
-    getSubjectsByDay(day)
+    getSubjectsByDay(day, res.locals.userId)
         .then((rows) => {
             res.status(200).json({message: "Rows selected successfully!", rows: rows});
         })
@@ -284,14 +285,15 @@ router.post('/', verifyToken, validationChain, validateSubject, (req, res) => {
         req.body.additionalInfo, 
         req.body.weekStart, 
         req.body.weekEnd, 
-        req.body.weekType
+        req.body.weekType,
+        res.locals.userId
     ]
 
     // check if subject exists (need that to retrieve id later on)
     getSubjectsByData(valuesArray)
         .then((rows) => {
             if (rows.length) {
-                throw new Error("user_exists")
+                throw new Error("subject_exists")
             } else {
                 return createSubject(valuesArray)
             }
@@ -311,7 +313,7 @@ router.post('/', verifyToken, validationChain, validateSubject, (req, res) => {
             }
         })
         .catch((err) => {
-            if (err.message === "user_exists") {
+            if (err.message === "subject_exists") {
                 return res.status(400).json({message: "This subject already exists", errors: ["This subject already exists"]})
             } else {
                 console.warn(err);
@@ -330,6 +332,11 @@ router.patch('/', verifyToken, validateId, validateUpdateArray, validateUpdate, 
         queryFields += `${req.body.updateArray[i]}=?, `;
         values.push(req.body[req.body.updateArray[i]]);
     }
+    
+    // add userId
+    queryFields += `userId=?, `;
+    values.push(res.locals.userId);
+
     queryFields = queryFields.slice(0, -2);
 
     updateSubject(req.body.id, queryFields, values)
@@ -348,7 +355,7 @@ router.patch('/', verifyToken, validateId, validateUpdateArray, validateUpdate, 
 
 // Delete schedule row
 router.delete('/', verifyToken, validateId, (req, res) => {
-    deleteSubject(req.body.id)
+    deleteSubject(req.body.id, res.locals.userId)
         .then((result) => {
             if (result) {
                 return res.status(200).json({message: "Subject deleted successfully"});
