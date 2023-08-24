@@ -16,11 +16,8 @@ export const isTokenValid = async () => {
         method: "GET",
         credentials: "include"
     })
-    if (data.status === 200) {
-        return true
-    } else {
-        return false
-    }
+    if (data.status === 200) return true
+    return false
 }
 
 export const signIn = async (username, password) => {
@@ -54,19 +51,17 @@ export const signOut = async () => {
         credentials: "include",
     })
     if (data.status === 200) return []
-    else return ["An error occured"]
+    return ["An error occured"]
 }
 
 export const signUp = async (username, password, confirmPassword) => {
     let errors = []
-    // Validation on users
     if (!validateUsername(username)) errors.push("Username should be 4 to 12 characters long")
     if (!validatePassword(password)) errors.push("Password should be 8 to 72 bytes long and contain lower and uppercase letters")
     if (password !== confirmPassword) errors.push("Passwords dont match")
 
     if (errors.length) return errors
 
-    // fetch if no errors
     let data = await fetch(`${source}/auth/signup`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -81,7 +76,7 @@ export const signUp = async (username, password, confirmPassword) => {
     data = await data.json()
     if (status === 201) return []
     if (data.errors?.length) return data.errors
-    else return errors.push(`Status code: ${status}`)
+    else return [`Status code: ${status}`]
 }
 
 export const getSchedule = async () => {
@@ -92,7 +87,7 @@ export const getSchedule = async () => {
     const status = data.status
     data = await data.json()
     if (status === 200) return data.rows
-    else return undefined
+    return undefined
 }
 
 export const getWeeks = async () => {
@@ -105,7 +100,7 @@ export const getWeeks = async () => {
     data = await data.json()
     if (status === 200 && !data.data.length) return {notFound: true}
     if (status === 200 && data.data.length) return {firstMonth: data.firstMonth.month, weeks: data.data}
-    else return undefined
+    return undefined
 }
 
 export const createSchedule = async ({dateStart, dateEnd}) => {
@@ -120,25 +115,10 @@ export const createSchedule = async ({dateStart, dateEnd}) => {
     data = await data.json()
     if (status === 201) return []
     if (data.errors?.length) return data.errors
-    else return [`Status code: ${status}`]
-}
-
-export const getScheduleForDay = async (day) => {
-    if (day < 0 || day > 6) return
-    let data = await fetch(`${source}/schedule/${day}`, {
-        method: "GET",
-        headers: {"Content-Type": "application/json"}
-    })
-    const status = data.status
-    data = await data.json()
-    if (status === 200) return data
-    
+    return [`Status code: ${status}`]
 }
 
 export const updateSubject = async (requestBody) => {
-    // validate this request on client
-    let errors = []
-
     let data = await fetch(`${source}/schedule`, {
         method: "PATCH",
         headers: {"Content-Type": "application/json"},
@@ -150,12 +130,10 @@ export const updateSubject = async (requestBody) => {
     data = await data.json()
     if (status === 200) return []
     if (data.errors?.length) return data.errors
-    else return errors.push(`Status code: ${status}`)
+    return [`Status code: ${status}`]
 }
 
 export const createSubject = async (requestBody) => {
-    let errors = []
-
     let data = await fetch(`${source}/schedule`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -167,28 +145,22 @@ export const createSubject = async (requestBody) => {
     data = await data.json()
     if (status === 201) return data.row[0]
     if (data.errors?.length) return data.errors
-    else return errors.push(`Status code: ${status}`)
+    return [`Status code: ${status}`]
 }
 
 export const deleteSubject = async (requestBody) => {
-    // validate this request on client
-    let errors = []
-    try {
-        let data = await fetch(`${source}/schedule`, {
-            method: "DELETE",
-            headers: {"Content-Type": "application/json"},
-            credentials: "include",
-            body: JSON.stringify(requestBody)
-        })
+    let data = await fetch(`${source}/schedule`, {
+        method: "DELETE",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify(requestBody)
+    })
 
-        const status = data.status
-        data = await data.json()
-        if (status === 200) return []
-        if (data.errors?.length) return data.errors
-        else return errors.push(`Status code: ${status}`)
-    } catch (err) {
-        console.log(err)
-    }
+    const status = data.status
+    data = await data.json()
+    if (status === 200) return []
+    if (data.errors?.length) return data.errors
+    return [`Status code: ${status}`]
 }
 
 export const validateTile = {
@@ -275,8 +247,6 @@ export const semesterSchedule = async () => {
 }
 
 export const patchSemesterScheduleDay = async (requestBody) => {
-    let errors = []
-
     let data = await fetch(`${source}/calendar/day`, {
         method: "PATCH",
         headers: {"Content-Type": "application/json"},
@@ -289,12 +259,10 @@ export const patchSemesterScheduleDay = async (requestBody) => {
     if (status === 200) return []
     if (status === 404) return [data.message]
     if (data.errors?.length) return data.errors
-    else return errors.push(`Status code: ${status}`)
+    return [`Status code: ${status}`]
 }
 
 export const patchSemesterScheduleWeek = async (requestBody) => {
-    let errors = []
-
     let data = await fetch(`${source}/calendar/week`, {
         method: "PATCH",
         headers: {"Content-Type": "application/json"},
@@ -307,5 +275,5 @@ export const patchSemesterScheduleWeek = async (requestBody) => {
     if (status === 200) return []
     if (status === 404) return [data.message]
     if (data.errors?.length) return data.errors
-    else return errors.push(`Status code: ${status}`)
+    return [`Status code: ${status}`]
 }
