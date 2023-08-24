@@ -18,11 +18,13 @@ import { isTokenValid } from './components/Requests';
 
 function App() {
   const [signedIn, setSignedIn] = useState(false);
+  const [fetchingSignedState, setFetchingSignedState] = useState(true);
 
   useEffect(() => {
     (async () => {
       const tokenState = await isTokenValid()
       tokenState ? setSignedIn(true) : setSignedIn(false)
+      setFetchingSignedState(false)
     })()
   }, [])
 
@@ -30,7 +32,7 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
-          <Route path="/schedule/*" element={signedIn ? <Schedule signedIn={signedIn}/> : <Navigate to="/signin" replace={true}/>} />
+          <Route path="/schedule/*" element={(fetchingSignedState || signedIn) ? <Schedule signedIn={signedIn}/> : <Navigate to="/signin" replace={true}/>} />
           <Route path="/signin" element={<SignIn type="signIn" signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
           <Route path="/signup" element={<SignUp type="signUp"/>}/>
           <Route path="/schedule/create" element={<CreateSchedule/>} />
