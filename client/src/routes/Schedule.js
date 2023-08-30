@@ -5,7 +5,7 @@ import Header from '../components/schedule/Header'
 import TileMounter from '../components/schedule/TileMounter'
 import { getSchedule, getWeeks } from '../components/Requests'
 
-export default function Schedule({signedIn}) {
+export default function Schedule() {
     const daysOfTheWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
     const [schedule, setSchedule] = useState([])
     const [weeks, setWeeks] = useState([])

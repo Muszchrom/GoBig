@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom';
+import { NavLink, Navigate } from 'react-router-dom';
 import { Overlay } from '../Overlay'
 
 import UploadModal from '../UploadModal';
-import { signOut } from '../Requests';
-
 
 import ExercisesSVG from '../../graphics/svgs/Exercises.svg'
 import LaboSVG from '../../graphics/svgs/Labo.svg'
@@ -17,10 +15,17 @@ import mapa from '../../graphics/jpg/mapaKampusu.jpg'
 export default function AdditionalInfo() {
   const [open, setOpen] = useState(false)
   const [show, setShow] = useState(false)
-
+  const [signOutConfirmed, setSignOutConfirmed] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+
+  const handleSignOut = () => {
+    setSignOutConfirmed(true)
+    return []
+  }
+
   return (
     <>
+      {signOutConfirmed && <Navigate to="/signout" replace={true}></Navigate>}
       {open &&
         <Overlay backgroundColor={"antiquewhite"} setOpen={setOpen} open={open}>
           <a href="http://we1.pollub.pl/ats4/" target="_blank" rel="noreferrer" style={{textDecoration: "underline"}}>Oryginalny plan</a>
@@ -29,7 +34,7 @@ export default function AdditionalInfo() {
                         color="var(--Color4)" 
                         handleClose={(e) => {e.stopPropagation();setShow(false)}} 
                         handleSoftClose={(e) => {e.stopPropagation(); setShow(false)}} 
-                        submitFunction={signOut}>
+                        submitFunction={handleSignOut}>
                             Are you sure?
                     </UploadModal>)}</span>
           <ul style={{marginTop: "2em"}}>

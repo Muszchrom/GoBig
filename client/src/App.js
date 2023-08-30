@@ -9,6 +9,7 @@ import {
 
 import SignIn from './routes/SignIn';
 import SignUp from './routes/SignUp';
+import SignOut from './routes/SignOut';
 import CreateSchedule from './routes/CreateSchedule';
 import Schedule from './routes/Schedule';
 import { isTokenValid } from './components/Requests';
@@ -31,7 +32,8 @@ function App() {
         <Routes>
           <Route path="/schedule/*" element={(fetchingSignedState || signedIn) ? <Schedule /> : <Navigate to="/signin" replace={true}/>} />
           <Route path="/signin" element={<SignIn signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
-          <Route path="/signup" element={<SignUp signedIn={signedIn}/>}/>
+          <Route path="/signup" element={<SignUp />}/>
+          <Route path="/signout" element={signedIn ? <SignOut setSignedIn={setSignedIn} /> : <SignIn signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
           <Route path="/schedule/create" element={<CreateSchedule/>} />
           <Route path="/" element={<Navigate to="/schedule/monday" replace={true}/>}/>
           <Route path="*" element={<Navigate to="/schedule/monday" replace={true}/>} />
