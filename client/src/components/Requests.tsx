@@ -11,179 +11,153 @@ const validatePassword = (password: string): boolean => {
     return (/[a-z]/.test(password) && /[A-Z]/.test(password))
 }
 
-export const isTokenValid = async (): Promise<boolean> => {
-    let data = await fetch(`${source}/auth/protected`, {
-        method: "GET",
-        credentials: "include"
-    })
-    if (data.status === 200) return true
-    return false
+// 
+const unexpectedAppOrServerError = (status: number): string[] => { 
+    return [`An unexpected error occured. Status code: ${status}`]
 }
 
-export const signIn = async (username: string, password: string): Promise<[] | string[]> => {
-    let errors = []
+export interface Schedule {
+    rows: {
+        id: number,
+        day: number,
+        start: string,
+        end: string,
+        subjectName: string,
+        subjectType: string,
+        hall: string,
+        teacher: string,
+        icon: string,
+        additionalInfo: string,
+        weekStart: number,
+        weekEnd: number,
+        weekType: number,
+        userId: number
+    }[]
+}
+
+export interface Weeks {
+    firstMonth: {
+        month: number
+    }, 
+    data: {
+        week: number, 
+        type: number
+    }[]
+}
+
+interface Options {
+    endpoint: string, 
+    method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE", 
+    headers?: {[key: string]: string} | undefined, 
+    credentials?: RequestCredentials | undefined,
+    data?: any
+}
+
+const callApi = async ({
+    endpoint, 
+    method="GET", 
+    headers={"Content-Type": "application/json"}, 
+    credentials="include", 
+    data}: Options): Promise<{status: number, data: any, errors: string[]}> => {
+
+        const fetchedData = await fetch(`${source}${endpoint}`, {
+            method: method,
+            headers: headers,
+            credentials: credentials,
+            body: JSON.stringify(data)
+        })
+        
+        const dataJson = await fetchedData.json()
+
+        return {
+            status: fetchedData.status,
+            data: dataJson,
+            errors: dataJson.errors
+        }
+}
+
+export const isTokenValid = async (): Promise<boolean> => {
+    const data = await callApi({endpoint: "/auth/protected", headers: undefined})
+    return data.status === 200
+}
+
+export const signIn = async (username: string, password: string): Promise<string[]> => {
+    const errors = []
     if (!validateUsername(username)) errors.push("Invalid username")
     if (!validatePassword(password)) errors.push("Invalid password")
 
     if (errors.length) return errors
 
-    let data = await fetch(`${source}/auth/signin`, {
+    const data = await callApi({
+        endpoint: "/auth/signin",
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-        body: JSON.stringify({
-                username,
-                password
-            })
+        data: {username, password}
     })
 
-    const status = data.status
-
-    if (status === 201) return []
-    else if (status === 401) return ["Invalid username and/or password"]
-    else return ["An internal server error occured"]
+    if (data.status === 201) return []
+    if (data.status === 401) return ["Invalid username and/or password"]
+    return unexpectedAppOrServerError(data.status)
 }
 
-export const signOut = async (): Promise<[] | string[]> => {
-    let data = await fetch(`${source}/auth/signout`, {
-        method: "GET",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-    })
-    if (data.status === 200) return []
-    return ["An error occured"]
+export const signOut = async (): Promise<string[]> => {
+    const data = await callApi({endpoint: "/auth/signout", headers: undefined})
+    return data.status === 200 ? [] : unexpectedAppOrServerError(data.status)
 }
 
-export const signUp = async (username: string, password: string, confirmPassword: string): Promise<[] | string[]> => {
-    let errors = []
+export const signUp = async (username: string, password: string, confirmPassword: string): Promise<string[]> => {
+    const errors = []
     if (!validateUsername(username)) errors.push("Username should be 4 to 12 characters long")
     if (!validatePassword(password)) errors.push("Password should be 8 to 72 bytes long and contain lower and uppercase letters")
     if (password !== confirmPassword) errors.push("Passwords dont match")
 
     if (errors.length) return errors
 
-    let data = await fetch(`${source}/auth/signup`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-                username,
-                password,
-                confirmPassword
-            })
-    })
+    const data = await callApi({endpoint: "/auth/signup", method: "POST", data: {username, password, confirmPassword}})
     
-    const status = data.status
-    if (status === 201) return []
-    const dataJson: {errors?: string[]} = await data.json()
-    if (dataJson.errors?.length) return dataJson.errors
-    else return [`Status code: ${status}`]
+    if (data.status === 201) return []
+    if (data.errors.length) return data.errors
+    return unexpectedAppOrServerError(data.status)
 }
 
-export const getSchedule = async (): Promise<{[key: string]: any}[] | []>=> {
-    let data = await fetch(`${source}/schedule/`, {
-        method: "GET",
-        headers: {"Content-Type": "application/json"}
-    })
-    const status = data.status
-
-    type Schedule = {
-        rows: {
-            id: number,
-            day: number,
-            start: string,
-            end: string,
-            subjectName: string,
-            subjectType: string,
-            hall: string,
-            teacher: string,
-            icon: string,
-            additionalInfo: string,
-            weekStart: number,
-            weekEnd: number,
-            weekType: number,
-            userId: number
-        }[] | []
-    }
-    const dataJson: Schedule = await data.json()
-    return dataJson.rows
+export const getSchedule = async (): Promise<Schedule>=> {
+    const data = await callApi({endpoint: "/schedule/", headers: undefined})
+    return data.data.rows
 }
 
 export const getWeeks = async () => {
-    let data = await fetch(`${source}/calendar/weeks`, {
-        method: "GET",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include"
-    })
-    const status = data.status
-    type Weeks = {
-        firstMonth: {
-            month: number
-        }, 
-        data: {
-            week: number, 
-            type: number
-        }[]
-    }
-    const dataJson: Weeks = await data.json()
-    if (status === 200 && !dataJson.data.length) return {notFound: true}
-    if (status === 200 && dataJson.data.length) return {firstMonth: dataJson.firstMonth.month, weeks: dataJson.data}
+    const data = await callApi({endpoint: "/calendar/weeks", headers: undefined})
+    if (data.status === 200 && !data.data.data.length) return {notFound: true}
+    if (data.status === 200 && data.data.data.length) return {firstMonth: data.data.firstMonth.month, weeks: data.data.data}
     return undefined
 }
 
 export const createSchedule = async ({dateStart, dateEnd}: {dateStart: number, dateEnd: number}) => {
-    const data = await fetch(`${source}/calendar`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-        body: JSON.stringify({dateStart: dateStart, dateEnd: dateEnd})
-    })
+    const data = await callApi({endpoint: "/calendar", method: "POST", data: {dateStart: dateStart, dateEnd: dateEnd}})
     
-    const dataJson = await data.json()
     if (data.status === 201) return []
-    if (dataJson.errors?.length) return dataJson.errors
-    return [`Status code: ${data.status}`]
+    if (data.errors.length) return data.errors
+    return unexpectedAppOrServerError(data.status)
 }
 
 export const updateSubject = async (requestBody: {[key: string]: any}) => {
-    const data = await fetch(`${source}/schedule`, {
-        method: "PATCH",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-        body: JSON.stringify(requestBody)
-    })
-    
-    const dataJson = await data.json()
+    const data = await callApi({endpoint: "/schedule", method: "PATCH", data: requestBody})
     if (data.status === 200) return []
-    if (dataJson.errors?.length) return dataJson.errors
-    return [`Status code: ${data.status}`]
+    if (data.errors.length) return data.errors
+    return unexpectedAppOrServerError(data.status)
 }
 
 export const createSubject = async (requestBody: {[key: string]: any}) => {
-    let data = await fetch(`${source}/schedule`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-        body: JSON.stringify(requestBody)
-    })
-    
-    const dataJson = await data.json()
-    if (data.status === 201) return dataJson.row[0]
-    if (dataJson.errors?.length) return dataJson.errors
-    return [`Status code: ${data.status}`]
+    const data = await callApi({endpoint: "/schedule", method: "POST", data: requestBody})
+    if (data.status === 201) return data.data.row[0]
+    if (data.errors.length) return data.errors
+    return unexpectedAppOrServerError(data.status)
 }
 
 export const deleteSubject = async (requestBody: {[key: string]: any}) => {
-    const data = await fetch(`${source}/schedule`, {
-        method: "DELETE",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-        body: JSON.stringify(requestBody)
-    })
-
-    const dataJson = await data.json()
+    const data = await callApi({endpoint: "/schedule", method: "DELETE", data: requestBody})
     if (data.status === 200) return []
-    if (dataJson.errors?.length) return dataJson.errors
-    return [`Status code: ${data.status}`]
+    if (data.errors.length) return data.errors
+    return unexpectedAppOrServerError(data.status)
 }
 
 export const validateTile = {
@@ -260,42 +234,22 @@ export const validateTile = {
 }
 
 export const semesterSchedule = async () => {
-    const data = await fetch(`${source}/calendar/`, {
-                method: "GET",
-                credentials: "include"
-            })
-    const dataJson = await data.json()
-    return {dates: dataJson?.data?.dates, status: data.status}
+    const data = await callApi({endpoint: "/calendar", headers: undefined})
+    return {dates: data.data.data.dates, status: data.status}
 }
 
 export const patchSemesterScheduleDay = async (requestBody: {[key: string]: any}) => {
-    const data = await fetch(`${source}/calendar/day`, {
-        method: "PATCH",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-        body: JSON.stringify(requestBody)
-    })
-    
+    const data = await callApi({endpoint: "/calendar/day", method: "PATCH", data: requestBody})
     if (data.status === 200) return []
-
-    const dataJson = await data.json()
-    if (data.status === 404) return [dataJson.message]
-    if (dataJson.errors?.length) return dataJson.errors
-    return [`Status code: ${data.status}`]
+    if (data.status === 404) return [data.data.message]
+    if (data.errors.length) return data.errors
+    return unexpectedAppOrServerError(data.status)
 }
 
 export const patchSemesterScheduleWeek = async (requestBody: {[key: string]: any}) => {
-    const data = await fetch(`${source}/calendar/week`, {
-        method: "PATCH",
-        headers: {"Content-Type": "application/json"},
-        credentials: "include",
-        body: JSON.stringify(requestBody)
-    })
-    
+    const data = await callApi({endpoint: "/calendar/week", method: "PATCH", data: requestBody})
     if (data.status === 200) return []
-
-    const dataJson = await data.json()
-    if (data.status === 404) return [dataJson.message]
-    if (dataJson.errors?.length) return dataJson.errors
-    return [`Status code: ${data.status}`]
+    if (data.status === 404) return [data.data.message]
+    if (data.errors.length) return data.errors
+    return unexpectedAppOrServerError(data.status)
 }

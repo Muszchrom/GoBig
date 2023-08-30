@@ -223,7 +223,7 @@ router.post('/signin', validationChain, validateCredentials("sign_in"), (req, re
 
 router.get('/signout', (req, res) => {
     res.clearCookie('token');
-    res.end();
+    res.status(200).json({message: "Signed out successfully"});
 })
 
 // delete user

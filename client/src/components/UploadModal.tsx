@@ -1,6 +1,6 @@
+import React, { useState } from "react"
 import { SubmitButton, CancelButton, LoadingButtonAnimation, ErrorList } from "./Common"
 import { ModalWindow } from "./Overlay"
-import { useState } from "react"
 
 /**
  * @param {string} color - Background color for window
@@ -9,10 +9,25 @@ import { useState } from "react"
  * @param {function} handleSoftClose - Ran on every cancel button click
  * @param {function} submitFunction - Must return an array. If this array is empty then upload is considered successfull
  */
-export default function UploadModal({color, children, handleClose, handleSoftClose, submitFunction}) {
-    const [uploading, setUploading] = useState(false)
-    const [uploadErrors, setUploadErrors] = useState([])
-    const [uploadFinished, setUploadFinished] = useState(false)
+
+interface ModalProps {
+    color: string
+    children: React.ReactNode
+    handleClose: () => void
+    handleSoftClose: () => void
+    submitFunction: () => Promise<string[]>
+}
+
+interface ErrModalProps {
+    color: string
+    uploadErrors: string[]
+    handleSoftClose: () => void
+}
+
+export default function UploadModal({color, children, handleClose, handleSoftClose, submitFunction}: ModalProps) {
+    const [uploading, setUploading] = useState<boolean>(false)
+    const [uploadErrors, setUploadErrors] = useState<string[]>([])
+    const [uploadFinished, setUploadFinished] = useState<boolean>(false)
 
     const upload = async () => {
         setUploading(true)
@@ -25,7 +40,7 @@ export default function UploadModal({color, children, handleClose, handleSoftClo
     return (
         <>
             <ModalWindow color={color}>
-                {!!(!uploading & !uploadFinished) && 
+                {!!(!uploading && !uploadFinished) && 
                     <>
                         <span className="heading1">
                             {children}
@@ -48,7 +63,7 @@ export default function UploadModal({color, children, handleClose, handleSoftClo
                         <LoadingButtonAnimation />
                     </>
                 }
-                {!!(uploadFinished & !!uploadErrors.length) && 
+                {!!(uploadFinished && !!uploadErrors.length) && 
                     <>
                         <span className="heading1">
                             Upload failure!
@@ -59,7 +74,7 @@ export default function UploadModal({color, children, handleClose, handleSoftClo
                         </CancelButton>
                     </>
                 }
-                {!!(uploadFinished & !uploadErrors.length) && 
+                {!!(uploadFinished && !uploadErrors.length) && 
                     <>
                         <span className="heading1">
                             Upload success!
@@ -73,7 +88,7 @@ export default function UploadModal({color, children, handleClose, handleSoftClo
         </>
     )
 }
-export function ErrorModal({color, uploadErrors, handleSoftClose}) {
+export function ErrorModal({color, uploadErrors, handleSoftClose}: ErrModalProps) {
     return (
         <ModalWindow color={color}>
             <span className="heading1">
