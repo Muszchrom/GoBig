@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 
-import NotFound from './NotFound'
 import Header from '../components/schedule/Header'
 import TileMounter from '../components/schedule/TileMounter'
 import { getSchedule, getWeeks } from '../components/Requests'
@@ -148,22 +147,22 @@ export default function Schedule({signedIn}) {
             handleWeekChange={handleWeekChange} 
             getAndSetCurrentWeek={getAndSetCurrentWeek}/>
         <Routes>
-            <Route exact path="/" element={<HandleDefaultPath getCurrentDay={getCurrentDay} />} />
+            <Route path="/" element={<HandleDefaultPath getCurrentDay={getCurrentDay} />} />
             {daysOfTheWeek.map((path, index) => (
                 <Route path={`/${path}`} key={index} element={
                     <TileMounter 
-                        signedIn={signedIn} 
+                        signedIn={true} 
                         scheduleForTheDay={schedule[index]}
                         updateScheduleWithoutApiCall={updateScheduleWithoutApiCall}
                         currentWeek={currentWeek}/>
                         
                 } />
             ))}
-            <Route path="*" element={<NotFound goTo={"/"} title={"ERR 404"} />} />
+            <Route path="*" element={<Navigate to="/" replace={true}></Navigate>} />
         </Routes>
     </>
     )
 }
-function HandleDefaultPath(props) {
-    return <Navigate to={props.getCurrentDay()} />
+function HandleDefaultPath({getCurrentDay}) {
+    return <Navigate to={getCurrentDay()} />
 }

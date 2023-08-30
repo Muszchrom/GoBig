@@ -5,7 +5,7 @@ import { NavigateBackTo, SubmitButton } from "../components/Common";
 import UploadModal from "../components/UploadModal";
 import { createSchedule } from "../components/Requests";
 
-export default function CreateSchedule({signedIn, setSignedIn}) {
+export default function CreateSchedule() {
     const [showUploadModal, setShowUploadModal] = useState(false)
     const [exit, setExit] = useState(false)
     const dateStartInput = useRef(null)

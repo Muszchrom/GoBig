@@ -7,11 +7,8 @@ import {
   Navigate
 } from 'react-router-dom';
 
-//monday
-import NotFound from './routes/NotFound';
 import SignIn from './routes/SignIn';
 import SignUp from './routes/SignUp';
-import Landing from './routes/Landing'
 import CreateSchedule from './routes/CreateSchedule';
 import Schedule from './routes/Schedule';
 import { isTokenValid } from './components/Requests';
@@ -32,12 +29,12 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
-          <Route path="/schedule/*" element={(fetchingSignedState || signedIn) ? <Schedule signedIn={signedIn}/> : <Navigate to="/signin" replace={true}/>} />
-          <Route path="/signin" element={<SignIn type="signIn" signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
-          <Route path="/signup" element={<SignUp type="signUp"/>}/>
+          <Route path="/schedule/*" element={(fetchingSignedState || signedIn) ? <Schedule /> : <Navigate to="/signin" replace={true}/>} />
+          <Route path="/signin" element={<SignIn signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
+          <Route path="/signup" element={<SignUp signedIn={signedIn}/>}/>
           <Route path="/schedule/create" element={<CreateSchedule/>} />
-          <Route exact path="/" element={<Landing signedIn={signedIn} setSignedIn={setSignedIn} />}/>
-          <Route path="*" element={<NotFound />} />
+          <Route path="/" element={<Navigate to="/schedule/monday" replace={true}/>}/>
+          <Route path="*" element={<Navigate to="/schedule/monday" replace={true}/>} />
         </Routes>    
       </BrowserRouter>
     </div>

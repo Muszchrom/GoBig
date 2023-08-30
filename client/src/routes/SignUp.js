@@ -4,7 +4,7 @@ import { NavLink, Navigate, useNavigate } from 'react-router-dom'
 import {signUp} from '../components/Requests'
 import { UsernameInput, PasswordInput, ConfirmPasswordInput, ErrorList, SubmitButton, NavigateBackTo } from '../components/Common'
 
-export default function SignUp({signedIn, setSignedIn}) {
+export default function SignUp({signedIn}) {
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
