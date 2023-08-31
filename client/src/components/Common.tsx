@@ -12,13 +12,13 @@ export function LoadingButtonAnimation() {
     );
 }
 
-export function CloseButton({open, setOpen}) {
+export function CloseButton({open, setOpen}: {open: boolean, setOpen: (newState: boolean) => void}) {
     return (
         <button className="absolute-button absolute-close-button" onClick={() => setOpen(!open)}></button>
     );
 }
 
-export function NavigateBackTo({path}) {
+export function NavigateBackTo({path}: {path: string}) {
     const navigate = useNavigate()
     return (
         <button style={{background: "lightcoral", position: "sticky", }} aria-label="Additional info" className="absolute-button" onClick={() => navigate(path, {replace: true})}>
@@ -29,7 +29,7 @@ export function NavigateBackTo({path}) {
 }
   
 
-export function SubmitButton({children, waitingFor, handleClick}) {
+export function SubmitButton({children, waitingFor, handleClick}: {children: React.ReactNode, waitingFor: boolean, handleClick: () => void}) {
     return (
         handleClick ? (
             <button className="signInButton" type="button" onClick={handleClick}>
@@ -47,7 +47,7 @@ export function SubmitButton({children, waitingFor, handleClick}) {
     
 }
 
-export function CancelButton({children, handleClick}) {
+export function CancelButton({children, handleClick}: {children: React.ReactNode, handleClick: () => void}) {
     return (
         <button className="cancelButton" type="button" onClick={handleClick}>
             {children}
@@ -55,7 +55,7 @@ export function CancelButton({children, handleClick}) {
     )
 }
 
-export function ErrorList({errors}) {
+export function ErrorList({errors}: {errors: string[]}) {
     return (
         <>
             {!!errors.length && (
@@ -69,7 +69,7 @@ export function ErrorList({errors}) {
     )
 }
 
-export function UsernameInput({inputValue, handleChange}) {
+export function UsernameInput({inputValue, handleChange}: {inputValue: string, handleChange: (val: string) => void}) {
     return (
         <input 
             className="signInInput" 
@@ -82,7 +82,7 @@ export function UsernameInput({inputValue, handleChange}) {
         </input>
     )
 }
-export function PasswordInput({inputValue, handleChange, isNewPassword}) {
+export function PasswordInput({inputValue, handleChange, isNewPassword}: {inputValue: string, handleChange: (val: string) => void, isNewPassword: boolean}) {
     return (
         <input 
             className="signInInput" 
@@ -95,7 +95,7 @@ export function PasswordInput({inputValue, handleChange, isNewPassword}) {
         </input>
     )
 }
-export function ConfirmPasswordInput({inputValue, handleChange}) {
+export function ConfirmPasswordInput({inputValue, handleChange}: {inputValue: string, handleChange: (val: string) => void}) {
     return (
         <input 
             className="signInInput" 
