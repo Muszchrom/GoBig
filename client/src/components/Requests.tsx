@@ -232,8 +232,22 @@ export const validateTile = {
         return ""
     }
 }
-
-export const semesterSchedule = async () => {
+export interface SemesterScheduleInterface {
+    dates: {
+        month: number
+        weeks: {
+            days: {
+                day: number
+                type: number
+                message: string
+            }[]
+            type: number
+            week: number
+        }[]
+    }[]
+    status: number
+}
+export const semesterSchedule = async (): Promise<SemesterScheduleInterface> => {
     const data = await callApi({endpoint: "/calendar", headers: undefined})
     return {dates: data.data.data.dates, status: data.status}
 }

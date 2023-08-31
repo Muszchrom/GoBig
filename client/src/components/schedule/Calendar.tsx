@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef } from "react"
 import { Overlay } from "../Overlay"
 import Draggable from 'react-draggable'
-import { semesterSchedule, patchSemesterScheduleDay, patchSemesterScheduleWeek } from "../Requests"
+import { semesterSchedule, SemesterScheduleInterface, patchSemesterScheduleDay, patchSemesterScheduleWeek } from "../Requests"
 import UploadModal from "../UploadModal"
 
-export default function Calendar({handleClose}) {
-    const [fetchedData, setFetchedData] = useState({status: -1})
+export default function Calendar({handleClose}: {handleClose: () => void}) {
+    const [fetchedData, setFetchedData] = useState<SemesterScheduleInterface>({dates: [], status: -1})
     useEffect(() => {
         (async () => {
             const data = await semesterSchedule()
@@ -15,7 +15,7 @@ export default function Calendar({handleClose}) {
     return (
         <Overlay backgroundColor={"var(--Background)"} setOpen={handleClose} open={true}>
             <h1 style={{marginTop: "7px", width: "90%"}}>Semester schedule</h1>
-            {fetchedData.dates
+            {fetchedData.dates.length
                 ? fetchedData.dates.map((item, index) => {
                     return (
                         <div key={`1${index}`} style={{minWidth: "fit-content", margin: "0 -1em"}}>
@@ -48,7 +48,6 @@ export default function Calendar({handleClose}) {
                                 </div>
                 
                                 <div className="animated-background calendarTable" style={{height: "200px", borderTop: "2px solid var(--Lightcoral)", borderTopRightRadius: "2px"}}>
-                                    {/* <CalendarTable weeks={item.weeks} monthId={item.month}/> */}
                                 </div>  
                             </div>
                         ) : (fetchedData.status === 401 
@@ -60,7 +59,12 @@ export default function Calendar({handleClose}) {
     )
 }
 
-function CalendarTable({weeks, monthId}) {
+interface CalendarTableInterface {
+    weeks: SemesterScheduleInterface["dates"][0]["weeks"]
+    monthId: SemesterScheduleInterface["dates"][0]["month"]
+}
+
+function CalendarTable({weeks, monthId}: CalendarTableInterface) {
     return (
         <table className="calendarTable">
             <tbody>
@@ -72,7 +76,13 @@ function CalendarTable({weeks, monthId}) {
     )
 }
 
-function MonthsRow({week, monthId, style}) {
+interface MonthsRowInterface {
+    week: SemesterScheduleInterface["dates"][0]["weeks"][0]
+    monthId: SemesterScheduleInterface["dates"][0]["month"]
+    style: {backgroundColor: string}
+}
+
+function MonthsRow({week, monthId, style}: MonthsRowInterface) {
     return (
         <tr className="calendarRow" style={style}>
             <WeekType weekNum={week.week} weekType={week.type}/>
@@ -83,10 +93,15 @@ function MonthsRow({week, monthId, style}) {
     )
 }
 
-function WeekType({weekNum, weekType}) {
+interface WeekTypeInterface {
+    weekNum: SemesterScheduleInterface["dates"][0]["weeks"][0]["week"]
+    weekType: SemesterScheduleInterface["dates"][0]["weeks"][0]["type"]
+}
+
+function WeekType({weekNum, weekType}: WeekTypeInterface) {
     const [typeState, setTypeState] = useState(weekType)
     const [tempTypeState, setTempTypeState] = useState(0)
-    const [show, setShow] = useState([false, 0, 0, 0, 0])
+    const [show, setShow] = useState<[boolean, number, number, number, number]>([false, 0, 0, 0, 0])
     const [showUplaodModal, setShowuploadModal] = useState(false)
 
     const type = (() => {
@@ -96,7 +111,7 @@ function WeekType({weekNum, weekType}) {
         return "Err"
     })()
 
-    const prepareUploadStates = (type) => {
+    const prepareUploadStates = (type: WeekTypeInterface["weekType"]) => {
         setShowuploadModal(true)
         setTempTypeState(type)
     }
@@ -112,13 +127,13 @@ function WeekType({weekNum, weekType}) {
         return errors
     }
 
-    const handleCellClick = (e) => {
+    const handleCellClick = (e: React.MouseEvent<HTMLElement>) => {
         setShow([
             true, 
             e.clientX, 
             e.clientY, 
-            e.target.getBoundingClientRect().width, 
-            e.target.getBoundingClientRect().height
+            e.currentTarget.getBoundingClientRect().width, 
+            e.currentTarget.getBoundingClientRect().height
         ])
     }
 
@@ -127,7 +142,7 @@ function WeekType({weekNum, weekType}) {
     }
 
     return (<>
-        <td onClick={type !== 0 ? handleCellClick : null} className={show[0] ? " cellActive" : ""}>
+        <td onClick={handleCellClick} className={show[0] ? " cellActive" : ""}>
             {type}
             {show[0] && <ContextWindowForWeekType handleClose={handleCloseContext} 
                                                   data={{
@@ -148,10 +163,15 @@ function WeekType({weekNum, weekType}) {
     </>)
 }
 
-function DayComponent({day, monthId}) {
+interface DayComponentInterface {
+    day: SemesterScheduleInterface["dates"][0]["weeks"][0]["days"][0]
+    monthId: SemesterScheduleInterface["dates"][0]["month"]
+}
+
+function DayComponent({day, monthId}: DayComponentInterface) {
     const [dayState, setDayState] = useState(day)
-    const [tempDayState, setTempDayState] = useState({}) // changes only when prepareUploadStates is executed, no big deal
-    const [show, setShow] = useState([false, 0, 0, 0, 0]) // this one changes quite a lot
+    const [tempDayState, setTempDayState] = useState<{message: string, type: number}>({message: "", type: 0}) // changes only when prepareUploadStates is executed, no big deal
+    const [show, setShow] = useState<[boolean, number, number, number, number]>([false, 0, 0, 0, 0]) // this one changes quite a lot
     const [showUplaodModal, setShowuploadModal] = useState(false) // changes after prepareUploadStates so not big deal
 
     const date = new Date(day.day)
@@ -166,7 +186,7 @@ function DayComponent({day, monthId}) {
         return {}
     })()
 
-    const prepareUploadStates = ({message, type}) => {
+    const prepareUploadStates = (type: number, message: string) => {
         setShowuploadModal(true)
         setTempDayState({message: message, type: type})
     }
@@ -186,13 +206,14 @@ function DayComponent({day, monthId}) {
         return errors
     }
 
-    const handleCellClick = (e) => {
+    const handleCellClick = (e: React.MouseEvent<HTMLElement> | undefined) => {
+        if (e === undefined) return 
         setShow([
             true, 
             e.clientX, 
             e.clientY, 
-            e.target.getBoundingClientRect().width, 
-            e.target.getBoundingClientRect().height
+            e.currentTarget.getBoundingClientRect().width, 
+            e.currentTarget.getBoundingClientRect().height
         ])
     }
 
@@ -203,7 +224,7 @@ function DayComponent({day, monthId}) {
     return (
         <td onClick={day.type !== 0 
                         ? handleCellClick  
-                        : null} 
+                        : undefined} 
             style={styles} 
             className={`${((dayState.type !== 0 
                         && dayState.type !== 1) 
@@ -226,14 +247,31 @@ function DayComponent({day, monthId}) {
     )
 }
 
-function ContextWindow({handleClose, data, submitFunction, pos, parentSize}) {
+interface ContextWindowInterface {
+    handleClose: () => void
+    data: {
+        title: string
+        type: WeekTypeInterface["weekType"]
+        message?: string
+    }
+    submitFunction: (type: WeekTypeInterface["weekType"], message: string) => void
+    pos: {
+        x: number 
+        y: number
+    }
+    parentSize: {
+        x: number 
+        y: number
+    }
+}
+
+function ContextWindow({handleClose, data, submitFunction, pos, parentSize}: ContextWindowInterface) {
     const [editMode, setEditMode] = useState(false)
     const [dataState, setDataState] = useState(data)
 
     const nodeRef = useRef(null)
 
     const changeType = () => {
-        console.log(dataState.type)
         if (dataState.type === 1) dataState.type = 3
         else if (dataState.type === 3) dataState.type = 4
         else if (dataState.type === 4) dataState.type = 5
@@ -244,7 +282,9 @@ function ContextWindow({handleClose, data, submitFunction, pos, parentSize}) {
 
     const handleSaveChanges = () => {
         setEditMode(!editMode)
-        submitFunction({message: dataState.message, type: dataState.type})
+        dataState.message 
+            ? submitFunction(dataState.type, dataState.message)
+            : submitFunction(dataState.type, "")
     }
 
     const calcPosition = (() => {
@@ -297,7 +337,11 @@ function ContextWindow({handleClose, data, submitFunction, pos, parentSize}) {
     )
 }
 
-function ContextWindowForWeekType({handleClose, data, submitFunction, pos, parentSize}) {
+interface ContextWindowForWeekTypeInterface extends Omit<ContextWindowInterface, "submitFunction"> {
+    submitFunction: (type: WeekTypeInterface["weekType"]) => void
+}
+
+function ContextWindowForWeekType({handleClose, data, submitFunction, pos, parentSize}: ContextWindowForWeekTypeInterface) {
     const [editMode, setEditMode] = useState(false)
     const [type, setType] = useState(data.type)
 
@@ -369,7 +413,7 @@ function ContextWindowForWeekType({handleClose, data, submitFunction, pos, paren
     )
 }
 
-function ContextWindowHeader({children, handleClose}) {
+function ContextWindowHeader({children, handleClose}: {children: React.ReactNode, handleClose: () => void}) {
     return (
         <div className="contextWindowHeader">
             <div id="handle" className="contextWindowText">
@@ -388,7 +432,7 @@ function ContextWindowHeader({children, handleClose}) {
     )
 }
 
-function Svgs({whichOne}) {
+function Svgs({whichOne}: {whichOne: 0 | 1 | 2 | 3 | 4}) {
     if (whichOne === 0) return (
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M4.5 15L3 20.5L8.5 19M4.5 15L13.5 6M4.5 15C5.33333 14.8333 7 14.9 7 16.5M8.5 19L17.5 10M8.5 19C8.66667 18.1667 8.6 16.5 7 16.5M13.5 6L16.5 3L20.5 7L17.5 10M13.5 6L15.5 8M17.5 10L15.5 8M15.5 8L7 16.5" strokeWidth="1.5" stroke="#322F2B" strokeLinejoin="round"/>
