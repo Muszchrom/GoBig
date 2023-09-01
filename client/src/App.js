@@ -31,8 +31,8 @@ function App() {
       <BrowserRouter>
         {(signedIn || fetchingSignedState) ? (
           <Routes>
-            <Route path="/schedule/*" element={(fetchingSignedState || signedIn) ? <Schedule /> : <Navigate to="/signin" replace={true}/>} />
-            <Route path="/signout" element={signedIn ? <SignOut setSignedIn={setSignedIn} /> : <SignIn signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
+            <Route path="/schedule/*" element={<Schedule />} />
+            <Route path="/signout" element={<SignOut setSignedIn={setSignedIn} />}/>
             <Route path="/schedule/create" element={<CreateSchedule/>} />
             <Route path="*" element={<Navigate to="/schedule/monday" replace={true}/>} />
           </Routes>    
