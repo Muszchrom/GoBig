@@ -29,15 +29,20 @@ function App() {
   return (
     <div className="App">
       <BrowserRouter>
-        <Routes>
-          <Route path="/schedule/*" element={(fetchingSignedState || signedIn) ? <Schedule /> : <Navigate to="/signin" replace={true}/>} />
-          <Route path="/signin" element={<SignIn signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
-          <Route path="/signup" element={<SignUp />}/>
-          <Route path="/signout" element={signedIn ? <SignOut setSignedIn={setSignedIn} /> : <SignIn signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
-          <Route path="/schedule/create" element={<CreateSchedule/>} />
-          <Route path="/" element={<Navigate to="/schedule/monday" replace={true}/>}/>
-          <Route path="*" element={<Navigate to="/schedule/monday" replace={true}/>} />
-        </Routes>    
+        {(signedIn || fetchingSignedState) ? (
+          <Routes>
+            <Route path="/schedule/*" element={(fetchingSignedState || signedIn) ? <Schedule /> : <Navigate to="/signin" replace={true}/>} />
+            <Route path="/signout" element={signedIn ? <SignOut setSignedIn={setSignedIn} /> : <SignIn signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
+            <Route path="/schedule/create" element={<CreateSchedule/>} />
+            <Route path="*" element={<Navigate to="/schedule/monday" replace={true}/>} />
+          </Routes>    
+        ) : (
+          <Routes>
+            <Route path="/signin" element={<SignIn signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
+            <Route path="/signup" element={<SignUp />}/>
+            <Route path="*" element={<Navigate to="/signin" replace={true}/>} />
+          </Routes>    
+        )}
       </BrowserRouter>
     </div>
   );

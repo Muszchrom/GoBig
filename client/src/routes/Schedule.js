@@ -77,7 +77,7 @@ export default function Schedule() {
     useEffect(() => {
         (async () => {
             const [fetchedSchedule, fetchedWeeks] = await Promise.all([getSchedule(), getWeeks()])
-            if (fetchedWeeks.notFound) {
+            if (fetchedWeeks?.notFound) {
                 return setWeeks([false])
             }
             if (fetchedSchedule) {
