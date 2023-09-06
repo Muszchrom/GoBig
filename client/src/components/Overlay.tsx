@@ -9,6 +9,10 @@ interface OverlayProps {
   children: React.ReactNode
 }
 
+interface OverlayNoBoundsProps extends Omit<OverlayProps, "backgroundColor"> {
+  backgroundColor?: string | undefined
+}
+
 interface ModalWindowProps {
   color: string
   children: React.ReactNode
@@ -25,6 +29,20 @@ export function Overlay({backgroundColor, setOpen, open, children}: OverlayProps
       </div>
     </FocusTrap>
   );
+}
+
+export function OverlayNoBounds({backgroundColor, setOpen, open, children}: OverlayNoBoundsProps) {
+  if (backgroundColor === undefined) backgroundColor = "var(--Background)"
+  return (
+    <FocusTrap>
+      <div className="overlay" style={{backgroundColor: backgroundColor, display: "flex", alignItems: "center"}}>
+        <div>
+          <CloseButton setOpen={setOpen} open={open}/>
+          {children}
+        </div>
+      </div>
+    </FocusTrap>
+  )
 }
 
 export function ModalWindow({color, children}: ModalWindowProps) {

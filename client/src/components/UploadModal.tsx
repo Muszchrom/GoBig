@@ -13,8 +13,8 @@ import { ModalWindow } from "./Overlay"
 interface ModalProps {
     color: string
     children: React.ReactNode
-    handleClose: () => void
-    handleSoftClose: () => void
+    handleClose: (e?: Event) => void
+    handleSoftClose: (e?: Event) => void
     submitFunction: () => Promise<string[]>
 }
 
@@ -42,7 +42,7 @@ export default function UploadModal({color, children, handleClose, handleSoftClo
             <ModalWindow color={color}>
                 {!!(!uploading && !uploadFinished) && 
                     <>
-                        <span className="heading1">
+                        <span className="heading1" style={{width: "100%", textAlign: "center"}}>
                             {children}
                         </span>
                         <div className="two-buttons-horizontal-container-v2">

@@ -76,6 +76,23 @@ const callApi = async ({
         }
 }
 
+export const uploadImage = async (formData: FormData) => {
+    const fetchedData = await fetch(`${source}/files`, {
+        method: "POST",
+        credentials: "include",
+        body: formData
+    })
+    return fetchedData
+}
+
+export const getImage = async () => {
+    const fetchedData = await fetch(`${source}/files`, {
+        method: "GET",
+        credentials: "include",
+    })
+    return fetchedData
+}
+
 export const isTokenValid = async (): Promise<boolean> => {
     const data = await callApi({endpoint: "/auth/protected", headers: undefined})
     return data.status === 200
