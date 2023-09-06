@@ -4,8 +4,7 @@ client/src/source.js
 client/build
 nginx/certbot
 outdatedfile
-api/database/schedule.db
-api/database/users.db
-api/database/calendar.db
+api/database/
+api/files/user_files/
 docker-compose.dev.yml
 nginx/nginx/conf/default.conf
