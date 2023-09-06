@@ -458,7 +458,8 @@ function Svgs({whichOne}: {whichOne: 0 | 1 | 2 | 3 | 4}) {
             <path d="M16.5 9.75V6.375M16.5 6.375L13.125 3M16.5 6.375H13.125V3M13.125 3H3V21H16.5V14.25" stroke="#322F2B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>)
     
-    else if (whichOne === 4) return (
+    // if (whichOne === 4)
+    else return (
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M2 9V20H22V9M2 9V5.5H6M2 9H22M22 9V5.5H18M13 11.5L19 17.5M19 11.5L13 17.5M5 12H6.5H8M5 14.5H6.5H8M5 17H8M6 5.5V4M6 5.5H18M18 5.5V4" stroke="#322F2B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>)
