@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser');
 const {authRouter} = require('./auth');
 const {scheduleRouter} = require('./schedule');
 const {calendarRouter} = require('./calendar');
+const {more} = require('./more');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api/static', express.static('files/public'))
 app.use('/api/auth', authRouter);
 app.use('/api/schedule', scheduleRouter);
 app.use('/api/calendar', calendarRouter);
+app.use('/api/files', more)
 
 app.listen(process.env.PORT, () => {
     console.log(`Listening on port ${process.env.PORT}`);
