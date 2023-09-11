@@ -1,9 +1,7 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const { body, validationResult } = require('express-validator');
-const process = require('process');
 const {verifyToken} = require('./auth');
-const { rejects } = require('assert');
 
 const router = express.Router();
 
@@ -75,53 +73,52 @@ db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='days'`, (err
 ########################## SQL ###########################
 ------------------------------------------------------- */
 
-// needed for creation
-const insertIntoMonths = ({userId, month}) => {
-    const sql = "INSERT INTO months(userId, month) VALUES (?, ?)";
+const bulkInsertMonths = ({qString, vals}) => {
+    const sql = `INSERT INTO months(userId, month) VALUES ${qString}`;
     return new Promise((resolve, reject) => {
-        db.run(sql, [userId, month], (err) => {
+        db.run(sql, vals, (err) => {
             if (err) reject(err);
             else resolve(true);
         });
     });
 }
 // needed for creation
-const insertIntoWeeks = ({monthId, week, type}) => {
-    const sql = "INSERT INTO weeks(monthId, week, type) VALUES (?, ?, ?)";
+const bulkInsertWeeks = ({qString, vals, monthIds}) => { // monthIds is just a quick hack. I'll figure something out during transition to typescript 
+    const sql = `INSERT INTO weeks(monthId, week, type) VALUES ${qString}`;
     return new Promise((resolve, reject) => {
-        db.run(sql, [monthId, week, type], (err) => {
+        db.run(sql, vals, (err) => {
+            if (err) reject(err);
+            else resolve(monthIds);
+        });
+    });
+}
+// needed for creation
+const bulkInsertDays = ({qString, vals}) => {
+    const sql = `INSERT INTO days(weekId, day, type, message) VALUES ${qString}`;
+    return new Promise((resolve, reject) => {
+        db.run(sql, vals, (err) => {
             if (err) reject(err);
             else resolve(true);
         });
     });
 }
 // needed for creation
-const insertIntoDays = ({weekId, day, type, message}) => {
-    const sql = "INSERT INTO days(weekId, day, type, message) VALUES (?, ?, ?, ?)";
+const selectIdsFromMonths = (userId) => {
+    const sql = `SELECT id FROM months WHERE userId=? ORDER BY month`;
     return new Promise((resolve, reject) => {
-        db.run(sql, [weekId, day, type, message], (err) => {
+        db.all(sql, [userId], (err, rows) => {
             if (err) reject(err);
-            else resolve(true);
+            else resolve(rows);
         });
     });
 }
 // needed for creation
-const selectIdFromMonths = ({userId, month}) => {
-    const sql = `SELECT id FROM months WHERE userId=? AND month=?`;
+const selectIdsFromWeeks = (queryStringWithMonthIds) => {
+    const sql = `SELECT id FROM weeks WHERE monthId=${queryStringWithMonthIds} ORDER BY week`;
     return new Promise((resolve, reject) => {
-        db.get(sql, [userId, month], (err, row) => {
+        db.all(sql, [], (err, rows) => {
             if (err) reject(err);
-            else resolve(row);
-        });
-    });
-}
-// needed for creation
-const selectIdFromWeeks = ({monthId, week}) => {
-    const sql = `SELECT id FROM weeks WHERE monthId=? AND week=?`;
-    return new Promise((resolve, reject) => {
-        db.get(sql, [monthId, week], (err, row) => {
-            if (err) reject(err);
-            else resolve(row);
+            else resolve(rows);
         });
     });
 }
@@ -211,15 +208,7 @@ const selectMonthForUserId = ({userId}) => {
 /* -------------------------------------------------------
 ####################### Middleware #######################
 ------------------------------------------------------- */
-let start = process.hrtime();
-const logTime = (note) => {
-    const elapsed = process.hrtime(start)[1]/1000000;
-    console.log(process.hrtime(start)[0] + "s, " + elapsed.toFixed(3) + "ms - " + note);
-    start = process.hrtime();
-}
-
 const createDatesObject = (dateStart, dateEnd) => {
-    logTime('createDatesObject #1')
     const createMonthObject = (date, widx) => {
         const workingMonth = new Date(date).getMonth();
         // shitft date to monday of first day of the month
@@ -252,7 +241,6 @@ const createDatesObject = (dateStart, dateEnd) => {
 
         return [weeks, weeksIndex];
     }
-    logTime('createDatesObject #2')
     let weeksIndex = 2;
     const data = [];
 
@@ -266,13 +254,11 @@ const createDatesObject = (dateStart, dateEnd) => {
         });
         dateStart.setMonth(dateStart.getMonth() + 1);
     }
-    logTime('createDatesObject #3')
 
     return data;
 }
 
 const saveDatesObject = (req, res, next) => {
-    logTime('saveDatesObject #1');
     let dateStart = req.body.dateStart;
     let dateEnd = req.body.dateEnd;
 
@@ -289,8 +275,6 @@ const saveDatesObject = (req, res, next) => {
     const userId = res.locals.userId;
     const data = createDatesObject(dateStart, dateEnd);
 
-    logTime('saveDatesObject #2');
-
     const createMonths = () => {
         let monthSqlQueryPart = ""
         let monthValues = data.map((month) => {
@@ -300,25 +284,12 @@ const saveDatesObject = (req, res, next) => {
         monthSqlQueryPart = monthSqlQueryPart.slice(0, monthSqlQueryPart.length-2)
         monthValues = [].concat(...monthValues)
 
-        const sql = `INSERT INTO months(userId, month) VALUES ${monthSqlQueryPart}`;
-        return new Promise((resolve, reject) => {
-            db.run(sql, monthValues, (err) => {
-                if (err) reject(err);
-                else resolve(true);
-            });
-        });
+        return bulkInsertMonths({qString: monthSqlQueryPart, vals: monthValues})
     }
     
     createMonths()
-    .then((result) => { // get generated monthIds
-        const sql = `SELECT id FROM months WHERE userId=? ORDER BY month`;
-        return new Promise((resolve, reject) => {
-            db.all(sql, [userId], (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows);
-            });
-        });
-    }).then((monthIds) => { // create weeks
+    .then((result) => selectIdsFromMonths(userId))
+    .then((monthIds) => { // create weeks
         let weekSqlQueryPart = ""
         let weekValues = data.map((month, idx) => {
             const weeks = month.weeks.map((week) => {
@@ -330,24 +301,12 @@ const saveDatesObject = (req, res, next) => {
         weekSqlQueryPart = weekSqlQueryPart.slice(0, weekSqlQueryPart.length-2)
         weekValues = [].concat(...weekValues)
 
-        const sql = `INSERT INTO weeks(monthId, week, type) VALUES ${weekSqlQueryPart}`;
-        return new Promise((resolve, reject) => {
-            db.run(sql, weekValues, (err) => {
-                if (err) reject(err);
-                else resolve(monthIds);
-            });
-        });
+        return bulkInsertWeeks({qString: weekSqlQueryPart, vals: weekValues, monthIds: monthIds})
     }).then((monthIds) => { // get week ids
         const arrayOfMonthIds = monthIds.map((monthIdObject) => monthIdObject.id)
         let weekSqlQueryPart = arrayOfMonthIds.join(" OR monthId=")
 
-        const sql = `SELECT id FROM weeks WHERE monthId=${weekSqlQueryPart} ORDER BY week`;
-        return new Promise((resolve, reject) => {
-            db.all(sql, [], (err, rows) => {
-                if (err) reject(err);
-                else resolve(rows);
-            });
-        });
+        return selectIdsFromWeeks(weekSqlQueryPart)
     }).then((weekIds) => {
         let idxCounter = 0
         let daySqlQueryPart = ""
@@ -365,26 +324,12 @@ const saveDatesObject = (req, res, next) => {
         daySqlQueryPart = daySqlQueryPart.slice(0, daySqlQueryPart.length-2)
         daysValues = [].concat(...daysValues)
 
-        const sql = `INSERT INTO days(weekId, day, type, message) VALUES ${daySqlQueryPart}`;
-        return new Promise((resolve, reject) => {
-            db.run(sql, daysValues, (err) => {
-                if (err) reject(err);
-                else resolve(true);
-            });
-        });
+        return bulkInsertDays({qString: daySqlQueryPart, vals: daysValues})
     }).then(() => {
-        logTime('saveDatesObject #3');
         return next();
     })
     .catch((err) => {
         return serverErrorHandler(err, res);
-    })
-}
-
-const AAATEMPWWWW =(req, res, next) => {
-    db.run('DELETE FROM months WHERE userId=?', [res.locals.userId], (err) => {
-        console.log(err)
-        next()
     })
 }
 
@@ -398,7 +343,6 @@ const constructorForUserNotPresent = (req, res, next) => {
     console.log(res.locals.userId)
     selectFromMonthWhereUserId({userId: res.locals.userId})
         .then((row) => {
-            logTime('constructorForUserNotPresent');
             if (row === undefined) next()
             else return res.status(400).json({message: "Constructor is already created", errors: ["Constructor is already created"]});
         })
@@ -448,9 +392,9 @@ const responseToValidation = (req, res, next) => {
 ######################### Routes #########################
 ------------------------------------------------------- */
 
-router.post('/', verifyToken, AAATEMPWWWW, constructorForUserNotPresent, saveDatesObject, (req, res) => {
+router.post('/', verifyToken, constructorForUserNotPresent, saveDatesObject, (req, res) => {
     res.status(201).json({
-        message: "hello"
+        message: "Your schedule has been successuflly created"
     })
 })
 
