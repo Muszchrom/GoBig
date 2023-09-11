@@ -1,8 +1,9 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const { body, validationResult } = require('express-validator');
-
+const process = require('process');
 const {verifyToken} = require('./auth');
+const { rejects } = require('assert');
 
 const router = express.Router();
 
@@ -210,8 +211,15 @@ const selectMonthForUserId = ({userId}) => {
 /* -------------------------------------------------------
 ####################### Middleware #######################
 ------------------------------------------------------- */
-// hella slow holy fuck i've actually never experienced something like that before
+let start = process.hrtime();
+const logTime = (note) => {
+    const elapsed = process.hrtime(start)[1]/1000000;
+    console.log(process.hrtime(start)[0] + "s, " + elapsed.toFixed(3) + "ms - " + note);
+    start = process.hrtime();
+}
+
 const createDatesObject = (dateStart, dateEnd) => {
+    logTime('createDatesObject #1')
     const createMonthObject = (date, widx) => {
         const workingMonth = new Date(date).getMonth();
         // shitft date to monday of first day of the month
@@ -244,7 +252,7 @@ const createDatesObject = (dateStart, dateEnd) => {
 
         return [weeks, weeksIndex];
     }
-
+    logTime('createDatesObject #2')
     let weeksIndex = 2;
     const data = [];
 
@@ -258,11 +266,13 @@ const createDatesObject = (dateStart, dateEnd) => {
         });
         dateStart.setMonth(dateStart.getMonth() + 1);
     }
+    logTime('createDatesObject #3')
 
     return data;
 }
-// hella slow holy fuck i've actually never experienced something like that before
+
 const saveDatesObject = (req, res, next) => {
+    logTime('saveDatesObject #1');
     let dateStart = req.body.dateStart;
     let dateEnd = req.body.dateEnd;
 
@@ -279,50 +289,105 @@ const saveDatesObject = (req, res, next) => {
     const userId = res.locals.userId;
     const data = createDatesObject(dateStart, dateEnd);
 
-    const promises = []
+    logTime('saveDatesObject #2');
 
-    const saveDays = (weekId, days) => {
+    const createMonths = () => {
+        let monthSqlQueryPart = ""
+        let monthValues = data.map((month) => {
+            monthSqlQueryPart += "(?, ?), "
+            return [userId, month.month]
+        })
+        monthSqlQueryPart = monthSqlQueryPart.slice(0, monthSqlQueryPart.length-2)
+        monthValues = [].concat(...monthValues)
+
+        const sql = `INSERT INTO months(userId, month) VALUES ${monthSqlQueryPart}`;
         return new Promise((resolve, reject) => {
-            const promises = []
-            days.forEach((day) => {
-                promises.push(insertIntoDays({weekId: weekId, day: day.day, type: day.type, message: day.message}))
-            })
-            Promise.all(promises).then(() => resolve(true)).catch((err) => reject(err))
-        })
-    }
-
-    const saveWeeks = (monthId, weeks) => {
-        return new Promise((resolve, reject) => {
-            const promises = []
-            weeks.forEach((week) => {
-                promises.push(
-                    insertIntoWeeks({monthId: monthId, week: week.week, type: week.type})
-                        .then(() => selectIdFromWeeks({monthId: monthId, week: week.week}))
-                        .then((weekId) => saveDays(weekId.id, week.days)))
-            })
-            Promise.all(promises).then(() => resolve(true)).catch((err) => reject(err))
-        })
-    }
-
-    data.forEach((month) => {
-        promises.push(
-            insertIntoMonths({userId: userId, month: month.month})
-                .then(() => selectIdFromMonths({userId: userId, month: month.month}))
-                .then(({id}) => {
-                    const monthId = id
-                    return saveWeeks(monthId, month.weeks)
-                })
-        )
-    })
-    Promise.all(promises)
-        .then((val) => {
-            console.log(val)
-            return next();
-        })
-        .catch((err) => {
-            return serverErrorHandler(err, res);
+            db.run(sql, monthValues, (err) => {
+                if (err) reject(err);
+                else resolve(true);
+            });
         });
+    }
+    
+    createMonths()
+    .then((result) => { // get generated monthIds
+        const sql = `SELECT id FROM months WHERE userId=? ORDER BY month`;
+        return new Promise((resolve, reject) => {
+            db.all(sql, [userId], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+    }).then((monthIds) => { // create weeks
+        let weekSqlQueryPart = ""
+        let weekValues = data.map((month, idx) => {
+            const weeks = month.weeks.map((week) => {
+                weekSqlQueryPart += "(?, ?, ?), "
+                return [monthIds[idx].id, week.week, week.type]
+            })
+            return [].concat(...weeks)
+        })
+        weekSqlQueryPart = weekSqlQueryPart.slice(0, weekSqlQueryPart.length-2)
+        weekValues = [].concat(...weekValues)
+
+        const sql = `INSERT INTO weeks(monthId, week, type) VALUES ${weekSqlQueryPart}`;
+        return new Promise((resolve, reject) => {
+            db.run(sql, weekValues, (err) => {
+                if (err) reject(err);
+                else resolve(monthIds);
+            });
+        });
+    }).then((monthIds) => { // get week ids
+        const arrayOfMonthIds = monthIds.map((monthIdObject) => monthIdObject.id)
+        let weekSqlQueryPart = arrayOfMonthIds.join(" OR monthId=")
+
+        const sql = `SELECT id FROM weeks WHERE monthId=${weekSqlQueryPart} ORDER BY week`;
+        return new Promise((resolve, reject) => {
+            db.all(sql, [], (err, rows) => {
+                if (err) reject(err);
+                else resolve(rows);
+            });
+        });
+    }).then((weekIds) => {
+        let idxCounter = 0
+        let daySqlQueryPart = ""
+        let daysValues = data.map((month) => {
+            const weeks = month.weeks.map((week) => {
+                const days = week.days.map((day) => {
+                    daySqlQueryPart += "(?, ?, ?, ?), "
+                    return [weekIds[idxCounter].id, day.day, day.type, day.message]
+                })
+                idxCounter += 1
+                return [].concat(...days)
+            })
+            return [].concat(...weeks)
+        })
+        daySqlQueryPart = daySqlQueryPart.slice(0, daySqlQueryPart.length-2)
+        daysValues = [].concat(...daysValues)
+
+        const sql = `INSERT INTO days(weekId, day, type, message) VALUES ${daySqlQueryPart}`;
+        return new Promise((resolve, reject) => {
+            db.run(sql, daysValues, (err) => {
+                if (err) reject(err);
+                else resolve(true);
+            });
+        });
+    }).then(() => {
+        logTime('saveDatesObject #3');
+        return next();
+    })
+    .catch((err) => {
+        return serverErrorHandler(err, res);
+    })
 }
+
+const AAATEMPWWWW =(req, res, next) => {
+    db.run('DELETE FROM months WHERE userId=?', [res.locals.userId], (err) => {
+        console.log(err)
+        next()
+    })
+}
+
 // default handler for unhandled server errors
 const serverErrorHandler = (err, res) => {
     console.warn(err);
@@ -333,7 +398,7 @@ const constructorForUserNotPresent = (req, res, next) => {
     console.log(res.locals.userId)
     selectFromMonthWhereUserId({userId: res.locals.userId})
         .then((row) => {
-            console.log(row)
+            logTime('constructorForUserNotPresent');
             if (row === undefined) next()
             else return res.status(400).json({message: "Constructor is already created", errors: ["Constructor is already created"]});
         })
@@ -383,8 +448,7 @@ const responseToValidation = (req, res, next) => {
 ######################### Routes #########################
 ------------------------------------------------------- */
 
-// hella slow holy fuck i've actually never experienced something like that before
-router.post('/', verifyToken, constructorForUserNotPresent, saveDatesObject, (req, res) => {
+router.post('/', verifyToken, AAATEMPWWWW, constructorForUserNotPresent, saveDatesObject, (req, res) => {
     res.status(201).json({
         message: "hello"
     })
