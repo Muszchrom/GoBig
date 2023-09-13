@@ -1,12 +1,13 @@
-const express = require('express');
-const { body, validationResult } = require('express-validator');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken')
-const sqlite3 = require('sqlite3').verbose();
+import express, { NextFunction, Request, Response } from 'express';
+import { body, validationResult } from 'express-validator';
+import * as bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
+import sqlite from 'sqlite3';
+const sqlite3 = sqlite.verbose()
 
 const router = express.Router();
 
-const db = new sqlite3.Database('./database/users.db', sqlite3.OPEN_READWRITE, (err, result) => {
+const db = new sqlite3.Database('./database/users.db', sqlite3.OPEN_READWRITE, (err) => {
     if (err) {
         console.warn(err);
         return;
@@ -25,11 +26,21 @@ db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}
 });
 
 /* -------------------------------------------------------
+#################### TYPES/INTERFACES ####################
+------------------------------------------------------- */
+
+interface UsersTable {
+    id: number,
+    username: string,
+    password: string
+}
+
+/* -------------------------------------------------------
 ########################## SQL ###########################
 ------------------------------------------------------- */
 
 // if successfully created, resolve(true)
-const createUser = (username, hash) => {
+const createUser = (username: string, hash: string): Promise<true> => {
     const sql = `INSERT INTO users(username, password) VALUES (?, ?)`;
 
     return new Promise((resolve, reject) => {
@@ -44,11 +55,11 @@ const createUser = (username, hash) => {
 }
 
 // return row with specified username, else reject promise
-const getUserByUsername = (username) => {
+const getUserByUsername = (username: string): Promise<UsersTable> => {
     const sql = `SELECT * FROM users WHERE username = ?`;
 
     return new Promise((resolve, reject) => {
-        db.get(sql, username, (err, row) => {
+        db.get(sql, username, (err, row: UsersTable) => {
             if (err) {
                 reject(err);
                 return;
@@ -59,7 +70,7 @@ const getUserByUsername = (username) => {
 }
 
 // if successfully deleted, resolve(true)
-const deleteUser = (userId, username, hash) => {
+const deleteUser = (userId: string | number, username: string, hash: string): Promise<true> => {
     const sql = `DELETE FROM users WHERE id = ? AND username = ? AND password = ?`;
 
     return new Promise((resolve, reject) => {
@@ -102,12 +113,10 @@ const validationChainConfirmPassword = [
 ] 
 
 // call next if validation succeeds else 401 or 400
-const validateCredentials = (responseType) => {
-    return (req, res, next) => {
+const validateCredentials = (responseType: "sign_in" | "sign_up") => {
+    return (req: Request, res: Response, next: NextFunction) => {
         const errors = validationResult(req);
-        if (errors.isEmpty()) {
-            return next();
-        }
+        if (errors.isEmpty()) return next();
     
         if (responseType === "sign_in") {
             return res.status(401).json({message: "Validation error occured, check errors for more info", errors: ["Invalid username and/or password"]});
@@ -119,7 +128,7 @@ const validateCredentials = (responseType) => {
 }
 
 // call next() if user doesnt exist, else 403
-const userExists = (req, res, next) => {
+const userExists = (req: Request, res: Response, next: NextFunction) => {
     getUserByUsername(req.body.username)
         .then((row) => {
             if (row) return res.status(403).json({message: "Validation error occured, check errors for more info", errors: ["User already exists"]});;
@@ -132,12 +141,12 @@ const userExists = (req, res, next) => {
 }
 
 // call next() if valid token, else 401 invalida token or no token
-const verifyToken = (req, res, next) => {
+const verifyToken = (req: Request, res: Response, next: NextFunction) => {
     // const token = req.headers['authorization']?.split(' ')[1] || req.cookies.token;
-    const token = req.signedCookies.token;
+    const token: string = req.signedCookies.token;
     if (token) {
-        jwt.verify(token, process.env.JWT_KEY, (err, data) => {
-            if (err) {
+        jwt.verify(token, process.env.JWT_KEY!, (err, data) => {
+            if (err || !data || typeof data !== 'object') {
                 return res.status(401).json({message: "Access token is invalid", errors: ["Access token is invalid"]});
             } else {
                 res.locals.userId = data.userId;
@@ -149,20 +158,19 @@ const verifyToken = (req, res, next) => {
     }
 }
 
-
 /* -------------------------------------------------------
 ######################### Routes #########################
 ------------------------------------------------------- */
 
-router.get('/protected', verifyToken, (req, res) => {
-    res.status(200).json({message: "Secret information"})
+router.get('/protected', verifyToken, (req: Request, res: Response) => {
+    res.status(200).json({message: "You're logged in"})
 })
 
 // sign up
-router.post('/signup', validationChain, validationChainConfirmPassword, validateCredentials("sign_up"), userExists, (req, res) => {
-    const password = req.body.password;
-    const username = req.body.username;
-    const saltRounds = 10;
+router.post('/signup', validationChain, validationChainConfirmPassword, validateCredentials("sign_up"), userExists, (req: Request, res: Response) => {
+    const password: string = req.body.password;
+    const username: string = req.body.username;
+    const saltRounds: number = 10;
 
     bcrypt
         .hash(password, saltRounds)
@@ -183,15 +191,15 @@ router.post('/signup', validationChain, validationChainConfirmPassword, validate
 });
 
 // sign in
-router.post('/signin', validationChain, validateCredentials("sign_in"), (req, res) => {
-    const password = req.body.password;
-    const username = req.body.username;
+router.post('/signin', validationChain, validateCredentials("sign_in"), (req: Request, res: Response) => {
+    const password: string = req.body.password;
+    const username: string = req.body.username;
 
     // check if user exists
     getUserByUsername(username)
         // compare provided password with password in db
-        .then(u => {
-            if (!u) return 0;
+        .then((u) => {
+            if (!u) return false;
             res.locals.userId = u.id;
             return bcrypt.compare(password, u.password);
         })
@@ -200,11 +208,11 @@ router.post('/signin', validationChain, validateCredentials("sign_in"), (req, re
         .then((result) => {
             if (result && res.locals.userId) {
                 const token = jwt.sign({userId: res.locals.userId}, 
-                                        process.env.JWT_KEY, 
+                                        process.env.JWT_KEY!, 
                                         {expiresIn: process.env.JWT_EXPIRES_IN});
                 res.cookie('token', token, {
                     httpOnly: true,
-                    maxAge: parseInt(process.env.COOKIE_MAX_AGE),
+                    maxAge: parseInt(process.env.COOKIE_MAX_AGE!),
                     secure: true,
                     signed: true,
                     sameSite: true
@@ -221,31 +229,31 @@ router.post('/signin', validationChain, validateCredentials("sign_in"), (req, re
 
 })
 
-router.get('/signout', (req, res) => {
+router.get('/signout', (req: Request, res: Response) => {
     res.clearCookie('token');
     res.status(200).json({message: "Signed out successfully"});
 })
 
 // delete user
-router.delete('/temp', verifyToken, validationChain, validateCredentials("sign_in"), (req, res) => {
+router.delete('/temp', verifyToken, validationChain, validateCredentials("sign_in"), (req: Request, res: Response) => {
     if (!res.locals.userId) {
         res.status(500).json({message: "An internal server error occured, could not find an userId"})
     }
     getUserByUsername(req.body.username)
         .then((u) => {
-            if (!u) return 0;
+            if (!u) return false;
             else res.locals.user = u;
 
             if (res.locals.userId === u.id && req.body.username === u.username) {
                 return bcrypt.compare(req.body.password, u.password); 
             }
-            return 0;
+            return false;
         })
         .then((result) => {
             if (result) {
                 return deleteUser(res.locals.userId.toString(), req.body.username, res.locals.user.password);
             } else {
-                return 0;
+                return false;
             }
         })
         .then((result) => {
@@ -261,4 +269,4 @@ router.delete('/temp', verifyToken, validationChain, validateCredentials("sign_i
         })
 })
 
-module.exports = {authRouter: router, verifyToken: verifyToken};
+export {router as authRouter, verifyToken}

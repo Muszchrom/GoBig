@@ -1,12 +1,13 @@
-const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
-const { body, validationResult } = require('express-validator');
-
-const {verifyToken} = require('./auth');
+import express, { NextFunction, Request, Response } from 'express';
+import { body, validationResult } from 'express-validator';
+import sqlite from 'sqlite3';
+const sqlite3 = sqlite.verbose()
+import { verifyToken } from './auth';
+import { KeyObjectType } from 'crypto';
 
 const router = express.Router();
 
-const db = new sqlite3.Database('./database/schedule.db', sqlite3.OPEN_READWRITE, (err, result) => {
+const db = new sqlite3.Database('./database/schedule.db', sqlite3.OPEN_READWRITE, (err) => {
     if (err) {
         console.warn(err);
         return;
@@ -39,71 +40,81 @@ db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='schedule'`, 
 });
 
 /* -------------------------------------------------------
+#################### TYPES/INTERFACES ####################
+------------------------------------------------------- */
+
+interface ScheduleTable {
+    id: number,
+    day: number,
+    start: string,
+    end: string,
+    subjectName: string,
+    subjectType: string,
+    hall: string,
+    teacher: string,
+    icon: string,
+    additionalInfo: string | undefined,
+    weekStart: number,
+    weekEnd: number,
+    weekType: number,
+    userId: number
+}
+
+/* -------------------------------------------------------
 ########################## SQL ###########################
 ------------------------------------------------------- */
 
-const createSubject = (valuesArray) => {
+const createSubject = (vals: Omit<ScheduleTable, "id">): Promise<true> => {
+    const valuesArray = Object.keys(vals).map((k) => vals[k as keyof Omit<ScheduleTable, "id">])
     const sql = `INSERT INTO schedule(day, start, end, subjectName, subjectType, hall, teacher, icon, additionalInfo, weekStart, weekEnd, weekType, userId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-
     return new Promise((resolve, reject) => {
         db.run(sql, valuesArray, (err) => {
-            if (err) {
-                reject(err);
-                return;
-            }
+            if (err) reject(err);
             resolve(true);
         })
     });
 }
 
-const getSubjectsByData = (valuesArray) => {
+const getSubjectsByData = (vals: Omit<ScheduleTable, "id">): Promise<ScheduleTable[]> => {
+    const valuesArray = Object.keys(vals).map((k) => vals[k as keyof Omit<ScheduleTable, "id">])
     const sql = `SELECT * FROM schedule WHERE day=? AND start=? AND end=? AND subjectName=? AND subjectType=? AND hall=? AND teacher=? AND icon=? AND additionalInfo=? AND weekStart=? AND weekEnd=? AND weekType=? AND userId=?`
 
     return new Promise((resolve, reject) => {
-        db.all(sql, valuesArray, (err, rows) => {
-            if (err) {
-                reject(err);
-                return;
-            }
+        db.all(sql, valuesArray, (err, rows: ScheduleTable[]) => {
+            if (err) reject(err);
             resolve(rows);
         })
     });
 }
 
-const getSubjectsByDay = (day, userId) => {
+const getSubjectsByDay = (day: ScheduleTable["day"], userId: ScheduleTable["userId"]): Promise<ScheduleTable[]> => {
     const sql = `SELECT * FROM schedule WHERE day=? AND userId=? ORDER BY start`
 
     return new Promise((resolve, reject) => {
-        db.all(sql, [day, userId], (err, rows) => {
-            if (err) {
-                reject(err);
-                return;
-            }
+        db.all(sql, [day, userId], (err, rows: ScheduleTable[]) => {
+            if (err) reject(err);
             resolve(rows);
         })
     });
 }
 
-const getSchedule = (userId) => {
+const getSchedule = (userId: ScheduleTable["userId"]): Promise<ScheduleTable[]> => {
     const sql = `SELECT * FROM schedule WHERE userId=? ORDER BY day, start`
 
     return new Promise((resolve, reject) => {
-        db.all(sql, userId, (err, rows) => {
-            if (err) {
-                reject(err)
-                return
-            }
+        db.all(sql, userId, (err, rows: ScheduleTable[]) => {
+            if (err) reject(err)
             resolve(rows);
         })
     })
 }
 
-const updateSubject = (id, queryFields, values) => {
+const updateSubject = (id: ScheduleTable["id"], queryFields: string, values: (number | string | undefined)[]): Promise<number> => {
     const sql = `UPDATE schedule SET ${queryFields} WHERE id=?`
     values.push(id);
 
     return new Promise((resolve, reject) => {
-        db.run(sql, values, function (err, rows) {
+        db.run(sql, values, function (err) {
             if (err) {
                 reject(err);
                 return;
@@ -113,11 +124,11 @@ const updateSubject = (id, queryFields, values) => {
     });
 }
 
-const deleteSubject = (id, userId) => {
+const deleteSubject = (id: ScheduleTable["id"], userId: ScheduleTable["userId"]): Promise<number> => {
     const sql = `DELETE FROM schedule WHERE id=? AND userId=?`
 
     return new Promise((resolve, reject) => {
-        db.run(sql, [id, userId], function (err, rows) {
+        db.run(sql, [id, userId], function (err) {
             if (err) {
                 reject(err);
                 return;
@@ -170,7 +181,7 @@ const validationChain = [
 ]
 
 // Call next() if validation errors array is empty
-const validateSubject = (req, res, next) => {
+const validateSubject = (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (errors.isEmpty()) {
         return next();
@@ -183,7 +194,7 @@ const validateSubject = (req, res, next) => {
 }
 
 // Call next() if updateArray fits all conditions
-const validateUpdateArray = (req, res, next) => {
+const validateUpdateArray = (req: Request, res: Response, next: NextFunction) => {
     if (!(Array.isArray(req.body.updateArray))) {
         return res.status(400).json({
             message: "Update array is not an array", 
@@ -214,7 +225,7 @@ const validateUpdateArray = (req, res, next) => {
 }
 
 // Call next() if id is a number
-const validateId = (req, res, next) => {
+const validateId = (req: Request, res: Response, next: NextFunction) => {
     if (isNaN(parseInt(req.body.id)) || req.body.id != parseInt(req.body.id)) {
         return res.status(400).json({
             message: "Inavild id", 
@@ -224,7 +235,7 @@ const validateId = (req, res, next) => {
 }
 
 // Call next() if validation turns out successfull, Use after validateUpdateArray()!
-const validateUpdate = async (req, res, next) => {
+const validateUpdate = async (req: Request, res: Response, next: NextFunction) => {
     const columnsReference = ['day', 'start', 'end', 'subjectName', 'subjectType', 'hall', 'teacher', 'icon', 'additionalInfo', 'weekStart', 'weekEnd', 'weekType'];
 
     for (let i=0; i<req.body.updateArray.length; i++) {
@@ -239,7 +250,7 @@ const validateUpdate = async (req, res, next) => {
 ######################### Routes #########################
 ------------------------------------------------------- */
 
-router.get('/', verifyToken, (req, res) => {
+router.get('/', verifyToken, (req: Request, res: Response) => {
     getSchedule(res.locals.userId)
         .then((rows) => {
             res.status(200).json({message: "Rows selected successfully!", rows: rows})
@@ -251,7 +262,7 @@ router.get('/', verifyToken, (req, res) => {
 })
 
 // Get schedule for given day
-router.get('/:day', verifyToken, (req, res) => {
+router.get('/:day', verifyToken, (req: Request, res: Response) => {
     const day = parseInt(req.params.day);
     if (isNaN(day)) return res.status(400).json({message: "Day is not a valid number or was not provided", erros: ["Day is not a valid number or was not provided"]})
     
@@ -272,35 +283,35 @@ router.get('/:day', verifyToken, (req, res) => {
 })
 
 // Create new schedule row
-router.post('/', verifyToken, validationChain, validateSubject, (req, res) => {
-    valuesArray = [
-        req.body.day, 
-        req.body.start, 
-        req.body.end, 
-        req.body.subjectName, 
-        req.body.subjectType, 
-        req.body.hall, 
-        req.body.teacher, 
-        req.body.icon, 
-        req.body.additionalInfo, 
-        req.body.weekStart, 
-        req.body.weekEnd, 
-        req.body.weekType,
-        res.locals.userId
-    ]
+router.post('/', verifyToken, validationChain, validateSubject, (req: Request, res: Response) => {
+    const vals: Omit<ScheduleTable, "id"> = {
+        day: req.body.day, 
+        start: req.body.start, 
+        end: req.body.end, 
+        subjectName: req.body.subjectName, 
+        subjectType: req.body.subjectType, 
+        hall: req.body.hall, 
+        teacher: req.body.teacher, 
+        icon: req.body.icon, 
+        additionalInfo: req.body.additionalInfo, 
+        weekStart: req.body.weekStart, 
+        weekEnd: req.body.weekEnd, 
+        weekType: req.body.weekType,
+        userId: res.locals.userId
+    }
 
     // check if subject exists (need that to retrieve id later on)
-    getSubjectsByData(valuesArray)
+    getSubjectsByData(vals)
         .then((rows) => {
             if (rows.length) {
                 throw new Error("subject_exists")
             } else {
-                return createSubject(valuesArray)
+                return createSubject(vals)
             }
         })
         .then((result) => {
             if (result) {
-                return getSubjectsByData(valuesArray)
+                return getSubjectsByData(vals)
             } else {
                 throw new Error("Unable to save user in database")
             }
@@ -369,4 +380,4 @@ router.delete('/', verifyToken, validateId, (req, res) => {
         });
 });
 
-module.exports = {scheduleRouter: router};
+export {router as scheduleRouter}

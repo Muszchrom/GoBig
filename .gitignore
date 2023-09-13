@@ -5,6 +5,7 @@ client/build
 nginx/certbot
 outdatedfile
 api/database/
+api/dist/
 api/files/user_files/
 docker-compose.dev.yml
 nginx/nginx/conf/default.conf
