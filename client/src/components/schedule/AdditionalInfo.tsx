@@ -6,6 +6,7 @@ import UploadModal from '../UploadModal';
 import { MultilineInput, MultilineInputLoading } from '../FormElements';
 import { SubmitButton } from '../Common';
 import { getImage, uploadImage } from '../Requests';
+import { error } from 'console';
 
 export default function AdditionalInfo() {
   const [open, setOpen] = useState(false) // is This window open
@@ -91,7 +92,9 @@ function ImageBox() {
       reader.readAsDataURL(userImage);
       return []
     } else {
-      return  ["An error occured"]
+      const errors = await response.json();
+      if (!errors.errors.length) return ["An error occured"]
+      else return errors.errors 
     }
   }
 
