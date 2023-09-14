@@ -11,4 +11,5 @@ CMD ["npm", "run", "dev"]
 FROM base as prod
 RUN npm ci --production
 COPY . .
-CMD ["node", "index.js"]
+CMD ["npm", "run", "build"]
+CMD ["node", "dist/index.js"]

@@ -1,11 +1,9 @@
 api/node_modules
 client/node_modules
-client/src/source.js
-client/build
 nginx/certbot
-outdatedfile
 api/database/
 api/dist/
 api/files/user_files/
-docker-compose.dev.yml
+docker-compose.yml
+firstreadme
 nginx/nginx/conf/default.conf
