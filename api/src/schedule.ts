@@ -34,7 +34,7 @@ db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='schedule'`, 
             additionalInfo TEXT, 
             weekStart INTEGER NOT NULL, 
             weekEnd INTEGER NOT NULL, 
-            weekType INTEGER NOT NULL
+            weekType INTEGER NOT NULL,
             userId INTEGER NOT NULL)`);
     }
 });
