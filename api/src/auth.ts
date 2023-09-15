@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
+import { serverErrorHandler } from './commonResponse';
 
 import { usersTable } from './db';
 
@@ -58,8 +59,7 @@ const userExists = (req: Request, res: Response, next: NextFunction) => {
             return next();
         })
         .catch((err) => {
-            console.warn(`An error occured at userExists\n ${err}`);
-            return res.status(500).json({message: "An internal error occured"});
+            serverErrorHandler(err, res, "middleware userExists(...), usersTable.getUserByUsername(...), catch block")
         });
 }
 
@@ -100,16 +100,11 @@ router.post('/signup', validationChain, validationChainConfirmPassword, validate
         .then((hash) => {
             return usersTable.createUser(username, hash);
         })
-        .then((result) => {
-            if (result) {
-                return res.status(201).json({message: "User successfully created"});
-            } else {
-                return res.status(500).json({message: "Unable to save user in database", errors: ["Unable to save user in database"]});
-            }
+        .then(() => {
+            res.status(201).json({message: "User successfully created"});
         })
         .catch((err) => {
-            console.warn(err);
-            return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]});
+            serverErrorHandler(err, res, "router.post('/', ... ), bcrypt, catch block")
         })
 });
 
@@ -140,14 +135,13 @@ router.post('/signin', validationChain, validateCredentials("sign_in"), (req: Re
                     signed: true,
                     sameSite: true
                 })
-                return res.status(201).json({message: "Singed in successfully"});
+                res.status(201).json({message: "Singed in successfully"});
             } else {
-                return res.status(401).json({message: "Invalid username and/or password"});
+                res.status(401).json({message: "Invalid username and/or password"});
             }
         })
         .catch((err) => {
-            console.warn(err);
-            return res.status(500).json({message: "An internal server error occured"});
+            serverErrorHandler(err, res, "router.post('/signin', ... ), usersTable.getUserByUsername(...), catch block")
         });
 
 })
@@ -159,36 +153,34 @@ router.get('/signout', (req: Request, res: Response) => {
 
 // delete user
 router.delete('/temp', verifyToken, validationChain, validateCredentials("sign_in"), (req: Request, res: Response) => {
-    if (!res.locals.userId) {
-        res.status(500).json({message: "An internal server error occured, could not find an userId"})
-    }
     usersTable.getUserByUsername(req.body.username)
         .then((u) => {
-            if (!u) return false;
+            if (!u) throw new Error("User_not_found")
             else res.locals.user = u;
 
             if (res.locals.userId === u.id && req.body.username === u.username) {
                 return bcrypt.compare(req.body.password, u.password); 
+            } else {
+                throw new Error("Credentials_dont_match");
             }
-            return false;
         })
         .then((result) => {
             if (result) {
                 return usersTable.deleteUser(res.locals.userId.toString(), req.body.username, res.locals.user.password);
             } else {
-                return false;
+                throw new Error("Credentials_dont_match");
             }
         })
-        .then((result) => {
-            if (result) {
-                return res.status(200).json({message: "User successfully deleted"});
-            } else {
-                return res.status(500).json({message: "Unable to delete user in database"});
-            }
+        .then(() => {
+            res.status(200).json({message: "User successfully deleted"});
         })
         .catch((err) => {
-            console.warn(err);
-            return res.status(500).json({message: "An internal server error occured"});
+            if (err.message === "User_not_found" || err.message === "Credentials_dont_match") {
+                console.log("Suspicious behavior at delete auth route")
+                res.status(400).json({message: "Invalid credentials", errors: ["Invalid credentials"]})
+            } else {
+                serverErrorHandler(err, res, "router.delete('/', ... ), usersTable.getUserByUsername(...), catch block")
+            }
         })
 })
 

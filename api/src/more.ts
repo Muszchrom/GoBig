@@ -4,7 +4,7 @@ import { verifyToken } from './auth';
 import path from 'path'
 import * as fs from 'node:fs/promises'
 import { getRandomValues } from 'node:crypto';
-
+import { serverErrorHandler } from './commonResponse';
 import { filesTable } from './db';
 
 const filesDest = `${__dirname}/../files/user_files`
@@ -38,15 +38,6 @@ const upload = multer({
 const router = express.Router();
 
 /* -------------------------------------------------------
-####################### Middleware #######################
-------------------------------------------------------- */
-
-const serverErrorHandler = (err: Error, res: Response) => {
-    console.warn(err);
-    return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]})
-}
-
-/* -------------------------------------------------------
 ######################### Routes #########################
 ------------------------------------------------------- */
 
@@ -54,14 +45,14 @@ router.get('/', verifyToken, (req, res) => {
     filesTable.getFileName(res.locals.userId)
         .then((row) => {
             if (row) {
-                return res.sendFile(row.filename, {root: filesDest, dotfiles: "allow"})
+                res.sendFile(row.filename, {root: filesDest, dotfiles: "allow"})
             }
             else {
-                return res.status(404).json({message: "Could not find the file", errors: ["Could not find the file"]})
+                res.status(404).json({message: "Could not find the file", errors: ["Could not find the file"]})
             }
         })
         .catch((err) => {
-            return serverErrorHandler(err, res)
+            serverErrorHandler(err, res, "router.get('/', ... ), filesTable.getFileName(...),  catch block")
         })
 })
 
@@ -71,8 +62,7 @@ router.post('/', verifyToken, (req: Request, res: Response) => {
             return res.status(404).json({errors: [err.message]})
         }
         else if (err) {
-            console.warn(err)
-            return res.status(500).json({errors: ["An internal server error occured (multer)"]})
+            serverErrorHandler(err, res, "router.post('/', ... ), upload(), cb, else if (err)", ["An internal server error occured (multer)"])
         } else {
             filesTable.getFileName(res.locals.userId)
                 .then((row) => {
@@ -97,7 +87,7 @@ router.post('/', verifyToken, (req: Request, res: Response) => {
                 })
                 .catch((err) => {
                     if (err.message === "Filename not found") return res.status(400).json({message: "Filename not found", errors: ["Filename not found"]})
-                    serverErrorHandler(err, res)
+                    serverErrorHandler(err, res, "router.post('/', ... ), upload, cb, filesTable.getFileName(), catch block")
                 })
         }
     })

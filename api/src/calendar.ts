@@ -9,6 +9,7 @@ import {
     calendarDb_BulkInsertWeeksVals, 
     calendarDb_BulkInsertDaysVals
 } from "./db";
+import { serverErrorHandler } from './commonResponse';
 
 const router = express.Router();
 
@@ -144,15 +145,10 @@ const saveDatesObject = (req: Request, res: Response, next: NextFunction) => {
         return next();
     })
     .catch((err) => {
-        return serverErrorHandler(err, res);
+        serverErrorHandler(err, res, "middleware saveDatesObject(), createMonths(), catch block");
     })
 }
 
-// default handler for unhandled server errors
-const serverErrorHandler = (err: Error, res: Response) => {
-    console.warn(err);
-    return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]})
-}
 // call next if rows === undefined for userId
 const constructorForUserNotPresent = (req: Request, res: Response, next: NextFunction) => {
     console.log(res.locals.userId)
@@ -162,7 +158,7 @@ const constructorForUserNotPresent = (req: Request, res: Response, next: NextFun
             else return res.status(400).json({message: "Constructor is already created", errors: ["Constructor is already created"]});
         })
         .catch((err) => {
-            return serverErrorHandler(err, res);
+            serverErrorHandler(err, res, "middleware constructorForUserNotPresent(), calendarTable.selectFromMonthWhereUserId(), catch block");
         })
 }
 // dateStart dateEnd validation is in saveDatesObject()
@@ -281,7 +277,7 @@ router.get('/', verifyToken, (req: Request, res: Response) => {
             return res.status(200).json({message: "Successfully selected n of rows", data: data});
     })
     .catch((err) => {
-        return serverErrorHandler(err, res);
+        serverErrorHandler(err, res, "router.get('/', ... ), calendarTable.selectRowsWhereUserId(), catch block");
     })
 })
 
@@ -291,43 +287,43 @@ router.get('/weeks', verifyToken, (req, res) => {
         calendarTable.selectMonthForUserId(res.locals.userId)
     ])
     .then((result) => {
-        return res.status(200).json({message: "Selected rows successfully", firstMonth: result[1], data: result[0]})
+        res.status(200).json({message: "Selected rows successfully", firstMonth: result[1], data: result[0]})
     })
     .catch((err) => {
-        return serverErrorHandler(err, res)
+        serverErrorHandler(err, res, "router.get('/weeks', ... ), Promise.all(), catch block")
     })
 })
 
 router.patch('/day', verifyToken, validationChain, responseToValidation, (req: Request, res: Response) => {
     calendarTable.updateDay({userId: res.locals.userId, month: req.body.month, day: req.body.day, type: req.body.type, message: req.body.message})
         .then((changes) => {
-            if (changes === 0) return res.status(404).json({message: "Did not found any rows related to values provided, nothing was edited"});
-            else return res.status(200).json({message: "Edited all rows related to values provided"});
+            if (changes === 0) res.status(404).json({message: "Did not found any rows related to values provided, nothing was edited"});
+            else res.status(200).json({message: "Edited all rows related to values provided"});
         })
         .catch((err) => {
-            return serverErrorHandler(err, res);
+            serverErrorHandler(err, res, "router.patch('/day', ... ), calendarTable.updateDay(), catch block")
         });
 })
 
 router.patch('/week', verifyToken, validationChain2, responseToValidation, (req: Request, res: Response) => {
     calendarTable.updateWeekType({userId: res.locals.userId, week: req.body.week, type: req.body.type})
         .then((changes) => {
-            if (changes === 0) return res.status(404).json({message: "Did not found any rows related to values provided, nothing was edited"});
-            else return res.status(200).json({message: "Edited all rows related to values provided"});
+            if (changes === 0) res.status(404).json({message: "Did not found any rows related to values provided, nothing was edited"});
+            else res.status(200).json({message: "Edited all rows related to values provided"});
         })
         .catch((err) => {
-            return serverErrorHandler(err, res);
+            serverErrorHandler(err, res, "router.patch('/week', ... ), calendarTable.updateWeekType(), catch block")
         });
 })
 
 router.delete('/', verifyToken, (req, res) => {
     calendarTable.deleteFromMonthsWhereUserId(res.locals.userId)
         .then((changes) => {
-            if (changes === 0) return res.status(200).json({message: "Did not found any rows related to your user id, nothing was deleted"});
-            else return res.status(200).json({message: "Removed all rows related to your user id"});
+            if (changes === 0) res.status(200).json({message: "Did not found any rows related to your user id, nothing was deleted"});
+            else res.status(200).json({message: "Removed all rows related to your user id"});
         })
         .catch((err) => {
-            return serverErrorHandler(err, res);
+            serverErrorHandler(err, res, "router.delete('/week', ... ), calendarTable.deleteFromMonthsWhereUserId(), catch block")
         });
 })
 

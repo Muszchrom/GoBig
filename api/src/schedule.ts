@@ -2,6 +2,8 @@ import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { verifyToken } from './auth';
 import { scheduleTable, ScheduleTable } from './db';
+import { serverErrorHandler } from './commonResponse';
+
 const router = express.Router();
 
 /* -------------------------------------------------------
@@ -123,8 +125,7 @@ router.get('/', verifyToken, (req: Request, res: Response) => {
             res.status(200).json({message: "Rows selected successfully!", rows: rows})
         })
         .catch((err) => {
-            console.warn(err)
-            return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]})
+            serverErrorHandler(err, res, "router.get('/', ... ) catch block")
         })
 })
 
@@ -144,8 +145,7 @@ router.get('/:day', verifyToken, (req: Request, res: Response) => {
             res.status(200).json({message: "Rows selected successfully!", rows: rows});
         })
         .catch((err) => {
-            console.warn(err);
-            return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]});
+            serverErrorHandler(err, res, "router.get('/:day', ... ), scheduleTable.getSubjectsByDay(...), catch block")
         })
 })
 
@@ -185,17 +185,16 @@ router.post('/', verifyToken, validationChain, validateSubject, (req: Request, r
         })
         .then((rows) => {
             if (rows.length) {
-                return res.status(201).json({message: "Subject successfully created", row: rows})
+                res.status(201).json({message: "Subject successfully created", row: rows})
             } else {
                 throw new Error("Unable to find just created subject in the database")
             }
         })
         .catch((err) => {
             if (err.message === "subject_exists") {
-                return res.status(400).json({message: "This subject already exists", errors: ["This subject already exists"]})
+                res.status(400).json({message: "This subject already exists", errors: ["This subject already exists"]})
             } else {
-                console.warn(err);
-                return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]})
+                serverErrorHandler(err, res, "router.post('/', ... ), scheduleTable.getSubjectsByData(...), catch block")
             }
         })
 });
@@ -220,14 +219,13 @@ router.patch('/', verifyToken, validateId, validateUpdateArray, validateUpdate, 
     scheduleTable.updateSubject(req.body.id, queryFields, values)
         .then((result) => {
             if (result) {
-                return res.status(200).json({message: "Subject updated successfully"});
+                res.status(200).json({message: "Subject updated successfully"});
             } else {
-                return res.status(400).json({message: "Unable to update subject", errors: ["id provided didnt match any records"]});
+                res.status(400).json({message: "Unable to update subject", errors: ["id provided didnt match any records"]});
             }
         })
         .catch((err) => {
-            console.warn(err);
-            return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]});
+            serverErrorHandler(err, res, "router.patch('/', ... ), scheduleTable.updateSubject(...), catch block")
         })
 })
 
@@ -236,14 +234,13 @@ router.delete('/', verifyToken, validateId, (req, res) => {
     scheduleTable.deleteSubject(req.body.id, res.locals.userId)
         .then((result) => {
             if (result) {
-                return res.status(200).json({message: "Subject deleted successfully"});
+                res.status(200).json({message: "Subject deleted successfully"});
             } else {
-                return res.status(400).json({message: "Unable to update subject", errors: ["id provided didnt match any records"]});
+                res.status(400).json({message: "Unable to update subject", errors: ["id provided didnt match any records"]});
             }
         })
         .catch((err) => {
-            console.warn(err);
-            return res.status(500).json({message: "An internal server error occured", errors: ["An internal server error occured"]});
+            serverErrorHandler(err, res, "router.delete('/', ... ), scheduleTable.deleteSubject(...), catch block")
         });
 });
 
