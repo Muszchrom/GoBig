@@ -2,87 +2,10 @@ import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import sqlite from 'sqlite3';
-const sqlite3 = sqlite.verbose()
+
+import { usersTable } from './db';
 
 const router = express.Router();
-
-const db = new sqlite3.Database('./database/users.db', sqlite3.OPEN_READWRITE, (err) => {
-    if (err) {
-        console.warn(err);
-        return;
-    }
-});
-
-const tableName = 'users'
-db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}'`, (err, table) => {
-    if (err) {
-        console.warn(err);
-        return;
-    }
-    if (!table) {
-        db.run(`CREATE TABLE ${tableName}(id INTEGER PRIMARY KEY, username, password)`);
-    }
-});
-
-/* -------------------------------------------------------
-#################### TYPES/INTERFACES ####################
-------------------------------------------------------- */
-
-interface UsersTable {
-    id: number,
-    username: string,
-    password: string
-}
-
-/* -------------------------------------------------------
-########################## SQL ###########################
-------------------------------------------------------- */
-
-// if successfully created, resolve(true)
-const createUser = (username: string, hash: string): Promise<true> => {
-    const sql = `INSERT INTO users(username, password) VALUES (?, ?)`;
-
-    return new Promise((resolve, reject) => {
-        db.run(sql, [username, hash], (err) => {
-            if (err) {
-                reject(err);
-                return;
-            }   
-            resolve(true);
-        });
-    });
-}
-
-// return row with specified username, else reject promise
-const getUserByUsername = (username: string): Promise<UsersTable> => {
-    const sql = `SELECT * FROM users WHERE username = ?`;
-
-    return new Promise((resolve, reject) => {
-        db.get(sql, username, (err, row: UsersTable) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(row);
-        })
-    })
-}
-
-// if successfully deleted, resolve(true)
-const deleteUser = (userId: string | number, username: string, hash: string): Promise<true> => {
-    const sql = `DELETE FROM users WHERE id = ? AND username = ? AND password = ?`;
-
-    return new Promise((resolve, reject) => {
-        db.run(sql, [userId, username, hash], (err) => {
-            if (err) {
-                reject(err);
-                return;
-            }   
-            resolve(true);
-        });
-    });
-}
 
 /* -------------------------------------------------------
 ####################### Middleware #######################
@@ -129,7 +52,7 @@ const validateCredentials = (responseType: "sign_in" | "sign_up") => {
 
 // call next() if user doesnt exist, else 403
 const userExists = (req: Request, res: Response, next: NextFunction) => {
-    getUserByUsername(req.body.username)
+    usersTable.getUserByUsername(req.body.username)
         .then((row) => {
             if (row) return res.status(403).json({message: "Validation error occured, check errors for more info", errors: ["User already exists"]});;
             return next();
@@ -175,7 +98,7 @@ router.post('/signup', validationChain, validationChainConfirmPassword, validate
     bcrypt
         .hash(password, saltRounds)
         .then((hash) => {
-            return createUser(username, hash);
+            return usersTable.createUser(username, hash);
         })
         .then((result) => {
             if (result) {
@@ -196,7 +119,7 @@ router.post('/signin', validationChain, validateCredentials("sign_in"), (req: Re
     const username: string = req.body.username;
 
     // check if user exists
-    getUserByUsername(username)
+    usersTable.getUserByUsername(username)
         // compare provided password with password in db
         .then((u) => {
             if (!u) return false;
@@ -239,7 +162,7 @@ router.delete('/temp', verifyToken, validationChain, validateCredentials("sign_i
     if (!res.locals.userId) {
         res.status(500).json({message: "An internal server error occured, could not find an userId"})
     }
-    getUserByUsername(req.body.username)
+    usersTable.getUserByUsername(req.body.username)
         .then((u) => {
             if (!u) return false;
             else res.locals.user = u;
@@ -251,7 +174,7 @@ router.delete('/temp', verifyToken, validationChain, validateCredentials("sign_i
         })
         .then((result) => {
             if (result) {
-                return deleteUser(res.locals.userId.toString(), req.body.username, res.locals.user.password);
+                return usersTable.deleteUser(res.locals.userId.toString(), req.body.username, res.locals.user.password);
             } else {
                 return false;
             }

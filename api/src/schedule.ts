@@ -1,142 +1,9 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import sqlite from 'sqlite3';
-const sqlite3 = sqlite.verbose()
 import { verifyToken } from './auth';
-import { KeyObjectType } from 'crypto';
-
+import { scheduleTable, ScheduleTable } from './db';
 const router = express.Router();
 
-const db = new sqlite3.Database('./database/schedule.db', sqlite3.OPEN_READWRITE, (err) => {
-    if (err) {
-        console.warn(err);
-        return;
-    }
-});
-
-db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='schedule'`, (err, table) => {
-    if (err) {
-        console.warn(err);
-        return;
-    }
-    if (!table) {
-        console.log('Creating Table')
-        db.run(`CREATE TABLE schedule(
-            id INTEGER PRIMARY KEY, 
-            day INTEGER NOT NULL, 
-            start TEXT NOT NULL, 
-            end TEXT NOT NULL, 
-            subjectName TEXT NOT NULL, 
-            subjectType TEXT NOT NULL, 
-            hall TEXT NOT NULL, 
-            teacher TEXT NOT NULL, 
-            icon TEXT NOT NULL, 
-            additionalInfo TEXT, 
-            weekStart INTEGER NOT NULL, 
-            weekEnd INTEGER NOT NULL, 
-            weekType INTEGER NOT NULL,
-            userId INTEGER NOT NULL)`);
-    }
-});
-
-/* -------------------------------------------------------
-#################### TYPES/INTERFACES ####################
-------------------------------------------------------- */
-
-interface ScheduleTable {
-    id: number,
-    day: number,
-    start: string,
-    end: string,
-    subjectName: string,
-    subjectType: string,
-    hall: string,
-    teacher: string,
-    icon: string,
-    additionalInfo: string | undefined,
-    weekStart: number,
-    weekEnd: number,
-    weekType: number,
-    userId: number
-}
-
-/* -------------------------------------------------------
-########################## SQL ###########################
-------------------------------------------------------- */
-
-const createSubject = (vals: Omit<ScheduleTable, "id">): Promise<true> => {
-    const valuesArray = Object.keys(vals).map((k) => vals[k as keyof Omit<ScheduleTable, "id">])
-    const sql = `INSERT INTO schedule(day, start, end, subjectName, subjectType, hall, teacher, icon, additionalInfo, weekStart, weekEnd, weekType, userId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    return new Promise((resolve, reject) => {
-        db.run(sql, valuesArray, (err) => {
-            if (err) reject(err);
-            resolve(true);
-        })
-    });
-}
-
-const getSubjectsByData = (vals: Omit<ScheduleTable, "id">): Promise<ScheduleTable[]> => {
-    const valuesArray = Object.keys(vals).map((k) => vals[k as keyof Omit<ScheduleTable, "id">])
-    const sql = `SELECT * FROM schedule WHERE day=? AND start=? AND end=? AND subjectName=? AND subjectType=? AND hall=? AND teacher=? AND icon=? AND additionalInfo=? AND weekStart=? AND weekEnd=? AND weekType=? AND userId=?`
-
-    return new Promise((resolve, reject) => {
-        db.all(sql, valuesArray, (err, rows: ScheduleTable[]) => {
-            if (err) reject(err);
-            resolve(rows);
-        })
-    });
-}
-
-const getSubjectsByDay = (day: ScheduleTable["day"], userId: ScheduleTable["userId"]): Promise<ScheduleTable[]> => {
-    const sql = `SELECT * FROM schedule WHERE day=? AND userId=? ORDER BY start`
-
-    return new Promise((resolve, reject) => {
-        db.all(sql, [day, userId], (err, rows: ScheduleTable[]) => {
-            if (err) reject(err);
-            resolve(rows);
-        })
-    });
-}
-
-const getSchedule = (userId: ScheduleTable["userId"]): Promise<ScheduleTable[]> => {
-    const sql = `SELECT * FROM schedule WHERE userId=? ORDER BY day, start`
-
-    return new Promise((resolve, reject) => {
-        db.all(sql, userId, (err, rows: ScheduleTable[]) => {
-            if (err) reject(err)
-            resolve(rows);
-        })
-    })
-}
-
-const updateSubject = (id: ScheduleTable["id"], queryFields: string, values: (number | string | undefined)[]): Promise<number> => {
-    const sql = `UPDATE schedule SET ${queryFields} WHERE id=?`
-    values.push(id);
-
-    return new Promise((resolve, reject) => {
-        db.run(sql, values, function (err) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(this.changes);
-        });
-    });
-}
-
-const deleteSubject = (id: ScheduleTable["id"], userId: ScheduleTable["userId"]): Promise<number> => {
-    const sql = `DELETE FROM schedule WHERE id=? AND userId=?`
-
-    return new Promise((resolve, reject) => {
-        db.run(sql, [id, userId], function (err) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(this.changes);
-        })
-    });
-}
 /* -------------------------------------------------------
 ####################### Middleware #######################
 ------------------------------------------------------- */
@@ -251,7 +118,7 @@ const validateUpdate = async (req: Request, res: Response, next: NextFunction) =
 ------------------------------------------------------- */
 
 router.get('/', verifyToken, (req: Request, res: Response) => {
-    getSchedule(res.locals.userId)
+    scheduleTable.getSchedule(res.locals.userId)
         .then((rows) => {
             res.status(200).json({message: "Rows selected successfully!", rows: rows})
         })
@@ -272,7 +139,7 @@ router.get('/:day', verifyToken, (req: Request, res: Response) => {
             errors: ["Day should be an integer greater or equal than 0 and less or equal than 6"]
         });
     }
-    getSubjectsByDay(day, res.locals.userId)
+    scheduleTable.getSubjectsByDay(day, res.locals.userId)
         .then((rows) => {
             res.status(200).json({message: "Rows selected successfully!", rows: rows});
         })
@@ -301,17 +168,17 @@ router.post('/', verifyToken, validationChain, validateSubject, (req: Request, r
     }
 
     // check if subject exists (need that to retrieve id later on)
-    getSubjectsByData(vals)
+    scheduleTable.getSubjectsByData(vals)
         .then((rows) => {
             if (rows.length) {
                 throw new Error("subject_exists")
             } else {
-                return createSubject(vals)
+                return scheduleTable.createSubject(vals)
             }
         })
         .then((result) => {
             if (result) {
-                return getSubjectsByData(vals)
+                return scheduleTable.getSubjectsByData(vals)
             } else {
                 throw new Error("Unable to save user in database")
             }
@@ -350,7 +217,7 @@ router.patch('/', verifyToken, validateId, validateUpdateArray, validateUpdate, 
 
     queryFields = queryFields.slice(0, -2);
 
-    updateSubject(req.body.id, queryFields, values)
+    scheduleTable.updateSubject(req.body.id, queryFields, values)
         .then((result) => {
             if (result) {
                 return res.status(200).json({message: "Subject updated successfully"});
@@ -366,7 +233,7 @@ router.patch('/', verifyToken, validateId, validateUpdateArray, validateUpdate, 
 
 // Delete schedule row
 router.delete('/', verifyToken, validateId, (req, res) => {
-    deleteSubject(req.body.id, res.locals.userId)
+    scheduleTable.deleteSubject(req.body.id, res.locals.userId)
         .then((result) => {
             if (result) {
                 return res.status(200).json({message: "Subject deleted successfully"});

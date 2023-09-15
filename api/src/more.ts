@@ -2,43 +2,12 @@ import express, { Request, Response } from 'express';
 import multer from 'multer'
 import { verifyToken } from './auth';
 import path from 'path'
-import sqlite from 'sqlite3';
 import * as fs from 'node:fs/promises'
 import { getRandomValues } from 'node:crypto';
 
-const sqlite3 = sqlite.verbose()
+import { filesTable } from './db';
 
 const filesDest = `${__dirname}/../files/user_files`
-
-// setup sqlite
-const db = new sqlite3.Database('./database/files.db', sqlite3.OPEN_READWRITE, (err) => {
-    if (err) {
-        console.warn(err);
-        return;
-    }
-});
-
-interface FilesTable {
-    id: number,
-    userId: number,
-    filename: string
-}
-
-const tableName = 'files'
-db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}'`, (err, table) => {
-    if (err) {
-        console.warn(err);
-        return;
-    }
-    if (!table) {
-        db.run(`CREATE TABLE ${tableName}(
-            id INTEGER PRIMARY KEY, 
-            userId INTEGER NOT NULL, 
-            filename TEXT NOT NULL
-        )`);
-    }
-});
-
 
 // setup multer storage
 const storage = multer.diskStorage({
@@ -69,48 +38,6 @@ const upload = multer({
 const router = express.Router();
 
 /* -------------------------------------------------------
-########################## SQL ###########################
-------------------------------------------------------- */
-
-interface InsertIntoFiles {
-    ({userId, filename}: {userId: FilesTable["userId"], filename: FilesTable["filename"]}): Promise<true>
-}
-const insertIntoFiles: InsertIntoFiles = ({userId, filename}) => {
-    const sql = "INSERT INTO files(userId, filename) VALUES (?, ?)";
-    return new Promise((resolve, reject) => {
-        db.run(sql, [userId, filename], (err) => {
-            if (err) reject(err);
-            else resolve(true);
-        });
-    });
-}
-
-interface GetFileName {
-    (userId: FilesTable["userId"]): Promise<{filename: FilesTable["filename"]} | undefined>
-}
-const getFileName: GetFileName = (userId) => {
-    const sql = "SELECT filename FROM files WHERE userId=?";
-    return new Promise((resolve, reject) => {
-        db.get(sql, userId, (err, row: {filename: FilesTable["filename"]} | undefined) => {
-            if (err) reject(err);
-            else resolve(row);
-        });
-    });
-}
-interface DeleteFromFiles {
-    (userId: number): Promise<true>
-}
-const deleteFromFiles: DeleteFromFiles = (userId) => {
-    const sql = "DELETE FROM files WHERE userId=?";
-    return new Promise((resolve, reject) => {
-        db.run(sql, userId, (err) => {
-            if (err) reject(err);
-            else resolve(true);
-        });
-    });
-}
-
-/* -------------------------------------------------------
 ####################### Middleware #######################
 ------------------------------------------------------- */
 
@@ -124,7 +51,7 @@ const serverErrorHandler = (err: Error, res: Response) => {
 ------------------------------------------------------- */
 
 router.get('/', verifyToken, (req, res) => {
-    getFileName(res.locals.userId)
+    filesTable.getFileName(res.locals.userId)
         .then((row) => {
             if (row) {
                 return res.sendFile(row.filename, {root: filesDest, dotfiles: "allow"})
@@ -147,7 +74,7 @@ router.post('/', verifyToken, (req: Request, res: Response) => {
             console.warn(err)
             return res.status(500).json({errors: ["An internal server error occured (multer)"]})
         } else {
-            getFileName(res.locals.userId)
+            filesTable.getFileName(res.locals.userId)
                 .then((row) => {
                     if (row) {
                         const file = `${filesDest}/${row.filename}`
@@ -157,13 +84,13 @@ router.post('/', verifyToken, (req: Request, res: Response) => {
                     }
                 })
                 .then(() => {
-                    return deleteFromFiles(res.locals.userId)
+                    return filesTable.deleteFromFiles(res.locals.userId)
                 })
                 .then(() => {
                     const file: string | undefined = req.file?.filename
                     if (!file) throw new Error("Filename not found")
                     const userId: number = parseInt(res.locals.userId)
-                    return insertIntoFiles({userId: userId, filename: file})
+                    return filesTable.insertIntoFiles({userId: userId, filename: file})
                 })
                 .then(() => {
                     res.status(201).json({message: "Image uploaded successfully"})
