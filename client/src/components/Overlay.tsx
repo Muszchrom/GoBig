@@ -35,7 +35,7 @@ export function OverlayNoBounds({backgroundColor, setOpen, open, children}: Over
   if (backgroundColor === undefined) backgroundColor = "var(--Background)"
   return (
     <FocusTrap>
-      <div className="overlay" style={{backgroundColor: backgroundColor, display: "flex", alignItems: "center"}}>
+      <div className="overlay" style={{backgroundColor: backgroundColor, display: "flex", alignItems: "center", justifyContent: "center"}}>
         <div>
           <CloseButton setOpen={setOpen} open={open}/>
           {children}

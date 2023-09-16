@@ -3,10 +3,9 @@ import { Navigate } from 'react-router-dom';
 import { Overlay, OverlayNoBounds } from '../Overlay'
 
 import UploadModal from '../UploadModal';
-import { MultilineInput, MultilineInputLoading } from '../FormElements';
+import { MultilineInput } from '../FormElements';
 import { SubmitButton } from '../Common';
 import { getImage, uploadImage } from '../Requests';
-import { error } from 'console';
 
 export default function AdditionalInfo() {
   const [open, setOpen] = useState(false) // is This window open
@@ -57,7 +56,7 @@ function ImageBox() {
   const [showBigImage, setShowBigImage] = useState(false)
   const [showUploadImageModal, setShowUploadImageModal] = useState(false)
   const [data, setData] = useState({
-    isRequestRecieved: true,
+    isRequestRecieved: false,
     image: ""
   })
   const [userImage, setUserImage] = useState<File | null>(null)
@@ -65,7 +64,13 @@ function ImageBox() {
   useEffect(() => {
     (async () => {
       const image = await getImage()
-      if (image.status !== 200) return
+      if (image.status !== 200) {
+        setData({
+          isRequestRecieved: true,
+          image: ""
+        })
+        return
+      }
       const imgblob = await image.blob()
       console.log(URL.createObjectURL(imgblob))
       setData({
@@ -100,34 +105,40 @@ function ImageBox() {
 
   return (
     <>
-      {data.isRequestRecieved ? (
-        <div className="ex-inputWrapper" style={{padding: 0}} role="button">
-          <label className="ex-inputTitle" onClick={() => setShowUploadImageModal(true)} style={{padding: "12px"}}>Campus map</label>
-          <div className="ex-inputInnerWrapper">
-            <div className="image-frame animated-background" style={{borderBottomLeftRadius: "10px", borderBottomRightRadius: "10px"}}>
-              <img onClick={() => setShowBigImage(true)} 
-                   src={data.image} 
-                   className="map-image" 
-                   style={{borderBottomLeftRadius: "10px", borderBottomRightRadius: "10px", ...(data.isRequestRecieved ? {} : {display: "none"})}} 
-                   alt="Campus map"/>
-            </div>
+      <div className="ex-inputWrapper" style={{padding: 0}} role="button">
+        <label className="ex-inputTitle" onClick={() => setShowUploadImageModal(true)} style={{padding: "12px"}}>Campus map</label>
+        <div className="ex-inputInnerWrapper">
+          <div className={`image-frame ${!data.isRequestRecieved && "animated-background"}`} style={{borderBottomLeftRadius: "10px", borderBottomRightRadius: "10px", ...(data.image && {height: "unset", maxHeight: "600px"})}}>
+            {!!data.isRequestRecieved && (
+                data.image ? (
+                  <img onClick={() => setShowBigImage(true)} 
+                    src={data.image} 
+                    className="map-image" 
+                    style={{borderBottomLeftRadius: "10px", borderBottomRightRadius: "10px", ...(data.isRequestRecieved ? {} : {display: "none"})}} 
+                    alt="Campus map"/>
+                ) : (
+                  <div style={{width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center"}}>
+                    <span>No image has been found</span>
+                  </div>
+                )
+            )}
           </div>
-          {showUploadImageModal && (
-            <UploadModal 
-              color="var(--Color4)" 
-              handleClose={(e) => {e!.stopPropagation(); setShowUploadImageModal(false)}} 
-              handleSoftClose={(e) => {e!.stopPropagation(); setShowUploadImageModal(false)}} 
-              submitFunction={uploadNewImage}>
-                  <UploadImage userImage={userImage} setUserImage={setUserImage}></UploadImage>
+        </div>
+        {showUploadImageModal && (
+          <UploadModal 
+            color="var(--Color4)" 
+            handleClose={(e) => {e!.stopPropagation(); setShowUploadImageModal(false)}} 
+            handleSoftClose={(e) => {e!.stopPropagation(); setShowUploadImageModal(false)}} 
+            submitFunction={uploadNewImage}>
+                <UploadImage userImage={userImage} setUserImage={setUserImage}></UploadImage>
           </UploadModal>
-          )}
-          {showBigImage && (
-            <OverlayNoBounds open={showBigImage} setOpen={setShowBigImage}>
-              <img src={data.image} className="map-image" style={(data.isRequestRecieved ? {} : {display: "none"})} alt="Campus map"/>
-            </OverlayNoBounds>
-          )}
-        </div>) : (<MultilineInputLoading>Campus map</MultilineInputLoading>)
-      }
+        )}
+        {showBigImage && (
+          <OverlayNoBounds open={showBigImage} setOpen={setShowBigImage}>
+            <img src={data.image} className="map-image" style={(data.isRequestRecieved ? {} : {display: "none"})} alt="Campus map"/>
+          </OverlayNoBounds>
+        )}
+      </div>
     </>
   )
 }
