@@ -1,5 +1,6 @@
 import { useState, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
 import { source } from '../source';
+import UploadModal from './UploadModal';
 
 function ValidationErrorMessage({errorMessage}: {errorMessage: string}) {
     return (
@@ -13,9 +14,10 @@ interface MultilineInputInterface {
     children: React.ReactNode
     initVal: string
     validatingFuntion: (val: string) => string
+    contentChangesSubmitted: (val: string) => Promise<string[]>
 }
 
-export const MultilineInput = forwardRef(function ({children, initVal, validatingFuntion}: MultilineInputInterface, ref: React.Ref<HTMLTextAreaElement>) {
+export const MultilineInput = forwardRef(function ({children, initVal, validatingFuntion, contentChangesSubmitted}: MultilineInputInterface, ref: React.Ref<HTMLTextAreaElement>) {
     const [validationError, setValidationError] = useState('')
     const [value, setValue] = useState(initVal)
     const [focused, setFocused] = useState(false)
@@ -46,20 +48,28 @@ export const MultilineInput = forwardRef(function ({children, initVal, validatin
         setFocused(false)
     }
     const calcRows = ({target}: {target: HTMLTextAreaElement}) => {
-        if (inputRef.current === null) return
         setValidationError(validatingFuntion(target.value))
-        inputRef.current.rows = 1 // This height reset must be present here
-        const calculatedRows = Math.floor(inputRef.current.scrollHeight/19)
-        inputRef.current.rows = calculatedRows >= 4 ? calculatedRows : 4
+        inputRef.current!.rows = 1 // This height reset must be present here
+        const calculatedRows = Math.floor(inputRef.current!.scrollHeight/19)
+        inputRef.current!.rows = calculatedRows >= 4 ? calculatedRows : 4
         setValue(target.value)
     }
 
     useEffect(() => {
         calcRows({target: inputRef.current!})
-    }, [])
+    }, [focused])
 
     return (
         <div ref={wrapperRef} className="ex-inputWrapper" role="button" onClick={handleClick}>
+            {(!focused && (initVal !== value)) && (
+                <UploadModal 
+                    color="var(--Color4)" 
+                    handleClose={() => {setValue(initVal)}} 
+                    handleSoftClose={() => {setValue(initVal)}} 
+                    submitFunction={() => contentChangesSubmitted(value)}>
+                        Upload changes?
+                </UploadModal>
+            )}
             <label ref={labelRef} className="ex-inputTitle">{children}</label>
             <div className="ex-inputInnerWrapper">
                 <div className="ex-textAreaWrapper">

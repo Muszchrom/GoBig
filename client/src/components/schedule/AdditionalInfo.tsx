@@ -22,7 +22,20 @@ export default function AdditionalInfo() {
     if (false) setData(data)
     return []
   }
-  const textt = "If you open it directly in the browser, you will see an empty page. You can add webfonts, meta tags, or analytics to this file.The build step will place the bundled scripts into the <body> tag.To begin the development, run `npm start` or `yarn start`.To create "
+
+  const [textt, setTextt] = useState("If you open it directly in the browser, you will see an empty page. You can add webfonts, meta tags, or analytics to this file.The build step will place the bundled scripts into the <body> tag.To begin the development, run `npm start` or `yarn start`.To create ")
+
+  const uploadChanges = async (val: string): Promise<{status: number}> => {const result = {status: 200}; return result} // inplement in Requests.tsx
+  
+  const notesContentChanged = async (newNotesString: string) => {
+    const f = await uploadChanges(newNotesString);
+    if (f.status === 200) {
+      setTextt(newNotesString)
+      return []
+    } else {
+      return ["An erorr occured (probably server sided)"]
+    }
+  }
 
   return (
     <>
@@ -30,7 +43,7 @@ export default function AdditionalInfo() {
         <Overlay backgroundColor={"antiquewhite"} setOpen={setOpen} open={open}>
           {/* Page context */}
           <h1 style={{marginTop: "7px"}}>More stuff</h1>
-          <MultilineInput initVal={textt} validatingFuntion={() => ""}>Notes</MultilineInput>
+          <MultilineInput initVal={textt} validatingFuntion={() => ""} contentChangesSubmitted={notesContentChanged}>Notes</MultilineInput>
           <ImageBox></ImageBox>
           <SubmitButton waitingFor={false} handleClick={() => setShow(true)}>Sign out</SubmitButton>
           {/* Upload Modal */}

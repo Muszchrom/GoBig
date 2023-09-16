@@ -32,7 +32,7 @@ export function NavigateBackTo({path}: {path: string}) {
 export function SubmitButton({children, waitingFor, handleClick}: {children: React.ReactNode, waitingFor: boolean, handleClick: () => void}) {
     return (
         handleClick ? (
-            <button className="signInButton" type="button" onClick={handleClick}>
+            <button className="signInButton" type="button" onClick={(e) => {e.stopPropagation(); handleClick()}}>
                 {!waitingFor ? 
                     children : <LoadingButtonAnimation></LoadingButtonAnimation>}    
             </button>
