@@ -1,11 +1,12 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer'
-import { verifyToken } from './auth';
 import path from 'path'
 import * as fs from 'node:fs/promises'
 import { getRandomValues } from 'node:crypto';
+import { filesTable, notesTable } from './db';
+import { verifyToken } from './auth';
 import { serverErrorHandler } from './commonResponse';
-import { filesTable } from './db';
+import { type } from 'os';
 
 const filesDest = `${__dirname}/../files/user_files`
 
@@ -91,6 +92,47 @@ router.post('/', verifyToken, (req: Request, res: Response) => {
                 })
         }
     })
+})
+
+router.get('/notes', verifyToken, (req: Request, res: Response) => {
+    notesTable.getNote(res.locals.userId)
+        .then((note) => {
+            if (note) {
+                res.status(200).json({note: note.note})
+            } else {
+                res.status(404).json({message: "Could not find the note", errors: ["Could not find the note"]})
+            }
+        })
+        .catch((err) => {
+            serverErrorHandler(err, res, "router.get('/notes', ... ), notesTable.getNote(...),  catch block")
+        })
+})
+router.post('/notes', verifyToken, (req: Request, res: Response) => {
+    const note = req.body.note
+    if (typeof note !== "string") {
+        return res.status(404).json({message: "Note must be a string", errors: ["Note must be a string"]})
+    }
+    if (note.length > 1000) {
+        return res.status(404).json({message: "Note must be shorter than 1000 characters", errors: ["Note must be shorter than 1000 characters"]})
+    }
+
+    // ill trust sqlite sanitization here
+    notesTable.getNote(res.locals.userId)
+        .then((note) => {
+            if (note) {
+                return notesTable.deleteFromNotes(res.locals.userId)
+            }
+            return true
+        })
+        .then(() => {
+            return notesTable.insertIntoNotes({userId: res.locals.userId, note: note})
+        })
+        .then(() => {
+            res.status(201).json({message: "Note inserted successfully"})
+        })
+        .catch((err) => {
+            serverErrorHandler(err, res, "router.get('/notes', ... ), notesTable.getNote(...),  catch block")
+        })
 })
 
 export {router as more};

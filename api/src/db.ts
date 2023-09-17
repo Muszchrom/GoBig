@@ -34,6 +34,12 @@ const dbInitializer = (dbInstance: sqlite.Database=db) => {
                 console.log(`${place.toUpperCase()} table creation: OK`)
             }
     }
+    dbInstance.run(`CREATE TABLE IF NOT EXISTS notes(
+        id INTEGER PRIMARY KEY, 
+        userId INTEGER NOT NULL, 
+        note TEXT
+    )`, (err) => dbInitializerCb(err, "notes"))
+
     dbInstance.run(`CREATE TABLE IF NOT EXISTS files(
         id INTEGER PRIMARY KEY, 
         userId INTEGER NOT NULL, 
@@ -558,4 +564,59 @@ export const filesTable = {
     insertIntoFiles: filesDb_insertIntoFiles,
     getFileName: filesDb_getFileName,
     deleteFromFiles: filesDb_deleteFromFiles
+}
+
+/* -------------------------------------------------------
+####################### Notes db queries #################
+------------------------------------------------------- */
+
+interface notesDb_InsertIntoNotes {
+    ({userId, note}: {userId: NotesTable["userId"], note: NotesTable["note"]}): Promise<true>
+}
+const notesDb_insertIntoNotes: notesDb_InsertIntoNotes = ({userId, note}) => {
+    const sql = "INSERT INTO notes(userId, note) VALUES (?, ?)";
+    return new Promise((resolve, reject) => {
+        db.run(sql, [userId, note], (err) => {
+            if (err) reject(err);
+            else resolve(true);
+        });
+    });
+}
+
+interface notesDb_GetNote {
+    (userId: NotesTable["userId"]): Promise<{id: NotesTable["id"], note: NotesTable["note"]} | undefined>
+}
+const notesDb_getNote: notesDb_GetNote = (userId) => {
+    const sql = "SELECT id, note FROM notes WHERE userId=?";
+    return new Promise((resolve, reject) => {
+        db.get(sql, userId, (err, row: {id: NotesTable["id"], note: NotesTable["note"]} | undefined) => {
+            if (err) reject(err);
+            else resolve(row);
+        });
+    });
+}
+
+interface notesDb_DeleteFromNotes {
+    (userId: NotesTable["userId"]): Promise<true>
+}
+const notesDb_deleteFromNotes: notesDb_DeleteFromNotes = (userId) => {
+    const sql = "DELETE FROM notes WHERE userId=?";
+    return new Promise((resolve, reject) => {
+        db.run(sql, userId, (err) => {
+            if (err) reject(err);
+            else resolve(true);
+        });
+    });
+}
+
+export interface NotesTable {
+    id: number,
+    userId: number,
+    note: string
+}
+
+export const notesTable = {
+    insertIntoNotes: notesDb_insertIntoNotes,
+    getNote: notesDb_getNote,
+    deleteFromNotes: notesDb_deleteFromNotes
 }
