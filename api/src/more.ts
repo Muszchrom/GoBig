@@ -110,10 +110,10 @@ router.get('/notes', verifyToken, (req: Request, res: Response) => {
 router.post('/notes', verifyToken, (req: Request, res: Response) => {
     const note = req.body.note
     if (typeof note !== "string") {
-        return res.status(404).json({message: "Note must be a string", errors: ["Note must be a string"]})
+        return res.status(400).json({message: "Note must be a string", errors: ["Note must be a string"]})
     }
     if (note.length > 1000) {
-        return res.status(404).json({message: "Note must be shorter than 1000 characters", errors: ["Note must be shorter than 1000 characters"]})
+        return res.status(400).json({message: "Note must be shorter than 1000 characters", errors: ["Note must be shorter than 1000 characters"]})
     }
 
     // ill trust sqlite sanitization here
