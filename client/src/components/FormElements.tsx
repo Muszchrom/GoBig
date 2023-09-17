@@ -21,6 +21,7 @@ export const MultilineInput = forwardRef(function ({children, initVal, validatin
     const [validationError, setValidationError] = useState('')
     const [value, setValue] = useState(initVal)
     const [focused, setFocused] = useState(false)
+    const [hideModal, setHideModal] = useState(false)
 
     const wrapperRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -57,38 +58,41 @@ export const MultilineInput = forwardRef(function ({children, initVal, validatin
 
     useEffect(() => {
         calcRows({target: inputRef.current!})
+        if (focused) setHideModal(false)
     }, [focused])
 
     return (
-        <div ref={wrapperRef} className="ex-inputWrapper" role="button" onClick={handleClick}>
-            {(!focused && (initVal !== value)) && (
+        <>
+            {(!focused && (initVal !== value) && !hideModal) && (
                 <UploadModal 
                     color="var(--Color4)" 
-                    handleClose={() => {setValue(initVal)}} 
-                    handleSoftClose={() => {setValue(initVal)}} 
+                    handleClose={() => {setHideModal(true)}} 
+                    handleSoftClose={() => {setHideModal(true)}} 
                     submitFunction={() => contentChangesSubmitted(value)}>
                         Upload changes?
                 </UploadModal>
             )}
-            <label ref={labelRef} className="ex-inputTitle">{children}</label>
-            <div className="ex-inputInnerWrapper">
-                <div className="ex-textAreaWrapper">
-                    <textarea ref={inputRef} inputMode="text" rows={1} className="ex-textInput" value={value} onChange={calcRows} onFocus={handleFocus} onBlur={handleOutFocus}></textarea>
-                </div>
-                <div className="ex-svgWrapper">
-                    {validationError.length
-                    ? (
-                        <>
-                            <img src={`${source}/static/Close - red.svg`} alt="Invalid value icon"/>
-                            {focused && <ValidationErrorMessage errorMessage={validationError}></ValidationErrorMessage>}
-                        </>
-                    )
-                    : focused 
-                    ? <img src={`${source}/static/Confirm.svg`} alt="Valid value icon"/>
-                    : <></>}
+            <div ref={wrapperRef} className="ex-inputWrapper" role="button" onClick={handleClick}>
+                <label ref={labelRef} className="ex-inputTitle">{children}</label>
+                <div className="ex-inputInnerWrapper">
+                    <div className="ex-textAreaWrapper">
+                        <textarea ref={inputRef} inputMode="text" rows={1} className="ex-textInput" value={value} onChange={calcRows} onFocus={handleFocus} onBlur={handleOutFocus}></textarea>
+                    </div>
+                    <div className="ex-svgWrapper">
+                        {validationError.length
+                        ? (
+                            <>
+                                <img src={`${source}/static/Close - red.svg`} alt="Invalid value icon"/>
+                                {focused && <ValidationErrorMessage errorMessage={validationError}></ValidationErrorMessage>}
+                            </>
+                        )
+                        : focused 
+                        ? <img src={`${source}/static/Confirm.svg`} alt="Valid value icon"/>
+                        : <></>}
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     )
 })
 
@@ -99,8 +103,6 @@ export function MultilineInputLoading({children}: {children: React.ReactNode}) {
             <div className="ex-inputInnerWrapper">
                 <div className="ex-textAreaWrapper">
                     <textarea  inputMode="text" rows={4} className="ex-textInput animated-background"></textarea>
-                </div>
-                <div className="ex-svgWrapper">
                 </div>
             </div>
         </div>

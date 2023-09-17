@@ -76,6 +76,19 @@ const callApi = async ({
         }
 }
 
+export const getNotes = async (): Promise<string> => {
+    const data = await callApi({endpoint: "/files/notes", headers: undefined})
+    if (data.status !== 200) return ""
+    else return data.data.note
+}
+
+export const uploadNotes = async (note: string): Promise<string[]> => {
+    const data = await callApi({endpoint: "/files/notes", method: "POST", data: {note: note}})
+    if (data.status === 201) return []
+    else if (data.errors.length) return data.errors
+    else return ["An unexpected error occured"]
+}
+
 export const uploadImage = async (formData: FormData) => {
     const fetchedData = await fetch(`${source}/files`, {
         method: "POST",
