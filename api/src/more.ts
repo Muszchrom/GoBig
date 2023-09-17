@@ -61,8 +61,9 @@ router.post('/', verifyToken, (req: Request, res: Response) => {
     upload(req, res, (err) => {
         if (err && err.message === 'Please provide png/jpg/jpeg file') {
             return res.status(404).json({errors: [err.message]})
-        }
-        else if (err) {
+        } else if (err.message === "File too large") {
+            return res.status(404).json({errors: ["File too large"]})
+        } else if (err) {
             serverErrorHandler(err, res, "router.post('/', ... ), upload(), cb, else if (err)", ["An internal server error occured (multer)"])
         } else {
             filesTable.getFileName(res.locals.userId)
