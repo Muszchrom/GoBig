@@ -11,7 +11,7 @@ function ValidationErrorMessage({errorMessage}) {
 }
 
 export function TextInput({children, inputRef, initVal, validatingFuntion}) {
-    const [validationError, setValidationError] = useState('')
+    const [validationError, setValidationError] = useState(validatingFuntion(initVal))
     const [value, setValue] = useState(initVal)
     const [focused, setFocused] = useState(false)
     
@@ -65,7 +65,7 @@ export function TextInput({children, inputRef, initVal, validatingFuntion}) {
 }
 
 export function StartEndInput({children, inputRef, initVal, validatingFuntion}) {
-    const [validationError, setValidationError] = useState("")
+    const [validationError, setValidationError] = useState(validatingFuntion(initVal))
     const wrapperRef = useRef()
     const labelRef = useRef()
 
@@ -185,7 +185,7 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
 }
 
 export function DropdownInput({children, inputRef, initVal, options, validatingFuntion}) {
-    const [validationError, setValidationError] = useState('')
+    const [validationError, setValidationError] = useState(validatingFuntion(initVal))
     const [matchingOptions, setMatchingOptions] = useState(options)
     const [value, setValue] = useState(initVal)
     const [focused, setFocused] = useState(false)
