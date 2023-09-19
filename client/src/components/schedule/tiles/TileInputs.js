@@ -70,8 +70,8 @@ export function StartEndInput({children, inputRef, initVal, validatingFuntion}) 
     const labelRef = useRef()
 
     const [startEnd, setStartEnd] = useState(initVal)
-    const [previousSelection, setpreviousSelection] = useState([13, 13])
-    const [cursor, setCursor] = useState(13)
+    const [previousSelection, setpreviousSelection] = useState([0, 0])
+    const [cursor, setCursor] = useState(0)
     const [focused, setFocused] = useState(false)
 
     useEffect(() => {
