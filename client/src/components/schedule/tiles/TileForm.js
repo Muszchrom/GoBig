@@ -103,7 +103,7 @@ export default function TileForm({children, subject, manageData, _title, color})
                 validatingFuntion={validateTile.validateWeekType}>Week type</DropdownInput>
 
             {/* Whatever integer,  */}
-            <WeekStartEndInput inputRef={weekStartEnd} initVal={`${subject?.weekStart || 0} - ${subject?.weekEnd || 0}`} validatingFuntion={validateTile.validateWeekStartEnd}>
+            <WeekStartEndInput inputRef={weekStartEnd} initVal={`${subject?.weekStart || -1} - ${subject?.weekEnd || -1}`} validatingFuntion={validateTile.validateWeekStartEnd}>
                 Week Start - End                    
             </WeekStartEndInput>
 
