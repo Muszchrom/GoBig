@@ -91,7 +91,6 @@ function ImageBox() {
         return
       }
       const imgblob = await image.blob()
-      console.log(URL.createObjectURL(imgblob))
       setData({
         isRequestRecieved: true,
         image: URL.createObjectURL(imgblob)
