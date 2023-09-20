@@ -3,13 +3,15 @@ import { Navigate } from 'react-router-dom'
 import { source } from "../source";
 import { NavigateBackTo, SubmitButton } from "../components/Common";
 import UploadModal from "../components/UploadModal";
-import { createSchedule } from "../components/Requests";
+import { createSchedule, createInitialGroup } from "../components/Requests";
+import { TextInput } from "../components/schedule/tiles/TileInputs";
 
 export default function CreateSchedule() {
     const [showUploadModal, setShowUploadModal] = useState(false)
     const [exit, setExit] = useState(false)
     const dateStartInput = useRef(null)
     const dateEndInput = useRef(null)
+    const scheduleNameInput = useRef(null)
 
     const validateInput = (val) => {
         const date = new Date(val)
@@ -27,11 +29,15 @@ export default function CreateSchedule() {
     const handleClose = () => setExit(true)
     const handleSoftClose = () => setShowUploadModal(false)
     const submitFunction = async () => {
+        const scheduleName = scheduleNameInput.current.value
         const start = new Date(dateStartInput.current.value)
         const end = new Date(dateEndInput.current.value)
         if (isNaN(start) || isNaN(end)) return ["Date is invalid"]
         if (start - end > 0) return ["Date start should be older than date end"]
         if ((end - start) / (1000*60*60*24) > 300) return ["Date difference should be smaller than or equal to 300 days"]
+        if (scheduleName.length < 2) return ["Schedule name is too short"]
+        const groupResult = await createInitialGroup(scheduleName)
+        if (groupResult.length) return groupResult 
         const result = await createSchedule({dateStart: start, dateEnd: end})
         return result
     }
@@ -44,6 +50,7 @@ export default function CreateSchedule() {
                                              submitFunction={submitFunction}>Upload Changes?</UploadModal>}
             <h1>Create schedule</h1>
             <form onSubmit={handleSubmit} className="tile-form" style={{width: "100%"}}>
+                <TextInput inputRef={scheduleNameInput} initVal={""} validatingFuntion={() => ""}>Schedule's name</TextInput>
                 <DateInput inputRef={dateStartInput} validatingFuntion={validateInput}>Start of the semester</DateInput>
                 <DateInput inputRef={dateEndInput} validatingFuntion={validateInput}>End of the semester</DateInput>
                 <SubmitButton>Confirm</SubmitButton>

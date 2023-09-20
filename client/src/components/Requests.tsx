@@ -76,6 +76,12 @@ const callApi = async ({
         }
 }
 
+export const createInitialGroup = async (name: string): Promise<string[]> => {
+    const data = await callApi({endpoint: "/groups/initGroup", method: "POST", data: {groupName: name}})
+    if (data.status === 201) return []
+    else return data.errors
+}
+
 export const getNotes = async (): Promise<string> => {
     const data = await callApi({endpoint: "/files/notes", headers: undefined})
     if (data.status !== 200) return ""
@@ -156,6 +162,7 @@ export const getSchedule = async (): Promise<Schedule>=> {
 
 export const getWeeks = async () => {
     const data = await callApi({endpoint: "/calendar/weeks", headers: undefined})
+    if (data.status === 404 && data.data.message === "Cant find group") return {notFound: true}
     if (data.status === 200 && !data.data.data.length) return {notFound: true}
     if (data.status === 200 && data.data.data.length) return {firstMonth: data.data.firstMonth.month, weeks: data.data.data}
     return undefined
