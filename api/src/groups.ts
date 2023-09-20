@@ -34,7 +34,13 @@ export const validateWritePermissions = (req: Request, res: Response, next: Next
 ------------------------------------------------------- */
 
 router.get('/', getGroup, (req, res) => {
-    res.status(200).json({groups: [{name: "Karol's group", privileges: 1}]})
+    groupsTable.getGroups(res.locals.userId)
+        .then((rows) => {
+            res.status(200).json({groups: rows})
+        })
+        .catch((err) => {
+            serverErrorHandler(err, res, "router.get('/', ...) groupsTable.getGroups() catch block")
+        })
 })
 
 router.post('/initGroup', (req, res) => {

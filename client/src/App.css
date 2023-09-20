@@ -836,3 +836,11 @@ li img {
   padding: 8px;
   box-shadow: var(--Shadow);
 }
+
+/* ------------------------------------- */
+/* Additional info --------------------- */
+/* ------------------------------------- */
+
+.usersListItem {
+  text-shadow: 0 0 1px var(--Text);
+}

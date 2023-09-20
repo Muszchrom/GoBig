@@ -192,12 +192,15 @@ const groupUsersDb_getMainGroupId = (userId: GroupUsersTable["userId"]): Promise
     })
 }
 
-const groupUsersDb_getGroups = (userId: GroupUsersTable["userId"]) => {
+const groupUsersDb_getGroups = (userId: GroupUsersTable["userId"]): Promise<{name: GroupsTable["name"], userPrivileges: GroupUsersTable["userPrivileges"], isMainGroup: GroupUsersTable["isMainGroup"]}[]> => {
     return new Promise((resolve, reject) => {
         const sql = `SELECT groups.name, groupUsers.userPrivileges, groupUsers.isMainGroup 
-                    FROM groups INNER JOIN groupUsers ON groups.id=groupUsers.groupId
+                    FROM groups 
+                    INNER JOIN groupUsers 
+                    ON groups.id=groupUsers.groupId 
                     WHERE userId=?`
-        db.all(sql, [userId], (err, rows) => {
+        
+        db.all(sql, [userId], (err, rows: {name: GroupsTable["name"], userPrivileges: GroupUsersTable["userPrivileges"], isMainGroup: GroupUsersTable["isMainGroup"]}[]) => {
             if (err) reject(err)
             else resolve(rows)
         })
@@ -222,7 +225,8 @@ export interface GroupUsersTable {
 export const groupsTable = {
     initGroup: groupsDb_initializeGroup,
     getPrivileges: groupUsersDb_getPrivileges,
-    getMainGroupId: groupUsersDb_getMainGroupId
+    getMainGroupId: groupUsersDb_getMainGroupId,
+    getGroups: groupUsersDb_getGroups
 }
 /* -------------------------------------------------------
 ####################### Auth db queries ##################

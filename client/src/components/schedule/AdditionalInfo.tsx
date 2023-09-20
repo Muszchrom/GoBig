@@ -5,7 +5,8 @@ import { Overlay, OverlayNoBounds } from '../Overlay'
 import UploadModal from '../UploadModal';
 import { MultilineInput, MultilineInputLoading } from '../FormElements';
 import { SubmitButton } from '../Common';
-import { getImage, uploadImage, getNotes, uploadNotes } from '../Requests';
+import { getImage, uploadImage, getNotes, uploadNotes, getUserGroups } from '../Requests';
+import { TextInput } from './tiles/TileInputs';
 
 export default function AdditionalInfo() {
   const [open, setOpen] = useState(false) // is This window open
@@ -25,6 +26,8 @@ export default function AdditionalInfo() {
           <h1 style={{marginTop: "7px"}}>More stuff</h1>
           <TextBox></TextBox>
           <ImageBox></ImageBox>
+          <GroupsBox></GroupsBox>
+          <SearchUsers></SearchUsers>
           <SubmitButton waitingFor={false} handleClick={() => setShow(true)}>Sign out</SubmitButton>
           {/* Upload Modal */}
           {show && (<UploadModal 
@@ -45,6 +48,53 @@ export default function AdditionalInfo() {
   )
 }
 
+function SearchUsers() {
+  const inpRef = useRef(null)
+  return (
+    <TextInput inputRef={inpRef} initVal={""} validatingFuntion={() => []}>Add friends to your Main group</TextInput>
+)
+}
+
+function GroupsBox() {
+  const [groupsArray, setGroupsArray] = useState<{name: string, userPrivileges: 0 | 1 | 2, isMainGroup: 0 | 1}[] | undefined>(undefined)
+  useEffect(() => {
+    (async () => {
+      const data = await getUserGroups()
+      const boilerplate: {name: string, userPrivileges: 0 | 1 | 2, isMainGroup: 0 | 1}[] = [
+        {name: "Lotem group", userPrivileges: 1, isMainGroup: 0},
+        {name: "Jonh's group", userPrivileges: 2, isMainGroup: 0},
+        {name: "Janna's group", userPrivileges: 1, isMainGroup: 0},
+        {name: "Miky's group", userPrivileges: 2, isMainGroup: 0}
+      ]
+      data.push(...boilerplate)
+      setGroupsArray(data)
+    })()
+  }, [])
+  return (
+    <>
+      <div className="ex-inputWrapper">
+          <label className="ex-inputTitle">Your groups</label>
+          <div className={`ex-inputInnerWrapper ${!groupsArray && "animated-background"}`} style={{flexDirection: "column", paddingTop: "10px"}}>
+            {groupsArray && groupsArray?.map((item) => {
+              return (<div key={item.name} className="usersListItem">
+                <span title={
+                  item.userPrivileges === 0 
+                    ? "You're an author of this group" 
+                    : item.userPrivileges === 1 
+                      ? "You have write and read permissions on this group" 
+                      : "You have read only permissions on this group"}>
+                        {item.userPrivileges === 0 ? "👑" : item.userPrivileges === 1 ? "👷" : "👀"}
+                </span>
+                <span title="Your group's name">&nbsp;&nbsp;{item.name}&nbsp;&nbsp;</span>
+                <span title={item.isMainGroup ? "This is your main group" : "Just a group"}>{item.isMainGroup ? "✨" : ""}</span>
+              </div>)
+            })}
+          </div>
+      </div>
+    </>
+  )
+}
+
 function TextBox() {
   const [data, setData] = useState<string | undefined>(undefined)
 
@@ -57,7 +107,6 @@ function TextBox() {
   useEffect(() => {
     (async () => {
       const note = await getNotes()
-      console.log(note)
       setData(note)
     })()
   }, [])

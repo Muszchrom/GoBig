@@ -76,6 +76,15 @@ const callApi = async ({
         }
 }
 
+export const getUserGroups = async (): Promise<{name: string, userPrivileges: 0 | 1 | 2, isMainGroup: 0 | 1}[]> => {
+    const data = await callApi({endpoint: "/groups"})
+    if (data.status === 200) return data.data.groups 
+    else {
+        console.log(data.errors)
+        return [{name: "An error occured", userPrivileges: 0, isMainGroup: 0}]
+    }
+}
+
 export const createInitialGroup = async (name: string): Promise<string[]> => {
     const data = await callApi({endpoint: "/groups/initGroup", method: "POST", data: {groupName: name}})
     if (data.status === 201) return []
