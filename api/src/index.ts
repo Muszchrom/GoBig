@@ -7,6 +7,7 @@ import {scheduleRouter} from './schedule';
 import {calendarRouter} from './calendar';
 import {more} from './more';
 import { verifyToken } from './auth';
+import { groupsRouter, getGroup } from './groups';
 
 const app = express();
 app.use(morgan('dev'));
@@ -22,7 +23,7 @@ app.use((req, res, next) => {
     'Origin, X-Requested-With, Content-Type, Accept, Authorization'
   )
   res.header('Access-Control-Allow-Methods', 'PUT, POST, PATCH, DELETE, GET')
-  if (req.method === 'OPTIONS') res.send(200)
+  if (req.method === 'OPTIONS') res.sendStatus(200)
   else next()
 });
 
@@ -32,9 +33,10 @@ app.get('/api/', (req, res) => {
 
 app.use('/api/static', express.static('files/public'))
 app.use('/api/auth', authRouter);
-app.use('/api/schedule', verifyToken, scheduleRouter);
-app.use('/api/calendar', verifyToken, calendarRouter);
-app.use('/api/files', verifyToken, more)
+app.use('/api/groups', verifyToken, groupsRouter) // NEED VALIDATION
+app.use('/api/schedule', verifyToken, getGroup, scheduleRouter);
+app.use('/api/calendar', verifyToken, getGroup, calendarRouter);
+app.use('/api/files', verifyToken, getGroup, more)
 
 app.listen(process.env.PORT, () => {
     console.log(`Listening on port ${process.env.PORT}`);

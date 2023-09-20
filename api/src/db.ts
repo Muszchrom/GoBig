@@ -52,6 +52,20 @@ const dbInitializer = (dbInstance: sqlite.Database=db) => {
         password TEXT NOT NULL 
     )`, (err) => dbInitializerCb(err, "users"));
 
+    dbInstance.run(`CREATE TABLE IF NOT EXISTS groups(
+        id INTEGER PRIMARY KEY, 
+        owner INTEGER NOT NULL, 
+        name TEXT NOT NULL 
+    )`, (err) => dbInitializerCb(err, "groups"));
+
+    dbInstance.run(`CREATE TABLE IF NOT EXISTS groupUsers(
+        groupId INTEGER NOT NULL, 
+        userId INTEGER NOT NULL, 
+        userPrivileges INTEGER NOT NULL,
+        isMainGroup INTEGER NOT NULL,
+        FOREIGN KEY(groupId) REFERENCES groups(id) ON DELETE CASCADE
+    )`, (err) => dbInitializerCb(err, "groupUsers"));
+
     dbInstance.run(`CREATE TABLE IF NOT EXISTS schedule(
         id INTEGER PRIMARY KEY, 
         day INTEGER NOT NULL, 
@@ -99,6 +113,117 @@ const dbInitializer = (dbInstance: sqlite.Database=db) => {
     )`, (err) => dbInitializerCb(err, "days"));
 }
 
+/* -------------------------------------------------------
+####################### Groups db queries ################
+------------------------------------------------------- */
+/**
+ * If group exist then "group_exists" error is thrown
+ */
+// initial group createion, during signup process
+const groupsDb_initializeGroup = (userId: GroupsTable["owner"], groupName: GroupsTable["name"]): Promise<true> => {    
+    const createGroup = (userId: GroupsTable["owner"], groupName: GroupsTable["name"]): Promise<true> => {
+        return new Promise((resolve, reject) => {
+            const sql = `INSERT INTO groups(owner, name) VALUES (?, ?)`
+            db.run(sql, [userId, groupName], (err) => {
+                if (err) reject(err)
+                else resolve(true)
+            })
+        })
+    }
+
+    const insertUserIntoGroup = (
+            groupId: GroupUsersTable["groupId"], 
+            userId: GroupUsersTable["userId"], 
+            privileges: GroupUsersTable["userPrivileges"], 
+            isMainGroup: GroupUsersTable["isMainGroup"]
+        ): Promise<true> => {
+            return new Promise((resolve, reject) => {
+                const sql = `INSERT INTO groupUsers(groupId, userId, userPrivileges, isMainGroup) VALUES (?, ?, ?, ?)`
+                db.run(sql, [groupId, userId, privileges, isMainGroup], (err) => {
+                    if (err) reject(err)
+                    else resolve(true)
+                })
+            })
+    }
+
+    return new Promise((resolve, reject) => {
+        groupsDb_getId(userId, groupName)
+            .then((row) => {
+                if (row) throw new Error("group_exists")
+                else return createGroup(userId, groupName)
+            })
+            .then(() => groupsDb_getId(userId, groupName))
+            .then((idObject) => {
+                if (!idObject) throw new Error("groupsDb_initializeGroup() in groupsDb_getId() then() chain: didnt get id from createGroup()")
+                else return insertUserIntoGroup(idObject.id, userId, 0, 1)
+            })
+            .then(() => resolve(true))
+            .catch((err) => reject(err))
+    })
+}
+// get id based on your users id and groups name
+const groupsDb_getId = (userId: GroupsTable["owner"], groupName: GroupsTable["name"]): Promise<{id: GroupsTable["id"]} | undefined> => {
+    return new Promise((resolve, reject) => {
+        const sql = `SELECT id FROM groups WHERE owner=? AND name=?`
+        db.get(sql, [userId, groupName], (err, row: {id: GroupsTable["id"]} | undefined) => {
+            if (err) reject(err)
+            else resolve(row)
+        })
+    })
+}
+
+const groupUsersDb_getPrivileges = (groupId: GroupUsersTable["groupId"], userId: GroupUsersTable["userId"]): Promise<{userPrivileges: GroupUsersTable["userPrivileges"]} | undefined> => {
+    return new Promise((resolve, reject) => {
+        const sql = `SELECT userPrivileges FROM groupUsers WHERE groupId=? AND userId=?`
+        db.get(sql, [groupId, userId], (err, row: {userPrivileges: GroupUsersTable["userPrivileges"]} | undefined) => {
+            if (err) reject(err)
+            else resolve(row)
+        })
+    })
+}
+
+const groupUsersDb_getMainGroupId = (userId: GroupUsersTable["userId"]): Promise<{groupId: GroupUsersTable["groupId"]} | undefined> => {
+    return new Promise((resolve, reject) => {
+        const sql = `SELECT groupId FROM groupUsers WHERE userId=? AND isMainGroup=?`
+        db.get(sql, [userId, 1], (err, row: {groupId: GroupUsersTable["groupId"]} | undefined) => {
+            if (err) reject(err)
+            else resolve(row)
+        })
+    })
+}
+
+const groupUsersDb_getGroups = (userId: GroupUsersTable["userId"]) => {
+    return new Promise((resolve, reject) => {
+        const sql = `SELECT groups.name, groupUsers.userPrivileges, groupUsers.isMainGroup 
+                    FROM groups INNER JOIN groupUsers ON groups.id=groupUsers.groupId
+                    WHERE userId=?`
+        db.all(sql, [userId], (err, rows) => {
+            if (err) reject(err)
+            else resolve(rows)
+        })
+    })
+}
+
+export interface GroupsTable {
+    id: number,
+    owner: number,
+    name: string
+} 
+/**
+ * @field userPrivileges: 0 - Owner, 1 - Read/Write, 2 - Read
+ * @field isMainGroup: 0 - false, 1 - true
+ */
+export interface GroupUsersTable {
+    groupId: GroupsTable["id"],
+    userId: GroupsTable["owner"],
+    userPrivileges: 0 | 1 | 2,
+    isMainGroup: 0 | 1
+} 
+export const groupsTable = {
+    initGroup: groupsDb_initializeGroup,
+    getPrivileges: groupUsersDb_getPrivileges,
+    getMainGroupId: groupUsersDb_getMainGroupId
+}
 /* -------------------------------------------------------
 ####################### Auth db queries ##################
 ------------------------------------------------------- */

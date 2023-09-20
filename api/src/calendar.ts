@@ -9,6 +9,7 @@ import {
     calendarDb_BulkInsertDaysVals
 } from "./db";
 import { serverErrorHandler } from './commonResponse';
+import { validateWritePermissions } from "./groups";
 
 const router = express.Router();
 
@@ -202,7 +203,7 @@ const responseToValidation = (req: Request, res: Response, next: NextFunction) =
 ######################### Routes #########################
 ------------------------------------------------------- */
 
-router.post('/', constructorForUserNotPresent, saveDatesObject, (req: Request, res: Response) => {
+router.post('/', validateWritePermissions, constructorForUserNotPresent, saveDatesObject, (req: Request, res: Response) => {
     res.status(201).json({
         message: "Your schedule has been successuflly created"
     })
@@ -293,7 +294,7 @@ router.get('/weeks', (req, res) => {
     })
 })
 
-router.patch('/day', validationChain, responseToValidation, (req: Request, res: Response) => {
+router.patch('/day', validateWritePermissions, validationChain, responseToValidation, (req: Request, res: Response) => {
     calendarTable.updateDay({userId: res.locals.userId, month: req.body.month, day: req.body.day, type: req.body.type, message: req.body.message})
         .then((changes) => {
             if (changes === 0) res.status(404).json({message: "Did not found any rows related to values provided, nothing was edited"});
@@ -304,7 +305,7 @@ router.patch('/day', validationChain, responseToValidation, (req: Request, res: 
         });
 })
 
-router.patch('/week', validationChain2, responseToValidation, (req: Request, res: Response) => {
+router.patch('/week', validateWritePermissions, validationChain2, responseToValidation, (req: Request, res: Response) => {
     calendarTable.updateWeekType({userId: res.locals.userId, week: req.body.week, type: req.body.type})
         .then((changes) => {
             if (changes === 0) res.status(404).json({message: "Did not found any rows related to values provided, nothing was edited"});
@@ -315,7 +316,7 @@ router.patch('/week', validationChain2, responseToValidation, (req: Request, res
         });
 })
 
-router.delete('/', (req, res) => {
+router.delete('/', validateWritePermissions, (req, res) => {
     calendarTable.deleteFromMonthsWhereUserId(res.locals.userId)
         .then((changes) => {
             if (changes === 0) res.status(200).json({message: "Did not found any rows related to your user id, nothing was deleted"});

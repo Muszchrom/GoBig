@@ -5,6 +5,7 @@ import * as fs from 'node:fs/promises'
 import { getRandomValues } from 'node:crypto';
 import { filesTable, notesTable } from './db';
 import { serverErrorHandler } from './commonResponse';
+import { validateWritePermissions } from './groups';
 
 const filesDest = `${__dirname}/../files/user_files`
 
@@ -54,7 +55,7 @@ router.get('/', (req, res) => {
             serverErrorHandler(err, res, "router.get('/', ... ), filesTable.getFileName(...),  catch block")
         })
 })
-router.post('/', (req: Request, res: Response) => {
+router.post('/', validateWritePermissions, (req: Request, res: Response) => {
     upload(req, res, (err) => {
         if (err && err.message === 'Please provide png/jpg/jpeg file') {
             return res.status(404).json({errors: [err.message]})
@@ -104,7 +105,7 @@ router.get('/notes', (req: Request, res: Response) => {
             serverErrorHandler(err, res, "router.get('/notes', ... ), notesTable.getNote(...),  catch block")
         })
 })
-router.post('/notes', (req: Request, res: Response) => {
+router.post('/notes', validateWritePermissions, (req: Request, res: Response) => {
     const note = req.body.note
     if (typeof note !== "string") {
         return res.status(400).json({message: "Note must be a string", errors: ["Note must be a string"]})

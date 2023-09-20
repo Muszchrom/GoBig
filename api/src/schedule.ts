@@ -2,7 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { scheduleTable, ScheduleTable } from './db';
 import { serverErrorHandler } from './commonResponse';
-
+import { validateWritePermissions } from './groups';
 const router = express.Router();
 
 /* -------------------------------------------------------
@@ -149,7 +149,7 @@ router.get('/:day', (req: Request, res: Response) => {
 })
 
 // Create new schedule row
-router.post('/', validationChain, validateSubject, (req: Request, res: Response) => {
+router.post('/', validateWritePermissions, validationChain, validateSubject, (req: Request, res: Response) => {
     const vals: Omit<ScheduleTable, "id"> = {
         day: req.body.day, 
         start: req.body.start, 
@@ -199,7 +199,7 @@ router.post('/', validationChain, validateSubject, (req: Request, res: Response)
 });
 
 // Update schedule row
-router.patch('/', validateId, validateUpdateArray, validateUpdate, (req, res) => {
+router.patch('/', validateWritePermissions, validateId, validateUpdateArray, validateUpdate, (req, res) => {
     let queryFields = '';
     let values = [];
 
@@ -229,7 +229,7 @@ router.patch('/', validateId, validateUpdateArray, validateUpdate, (req, res) =>
 })
 
 // Delete schedule row
-router.delete('/', validateId, (req, res) => {
+router.delete('/', validateWritePermissions, validateId, (req, res) => {
     scheduleTable.deleteSubject(req.body.id, res.locals.userId)
         .then((result) => {
             if (result) {
