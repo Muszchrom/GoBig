@@ -1,6 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { verifyToken } from './auth';
 import { scheduleTable, ScheduleTable } from './db';
 import { serverErrorHandler } from './commonResponse';
 
@@ -119,7 +118,7 @@ const validateUpdate = async (req: Request, res: Response, next: NextFunction) =
 ######################### Routes #########################
 ------------------------------------------------------- */
 
-router.get('/', verifyToken, (req: Request, res: Response) => {
+router.get('/', (req: Request, res: Response) => {
     scheduleTable.getSchedule(res.locals.userId)
         .then((rows) => {
             res.status(200).json({message: "Rows selected successfully!", rows: rows})
@@ -130,7 +129,7 @@ router.get('/', verifyToken, (req: Request, res: Response) => {
 })
 
 // Get schedule for given day
-router.get('/:day', verifyToken, (req: Request, res: Response) => {
+router.get('/:day', (req: Request, res: Response) => {
     const day = parseInt(req.params.day);
     if (isNaN(day)) return res.status(400).json({message: "Day is not a valid number or was not provided", erros: ["Day is not a valid number or was not provided"]})
     
@@ -150,7 +149,7 @@ router.get('/:day', verifyToken, (req: Request, res: Response) => {
 })
 
 // Create new schedule row
-router.post('/', verifyToken, validationChain, validateSubject, (req: Request, res: Response) => {
+router.post('/', validationChain, validateSubject, (req: Request, res: Response) => {
     const vals: Omit<ScheduleTable, "id"> = {
         day: req.body.day, 
         start: req.body.start, 
@@ -200,7 +199,7 @@ router.post('/', verifyToken, validationChain, validateSubject, (req: Request, r
 });
 
 // Update schedule row
-router.patch('/', verifyToken, validateId, validateUpdateArray, validateUpdate, (req, res) => {
+router.patch('/', validateId, validateUpdateArray, validateUpdate, (req, res) => {
     let queryFields = '';
     let values = [];
 
@@ -230,7 +229,7 @@ router.patch('/', verifyToken, validateId, validateUpdateArray, validateUpdate, 
 })
 
 // Delete schedule row
-router.delete('/', verifyToken, validateId, (req, res) => {
+router.delete('/', validateId, (req, res) => {
     scheduleTable.deleteSubject(req.body.id, res.locals.userId)
         .then((result) => {
             if (result) {

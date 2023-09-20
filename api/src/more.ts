@@ -4,9 +4,7 @@ import path from 'path'
 import * as fs from 'node:fs/promises'
 import { getRandomValues } from 'node:crypto';
 import { filesTable, notesTable } from './db';
-import { verifyToken } from './auth';
 import { serverErrorHandler } from './commonResponse';
-import { type } from 'os';
 
 const filesDest = `${__dirname}/../files/user_files`
 
@@ -42,7 +40,7 @@ const router = express.Router();
 ######################### Routes #########################
 ------------------------------------------------------- */
 
-router.get('/', verifyToken, (req, res) => {
+router.get('/', (req, res) => {
     filesTable.getFileName(res.locals.userId)
         .then((row) => {
             if (row) {
@@ -56,8 +54,7 @@ router.get('/', verifyToken, (req, res) => {
             serverErrorHandler(err, res, "router.get('/', ... ), filesTable.getFileName(...),  catch block")
         })
 })
-
-router.post('/', verifyToken, (req: Request, res: Response) => {
+router.post('/', (req: Request, res: Response) => {
     upload(req, res, (err) => {
         if (err && err.message === 'Please provide png/jpg/jpeg file') {
             return res.status(404).json({errors: [err.message]})
@@ -94,8 +91,7 @@ router.post('/', verifyToken, (req: Request, res: Response) => {
         }
     })
 })
-
-router.get('/notes', verifyToken, (req: Request, res: Response) => {
+router.get('/notes', (req: Request, res: Response) => {
     notesTable.getNote(res.locals.userId)
         .then((note) => {
             if (note) {
@@ -108,7 +104,7 @@ router.get('/notes', verifyToken, (req: Request, res: Response) => {
             serverErrorHandler(err, res, "router.get('/notes', ... ), notesTable.getNote(...),  catch block")
         })
 })
-router.post('/notes', verifyToken, (req: Request, res: Response) => {
+router.post('/notes', (req: Request, res: Response) => {
     const note = req.body.note
     if (typeof note !== "string") {
         return res.status(400).json({message: "Note must be a string", errors: ["Note must be a string"]})
