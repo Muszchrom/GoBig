@@ -3,10 +3,9 @@ import { Navigate } from 'react-router-dom';
 import { Overlay, OverlayNoBounds } from '../Overlay'
 
 import UploadModal from '../UploadModal';
-import { MultilineInput, MultilineInputLoading } from '../FormElements';
+import { InputLoading, TextInput, ImageContainer } from '../FormElements';
 import { SubmitButton } from '../Common';
 import { getImage, uploadImage, getNotes, uploadNotes, getUserGroups } from '../Requests';
-import { TextInput } from './tiles/TileInputs';
 
 export default function AdditionalInfo() {
   const [open, setOpen] = useState(false) // is This window open
@@ -24,12 +23,12 @@ export default function AdditionalInfo() {
         <Overlay backgroundColor={"antiquewhite"} setOpen={setOpen} open={open}>
           {/* Page context */}
           <h1 style={{marginTop: "7px"}}>More stuff</h1>
-          <TextBox></TextBox>
+          <NotesBox></NotesBox>
           <ImageBox></ImageBox>
           <GroupsBox></GroupsBox>
           <SearchUsers></SearchUsers>
+          {/* Sign Out */}
           <SubmitButton waitingFor={false} handleClick={() => setShow(true)}>Sign out</SubmitButton>
-          {/* Upload Modal */}
           {show && (<UploadModal 
                         color="var(--Color4)" 
                         handleClose={(e) => {e!.stopPropagation();setShow(false)}} 
@@ -48,10 +47,201 @@ export default function AdditionalInfo() {
   )
 }
 
+function NotesBox() {
+  const [showModal, setShowModal] = useState(false)
+  const [fetchedNote, setFetchedNote] = useState<string | undefined>(undefined)  // this one if fetched
+  const [note, setNote] = useState<string | undefined>(undefined)  // this one is edited/typed by user
+
+  useEffect(() => {
+    (async () => {
+      const data = await getNotes()
+      setFetchedNote(data)
+      setNote(data)
+    })()
+  }, [])
+
+  const handleBlur = async () => {
+    if (fetchedNote !== note) setShowModal(true)
+  }
+
+  const uploadNote = async () => {
+    if (note === undefined) return ["Note can not be undefined"]
+    const result = await uploadNotes(note)
+    if (result.length === 0) setFetchedNote(note)
+    return result
+  }
+
+  return (
+    <>
+      {note !== undefined
+        ? <TextInput 
+            validatingFuntion={() => ""} 
+            state={{field: "value", fun: (a, b) => setNote(b), initVal: note}}
+            multiline={true}
+            rows={4}
+            blurHandler={handleBlur}>Notes</TextInput>
+        : <InputLoading rows={4}>Notes</InputLoading> 
+      }
+      {showModal && (
+        <UploadModal 
+          color="var(--Color4)" 
+          handleClose={() => {setShowModal(false)}} 
+          handleSoftClose={() => {setShowModal(false)}} 
+          submitFunction={uploadNote}>
+              Upload changes?
+        </UploadModal>
+      )}
+    </>
+  )
+}
+
+function ImageBox() {
+  const [labelFocused, setLabelFocused] = useState(false)
+  const [imageFocused, setImageFocused] = useState(false)
+  const [data, setData] = useState({
+    isRequestRecieved: false,
+    image: ""
+  })
+  const [newImage, setNewImage] = useState<File | null>(null)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [showBigImage, setShowBigImage] = useState(false)
+
+  useEffect(() => {
+    (async () => {
+      const image = await getImage()
+      if (image.status !== 200) {
+        setData({
+          isRequestRecieved: true,
+          image: ""
+        })
+        return
+      }
+      const imgblob = await image.blob()
+      setData({
+        isRequestRecieved: true,
+        image: URL.createObjectURL(imgblob)
+      })
+    })()
+  }, [])
+
+  const uploadNewImage = async () => {
+    if (!newImage) return ["Image not found"]
+    const formData = new FormData()
+    formData.append('image', newImage)
+    const response = await uploadImage(formData)
+
+    if (response.status === 201) {
+      const reader = new FileReader()
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        setData({
+          isRequestRecieved: true,
+          image: e.target!.result as string
+        })
+      }
+      reader.readAsDataURL(newImage);
+      return []
+    } else {
+      const errors = await response.json();
+      if (!errors.errors.length) return ["An error occured"]
+      else return errors.errors 
+    }
+  }
+
+  return (
+    <>
+      <ImageContainer imgSrc={data.image}
+        imgAlt="Your campus map"
+        showLoadingAnimation={!data.isRequestRecieved}
+        labelFocused={labelFocused}
+        imageFocused={imageFocused}
+        labelClickHandler={() => {setShowUploadModal(true)}}
+        labelKeyDownHandler={(e: React.KeyboardEvent | undefined) => {(e?.key === "Enter" || e?.key === " ") && (() => {e.preventDefault(); setShowUploadModal(true)})()}}
+        imageClickHandler={() => {setShowBigImage(true)}}
+        imageKeyDownHandler={(e: React.KeyboardEvent | undefined) => {(e?.key === "Enter" || e?.key === " ") && setShowBigImage(true)}}
+        labelFocusHandler={() => {setLabelFocused(true)}} 
+        imageFocusHandler={() => {setImageFocused(true)}} 
+        labelBlurHandler={() => {setLabelFocused(false)}}
+        imageBlurHandler={() => {setImageFocused(false)}}
+        >Campus map</ImageContainer>
+      {showUploadModal && (
+        <UploadModal 
+          color="var(--Color4)" 
+          handleClose={() => {setShowUploadModal(false)}} 
+          handleSoftClose={() => {setShowUploadModal(false)}} 
+          submitFunction={uploadNewImage}>
+              <UploadImage userImage={newImage} setUserImage={setNewImage}></UploadImage>
+        </UploadModal>
+      )}
+      {showBigImage && (
+        <OverlayNoBounds open={showBigImage} setOpen={setShowBigImage}>
+          <img src={data.image} className="map-image" style={(data.isRequestRecieved ? {} : {display: "none"})} alt="Campus map"/>
+        </OverlayNoBounds>
+      )}
+    </>
+  )
+}
+
+function UploadImage({userImage, setUserImage}: {userImage: File | null, setUserImage: (file: File) => void}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const dropdownBox = useRef<HTMLDivElement>(null)
+  const [draggedOver, setDraggedOver] = useState(false)
+  const [imageUrl, setImageUrl] = useState("")
+
+
+  useEffect(() => {
+    if (!userImage) return
+    displayImage(userImage)
+    setDraggedOver(false)
+  }, [userImage])
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return
+    setUserImage(e.target.files[0])
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    if (!e.dataTransfer.files) return
+    setUserImage(e.dataTransfer.files[0])
+  }
+
+  const displayImage = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      const f = e.target!.result as string
+      setImageUrl(f)
+    }
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <>
+      <input ref={inputRef} onChange={handleChange} type="file" accept="image/*" style={{display: "none"}}></input>
+      <span>{imageUrl.length ? "File preview" : "Drop your file below"}</span>
+      <div ref={dropdownBox} 
+           title="Drop image here" 
+           className={`dropdownBox${draggedOver ? " dropdownBoxOnDrag" : ""}`} 
+           onDrop={handleDrop} 
+           onDragOver={(e: React.DragEvent<HTMLDivElement>) => e.preventDefault()} 
+           onDragEnter={() => setDraggedOver(true)} 
+           onDragLeave={() => setDraggedOver(false)} 
+           onClick={() => inputRef.current!.click()}>
+        {imageUrl.length ? (
+          <img src={imageUrl} style={{filter: draggedOver ? "brightness(0.9)" : "brightness(1)"}} alt="Your file"></img>
+        ) : (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" pointerEvents={"none"}>
+            <path d="M4 14V18H20V14M12 6L8 10M12 6L16 10M12 6V14" stroke="#322F2B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </div>
+    </>
+  )
+}
+
 function SearchUsers() {
   const inpRef = useRef(null)
   return (
-    <TextInput inputRef={inpRef} initVal={""} validatingFuntion={() => []}>Add friends to your Main group</TextInput>
+    <TextInput state={{field: "", fun: () => {}, initVal: ""}} validatingFuntion={() => ""}>Add friends to your Main group</TextInput>
 )
 }
 
@@ -95,189 +285,3 @@ function GroupsBox() {
   )
 }
 
-function TextBox() {
-  const [data, setData] = useState<string | undefined>(undefined)
-
-  const notesContentChanged = async (newNotesString: string) => {
-    const result = await uploadNotes(newNotesString)
-    if (result.length === 0) setData(newNotesString)
-    return result
-  }
-
-  useEffect(() => {
-    (async () => {
-      const note = await getNotes()
-      setData(note)
-    })()
-  }, [])
-
-  return (
-    <>
-      {data !== undefined
-        ? <MultilineInput initVal={data} validatingFuntion={() => ""} contentChangesSubmitted={notesContentChanged}>Notes</MultilineInput> 
-        : <MultilineInputLoading>Notes</MultilineInputLoading>}
-    </>
-  )
-}
-
-function ImageBox() {
-  const [showBigImage, setShowBigImage] = useState(false)
-  const [showUploadImageModal, setShowUploadImageModal] = useState(false)
-  const [data, setData] = useState({
-    isRequestRecieved: false,
-    image: ""
-  })
-  const [userImage, setUserImage] = useState<File | null>(null)
-
-  useEffect(() => {
-    (async () => {
-      const image = await getImage()
-      if (image.status !== 200) {
-        setData({
-          isRequestRecieved: true,
-          image: ""
-        })
-        return
-      }
-      const imgblob = await image.blob()
-      setData({
-        isRequestRecieved: true,
-        image: URL.createObjectURL(imgblob)
-      })
-    })()
-  }, [])
-
-  const uploadNewImage = async () => {
-    if (!userImage) return ["Image not found"]
-    const formData = new FormData()
-    formData.append('image', userImage)
-    const response = await uploadImage(formData)
-
-    if (response.status === 201) {
-      const reader = new FileReader()
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        setData({
-          isRequestRecieved: true,
-          image: e.target!.result as string
-        })
-      }
-      reader.readAsDataURL(userImage);
-      return []
-    } else {
-      const errors = await response.json();
-      if (!errors.errors.length) return ["An error occured"]
-      else return errors.errors 
-    }
-  }
-
-  return (
-    <>
-      <div className="ex-inputWrapper" style={{padding: 0}} role="button">
-        <label className="ex-inputTitle" onClick={() => setShowUploadImageModal(true)} style={{padding: "12px"}}>Campus map</label>
-        <div className="ex-inputInnerWrapper">
-          <div className={`image-frame ${!data.isRequestRecieved && "animated-background"}`} style={{borderBottomLeftRadius: "10px", borderBottomRightRadius: "10px", ...(data.image && {height: "unset", maxHeight: "600px"})}}>
-            {!!data.isRequestRecieved && (
-                data.image ? (
-                  <img onClick={() => setShowBigImage(true)} 
-                    src={data.image} 
-                    className="map-image" 
-                    style={{borderBottomLeftRadius: "10px", borderBottomRightRadius: "10px", ...(data.isRequestRecieved ? {} : {display: "none"})}} 
-                    alt="Campus map"/>
-                ) : (
-                  <div style={{width: "100%", height: "100%", display: "flex", justifyContent: "center", alignItems: "center"}}>
-                    <span>No image has been found</span>
-                  </div>
-                )
-            )}
-          </div>
-        </div>
-        {showUploadImageModal && (
-          <UploadModal 
-            color="var(--Color4)" 
-            handleClose={(e) => {e!.stopPropagation(); setShowUploadImageModal(false)}} 
-            handleSoftClose={(e) => {e!.stopPropagation(); setShowUploadImageModal(false)}} 
-            submitFunction={uploadNewImage}>
-                <UploadImage userImage={userImage} setUserImage={setUserImage}></UploadImage>
-          </UploadModal>
-        )}
-        {showBigImage && (
-          <OverlayNoBounds open={showBigImage} setOpen={setShowBigImage}>
-            <img src={data.image} className="map-image" style={(data.isRequestRecieved ? {} : {display: "none"})} alt="Campus map"/>
-          </OverlayNoBounds>
-        )}
-      </div>
-    </>
-  )
-}
-
-function UploadImage({userImage, setUserImage}: {userImage: File | null, setUserImage: (file: File) => void}) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const dropdownBox = useRef<HTMLDivElement>(null)
-  const [imageUrl, setImageUrl] = useState("")
-
-
-  useEffect(() => {
-    if (!userImage) return
-    displayImage(userImage)
-    changeStyle(true)
-  }, [userImage])
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return
-    setUserImage(e.target.files[0])
-  }
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    if (!e.dataTransfer.files) return
-    setUserImage(e.dataTransfer.files[0])
-  }
-
-  const displayImage = (file: File) => {
-    const reader = new FileReader()
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      const f = e.target!.result as string
-      setImageUrl(f)
-    }
-    reader.readAsDataURL(file);
-  }
-
-  const changeStyle = (remove?: boolean) => {
-    if (remove) {
-      dropdownBox.current?.classList.remove("dropdownBoxOnDrag")
-      const image = dropdownBox.current?.firstChild as HTMLImageElement
-      if (image) {
-        image.style.filter = "brightness(1)"
-      }
-    } else {
-      dropdownBox.current?.classList.add("dropdownBoxOnDrag")
-      const image = dropdownBox.current?.firstChild as HTMLImageElement
-      if (image) {
-        image.style.filter = "brightness(0.9)"
-      }
-    }
-  }
-
-  return (
-    <>
-      <input ref={inputRef} onChange={handleChange} type="file" accept="image/*" style={{display: "none"}}></input>
-      <span>{imageUrl.length ? "File preview" : "Drop your file below"}</span>
-      <div ref={dropdownBox} 
-           title="Drop image here" 
-           className="dropdownBox" 
-           onDrop={handleDrop} 
-           onDragOver={(e: React.DragEvent<HTMLDivElement>) => e.preventDefault()} 
-           onDragEnter={() => changeStyle()} 
-           onDragLeave={() => changeStyle(true)} 
-           onClick={() => inputRef.current!.click()}>
-        {imageUrl.length ? (
-          <img src={imageUrl} alt="Your file"></img>
-        ) : (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" pointerEvents={"none"}>
-            <path d="M4 14V18H20V14M12 6L8 10M12 6L16 10M12 6V14" stroke="#322F2B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        )}
-      </div>
-    </>
-  )
-}
