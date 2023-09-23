@@ -2,13 +2,6 @@ import React, { useState } from "react"
 import { SubmitButton, CancelButton, LoadingButtonAnimation, ErrorList } from "./Common"
 import { ModalWindow } from "./Overlay"
 
-/**
- * @param {string} color - Background color for window
- * @param {string} children - Title in initial appearance
- * @param {function} handleClose - Ran on successfull modal close button click
- * @param {function} handleSoftClose - Ran on every cancel button click
- * @param {function} submitFunction - Must return an array. If this array is empty then upload is considered successfull
- */
 
 interface ModalProps {
     color: string
@@ -23,7 +16,13 @@ interface ErrModalProps {
     uploadErrors: string[]
     handleSoftClose: () => void
 }
-
+/**
+ * @param {string} color - Background color for window
+ * @param {string} children - Title in initial appearance
+ * @param {function} handleClose - Ran on successfull modal close button click
+ * @param {function} handleSoftClose - Ran on every cancel button click
+ * @param {function} submitFunction - Must return an array. If this array is empty then upload is considered successfull
+ */
 export default function UploadModal({color, children, handleClose, handleSoftClose, submitFunction}: ModalProps) {
     const [uploading, setUploading] = useState<boolean>(false)
     const [uploadErrors, setUploadErrors] = useState<string[]>([])
