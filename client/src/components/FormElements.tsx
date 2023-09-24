@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, forwardRef } from 'react';
 import { source } from '../source';
 
 interface InputContainer {
@@ -8,9 +8,9 @@ interface InputContainer {
     error: string, 
     handleClick: () => void
 }
-export function InputContainer({focused, label, children, error, handleClick}: InputContainer) {
+export const InputContainer = forwardRef(function ({focused, label, children, error, handleClick}: InputContainer, ref: React.Ref<HTMLDivElement>) {
     return (
-        <div className={`ex-inputWrapper${focused ? " ex-activeWrapper" : ""}`} role="button" onClick={handleClick}>
+        <div ref={ref} className={`ex-inputWrapper${focused ? " ex-activeWrapper" : ""}`} role="button" onClick={handleClick}>
             <label className={`ex-inputTitle${focused ? " ex-activeTitle" : ""}`}>{label}</label>
             <div className="ex-inputInnerWrapper">
                 <div className="ex-textAreaWrapper">
@@ -31,7 +31,7 @@ export function InputContainer({focused, label, children, error, handleClick}: I
             </div>
         </div>
     )
-}
+})
 
 export function InputLoading({rows, children}: {rows: number, children: React.ReactNode}) {
     return (
@@ -64,8 +64,9 @@ export function TextInput({children, validatingFuntion, state, focusHandler, blu
     const [focused, setFocused] = useState(false)
     const [inputValue, setInputValue] = useState(state.initVal)
 
-    const inputRef = useRef<HTMLInputElement>(null)
-    const textAreaRef = useRef<HTMLTextAreaElement>(null)
+    const wrapperRef = useRef<HTMLDivElement | null>(null)
+    const inputRef = useRef<HTMLInputElement | null>(null)
+    const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
 
     // useImperativeHandle(ref, () => inputRef.current! || textAreaRef.current!)
 
@@ -74,6 +75,20 @@ export function TextInput({children, validatingFuntion, state, focusHandler, blu
         textAreaRef.current!.rows = 1
         textAreaRef.current!.rows = ((a=Math.floor(textAreaRef.current!.scrollHeight/19), b=rows || 1) => a < b ? b : a)()
     }, [multiline, rows])
+
+    useEffect(() => {
+        const handleOutFocus = () => {setFocused(false); blurHandler && blurHandler()}
+        const mousedownListener = (e: MouseEvent) => !wrapperRef.current?.contains(e.target as Node) && handleOutFocus()
+        const keydownListener = (e: KeyboardEvent) => e.key === "Tab" && handleOutFocus()
+        if (focused) {
+            document.addEventListener("mousedown", mousedownListener)
+            document.addEventListener("keydown", keydownListener)
+        }
+        return () => {
+            document.removeEventListener("mousedown", mousedownListener)
+            document.removeEventListener("keydown", keydownListener)
+        }
+    }, [focused, inputValue])
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         if (multiline) {
@@ -86,13 +101,12 @@ export function TextInput({children, validatingFuntion, state, focusHandler, blu
     }
     const handleClick = () => (inputRef.current || textAreaRef.current)!.focus()
     const handleFocus = () => {setFocused(true); focusHandler && focusHandler()}
-    const handleOutFocus = () => {setFocused(false); blurHandler && blurHandler()}
 
     return (
-        <InputContainer focused={focused} label={children} error={validationError} handleClick={handleClick}>
+        <InputContainer ref={wrapperRef} focused={focused} label={children} error={validationError} handleClick={handleClick}>
             {multiline 
-                ? <textarea ref={textAreaRef} rows={rows || 1} className={`ex-textInput${focused ? " ex-activeInput": ""}`} value={inputValue} onChange={handleChange} onFocus={handleFocus} onBlur={handleOutFocus}></textarea>
-                : <input type="text" ref={inputRef} className={`ex-textInput${focused ? " ex-activeInput" : ""}`} value={inputValue} onChange={handleChange} onFocus={handleFocus} onBlur={handleOutFocus}></input>
+                ? <textarea ref={textAreaRef} rows={rows || 1} className={`ex-textInput${focused ? " ex-activeInput": ""}`} value={inputValue} onChange={handleChange} onFocus={handleFocus}></textarea>
+                : <input type="text" ref={inputRef} className={`ex-textInput${focused ? " ex-activeInput" : ""}`} value={inputValue} onChange={handleChange} onFocus={handleFocus}></input>
             }
         </InputContainer>
     )
