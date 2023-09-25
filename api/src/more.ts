@@ -42,7 +42,7 @@ const router = express.Router();
 ------------------------------------------------------- */
 
 router.get('/', (req, res) => {
-    filesTable.getFileName(res.locals.userId)
+    filesTable.getFileName(res.locals.groupId)
         .then((row) => {
             if (row) {
                 res.sendFile(row.filename, {root: filesDest, dotfiles: "allow"})
@@ -64,7 +64,7 @@ router.post('/', validateWritePermissions, (req: Request, res: Response) => {
         } else if (err) {
             serverErrorHandler(err, res, "router.post('/', ... ), upload(), cb, else if (err)", ["An internal server error occured (multer)"])
         } else {
-            filesTable.getFileName(res.locals.userId)
+            filesTable.getFileName(res.locals.groupId)
                 .then((row) => {
                     if (row) {
                         const file = `${filesDest}/${row.filename}`
@@ -74,12 +74,12 @@ router.post('/', validateWritePermissions, (req: Request, res: Response) => {
                     }
                 })
                 .then(() => {
-                    return filesTable.deleteFromFiles(res.locals.userId)
+                    return filesTable.deleteFromFiles(res.locals.groupId)
                 })
                 .then(() => {
                     const file: string | undefined = req.file?.filename
                     if (!file) throw new Error("Filename not found")
-                    const userId: number = parseInt(res.locals.userId)
+                    const userId: number = parseInt(res.locals.groupId)
                     return filesTable.insertIntoFiles({userId: userId, filename: file})
                 })
                 .then(() => {
@@ -93,7 +93,7 @@ router.post('/', validateWritePermissions, (req: Request, res: Response) => {
     })
 })
 router.get('/notes', (req: Request, res: Response) => {
-    notesTable.getNote(res.locals.userId)
+    notesTable.getNote(res.locals.groupId)
         .then((note) => {
             if (note) {
                 res.status(200).json({note: note.note})
@@ -115,15 +115,15 @@ router.post('/notes', validateWritePermissions, (req: Request, res: Response) =>
     }
 
     // ill trust sqlite sanitization here
-    notesTable.getNote(res.locals.userId)
+    notesTable.getNote(res.locals.groupId)
         .then((note) => {
             if (note) {
-                return notesTable.deleteFromNotes(res.locals.userId)
+                return notesTable.deleteFromNotes(res.locals.groupId)
             }
             return true
         })
         .then(() => {
-            return notesTable.insertIntoNotes({userId: res.locals.userId, note: note})
+            return notesTable.insertIntoNotes({userId: res.locals.groupId, note: note})
         })
         .then(() => {
             res.status(201).json({message: "Note inserted successfully"})

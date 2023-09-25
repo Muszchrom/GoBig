@@ -98,7 +98,7 @@ const saveDatesObject = (req: Request, res: Response, next: NextFunction) => {
     if (dateStart - dateEnd > 0) return res.status(400).json({message: "dateStart dateEnd mismatch", errors: ["dateStart dateEnd mismatch"]});
     if ((dateEnd - dateStart)/(1000*60*60*24) > 300) return res.status(400).json({message: "Difference between dates must not exceed 300 days", errors: ["Difference between dates must not exceed 300 days"]});
     
-    const userId: number = res.locals.userId;
+    const userId: number = res.locals.groupId;
     
     const data: GeneratedData = createDatesObject(dateStart, dateEnd);
 
@@ -151,8 +151,7 @@ const saveDatesObject = (req: Request, res: Response, next: NextFunction) => {
 
 // call next if rows === undefined for userId
 const constructorForUserNotPresent = (req: Request, res: Response, next: NextFunction) => {
-    console.log(res.locals.userId)
-    calendarTable.selectFromMonthWhereUserId(res.locals.userId)
+    calendarTable.selectFromMonthWhereUserId(res.locals.groupId)
         .then((row) => {
             if (row === undefined) next()
             else return res.status(400).json({message: "Constructor is already created", errors: ["Constructor is already created"]});
@@ -210,7 +209,7 @@ router.post('/', validateWritePermissions, constructorForUserNotPresent, saveDat
 })
 
 router.get('/', (req: Request, res: Response) => {
-    calendarTable.selectRowsWhereUserId(res.locals.userId)
+    calendarTable.selectRowsWhereUserId(res.locals.groupId)
         .then((rows) => {
             if (rows.length === 0 || rows === undefined) return res.status(400).json({message: "You need to post date start and date end first", errors: ["You need to post date start and date end first"]})
             
@@ -283,8 +282,8 @@ router.get('/', (req: Request, res: Response) => {
 
 router.get('/weeks', (req, res) => {
     Promise.all([
-        calendarTable.selectWeeksAndWeekTypesForUserId(res.locals.userId), 
-        calendarTable.selectMonthForUserId(res.locals.userId)
+        calendarTable.selectWeeksAndWeekTypesForUserId(res.locals.groupId), 
+        calendarTable.selectMonthForUserId(res.locals.groupId)
     ])
     .then((result) => {
         res.status(200).json({message: "Selected rows successfully", firstMonth: result[1], data: result[0]})
@@ -295,7 +294,7 @@ router.get('/weeks', (req, res) => {
 })
 
 router.patch('/day', validateWritePermissions, validationChain, responseToValidation, (req: Request, res: Response) => {
-    calendarTable.updateDay({userId: res.locals.userId, month: req.body.month, day: req.body.day, type: req.body.type, message: req.body.message})
+    calendarTable.updateDay({userId: res.locals.groupId, month: req.body.month, day: req.body.day, type: req.body.type, message: req.body.message})
         .then((changes) => {
             if (changes === 0) res.status(404).json({message: "Did not found any rows related to values provided, nothing was edited"});
             else res.status(200).json({message: "Edited all rows related to values provided"});
@@ -306,7 +305,7 @@ router.patch('/day', validateWritePermissions, validationChain, responseToValida
 })
 
 router.patch('/week', validateWritePermissions, validationChain2, responseToValidation, (req: Request, res: Response) => {
-    calendarTable.updateWeekType({userId: res.locals.userId, week: req.body.week, type: req.body.type})
+    calendarTable.updateWeekType({userId: res.locals.groupId, week: req.body.week, type: req.body.type})
         .then((changes) => {
             if (changes === 0) res.status(404).json({message: "Did not found any rows related to values provided, nothing was edited"});
             else res.status(200).json({message: "Edited all rows related to values provided"});
@@ -317,7 +316,7 @@ router.patch('/week', validateWritePermissions, validationChain2, responseToVali
 })
 
 router.delete('/', validateWritePermissions, (req, res) => {
-    calendarTable.deleteFromMonthsWhereUserId(res.locals.userId)
+    calendarTable.deleteFromMonthsWhereUserId(res.locals.groupId)
         .then((changes) => {
             if (changes === 0) res.status(200).json({message: "Did not found any rows related to your user id, nothing was deleted"});
             else res.status(200).json({message: "Removed all rows related to your user id"});

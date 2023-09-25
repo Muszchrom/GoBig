@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from "express"
-import { groupsTable } from "./db"
+import { groupsTable, usersTable } from "./db"
 import { serverErrorHandler } from "./commonResponse"
 
 const router = express.Router()
@@ -54,5 +54,17 @@ router.post('/initGroup', (req, res) => {
         })
 })
 
+router.get('/usernames/:username', (req: Request, res: Response) => {
+    const username = req.params.username
+    if (username.length < 3) return res.status(400).json({message: "Provide at least 3 chars", erros: ["Please provide 3 or more characters"]})
+
+    usersTable.getFiveUsernames(username)
+        .then((rows) => {
+            res.status(200).json({message: "Rows selected successfully!", usernames: rows});
+        })
+        .catch((err) => {
+            serverErrorHandler(err, res, "groups.ts router.get('/usernames/:username', ... ), usersTable.getFiveUsernames(...), catch block")
+        })
+})
 
 export { router as groupsRouter }

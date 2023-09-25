@@ -271,6 +271,15 @@ const authDb_deleteUser = (userId: string | number, username: string, hash: stri
         });
     });
 }
+const authDb_getFiveUsernames = (username: string): Promise<{username: string}[]> => {
+    const sql = `SELECT username FROM users WHERE username LIKE ? LIMIT 5`
+    return new Promise((resolve, reject) => {
+        db.all(sql, [`%${username}%`], (err, rows: {username: string}[]) => {
+            if (err) reject(err)
+            resolve(rows)
+        })
+    })
+}
 
 export interface UsersTable {
     id: number,
@@ -281,7 +290,8 @@ export interface UsersTable {
 export const usersTable = {
     createUser: authDb_createUser,
     getUserByUsername: authDb_getUserByUsername,
-    deleteUser: authDb_deleteUser
+    deleteUser: authDb_deleteUser,
+    getFiveUsernames: authDb_getFiveUsernames
 }
 
 /* -------------------------------------------------------

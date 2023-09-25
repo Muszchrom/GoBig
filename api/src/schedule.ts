@@ -119,7 +119,7 @@ const validateUpdate = async (req: Request, res: Response, next: NextFunction) =
 ------------------------------------------------------- */
 
 router.get('/', (req: Request, res: Response) => {
-    scheduleTable.getSchedule(res.locals.userId)
+    scheduleTable.getSchedule(res.locals.groupId)
         .then((rows) => {
             res.status(200).json({message: "Rows selected successfully!", rows: rows})
         })
@@ -139,7 +139,7 @@ router.get('/:day', (req: Request, res: Response) => {
             errors: ["Day should be an integer greater or equal than 0 and less or equal than 6"]
         });
     }
-    scheduleTable.getSubjectsByDay(day, res.locals.userId)
+    scheduleTable.getSubjectsByDay(day, res.locals.groupId)
         .then((rows) => {
             res.status(200).json({message: "Rows selected successfully!", rows: rows});
         })
@@ -163,7 +163,7 @@ router.post('/', validateWritePermissions, validationChain, validateSubject, (re
         weekStart: req.body.weekStart, 
         weekEnd: req.body.weekEnd, 
         weekType: req.body.weekType,
-        userId: res.locals.userId
+        userId: res.locals.groupId
     }
 
     // check if subject exists (need that to retrieve id later on)
@@ -209,9 +209,9 @@ router.patch('/', validateWritePermissions, validateId, validateUpdateArray, val
         values.push(req.body[req.body.updateArray[i]]);
     }
     
-    // add userId
+    // add userId => should use groupId from now
     queryFields += `userId=?, `;
-    values.push(res.locals.userId);
+    values.push(res.locals.groupId);
 
     queryFields = queryFields.slice(0, -2);
 
@@ -230,7 +230,7 @@ router.patch('/', validateWritePermissions, validateId, validateUpdateArray, val
 
 // Delete schedule row
 router.delete('/', validateWritePermissions, validateId, (req, res) => {
-    scheduleTable.deleteSubject(req.body.id, res.locals.userId)
+    scheduleTable.deleteSubject(req.body.id, res.locals.groupId)
         .then((result) => {
             if (result) {
                 res.status(200).json({message: "Subject deleted successfully"});
