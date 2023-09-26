@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Navigate } from 'react-router-dom';
 import { Overlay, OverlayNoBounds } from '../Overlay'
 
 import UploadModal from '../UploadModal';
 import { InputLoading, TextInput, ImageContainer } from '../FormElements';
 import { SubmitButton } from '../Common';
-import { getImage, uploadImage, getNotes, uploadNotes, getUserGroups } from '../Requests';
+import { getImage, uploadImage, getNotes, uploadNotes, getUserGroups, searchUsers } from '../Requests';
 
 export default function AdditionalInfo() {
   const [open, setOpen] = useState(false) // is This window open
@@ -25,9 +25,12 @@ export default function AdditionalInfo() {
           <h1 style={{marginTop: "7px"}}>More stuff</h1>
           <NotesBox></NotesBox>
           <ImageBox></ImageBox>
-          <GroupsBox></GroupsBox>
+          <h1 style={{marginTop: "7px"}}>Groups</h1>
+          <UsersBox></UsersBox>
           <SearchUsers></SearchUsers>
+          <GroupsBox></GroupsBox>
           {/* Sign Out */}
+          <h1 style={{marginTop: "7px"}}>Account</h1>
           <SubmitButton waitingFor={false} handleClick={() => setShow(true)}>Sign out</SubmitButton>
           {show && (<UploadModal 
                         color="var(--Color4)" 
@@ -47,6 +50,7 @@ export default function AdditionalInfo() {
   )
 }
 
+// notes
 function NotesBox() {
   const [showModal, setShowModal] = useState(false)
   const [fetchedNote, setFetchedNote] = useState<string | undefined>(undefined)  // this one if fetched
@@ -60,9 +64,7 @@ function NotesBox() {
     })()
   }, [])
 
-  const handleBlur = async () => {
-    if (fetchedNote !== note) setShowModal(true)
-  }
+  const handleBlur = async () => fetchedNote !== note && setShowModal(true)
 
   const uploadNote = async () => {
     if (note === undefined) return ["Note can not be undefined"]
@@ -95,6 +97,7 @@ function NotesBox() {
   )
 }
 
+// campus map
 function ImageBox() {
   const [labelFocused, setLabelFocused] = useState(false)
   const [imageFocused, setImageFocused] = useState(false)
@@ -181,6 +184,7 @@ function ImageBox() {
   )
 }
 
+// campus map
 function UploadImage({userImage, setUserImage}: {userImage: File | null, setUserImage: (file: File) => void}) {
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownBox = useRef<HTMLDivElement>(null)
@@ -238,15 +242,104 @@ function UploadImage({userImage, setUserImage}: {userImage: File | null, setUser
   )
 }
 
+// search bar
 function SearchUsers() {
-  const inpRef = useRef(null)
+  const [focused, setFocused] = useState(false)
+  const [inputVal, setInputVal] = useState("")
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [choosenUser, setChoosenUser] = useState<string | undefined>(undefined)
+  const [data, setData] = useState<string[]>([])
+  
+  const wrapRef = useRef<HTMLDivElement | null>(null)
+  const inputField = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    const clickInDetector = (e: Event) => {
+      console.log("XD?D?X?DX")
+      if ((!wrapRef.current!.contains(e.target as Node)) || (e as KeyboardEvent).key === "Tab") {
+          setFocused(false)
+      }
+    }
+    if (focused) {
+        document.addEventListener('mousedown', clickInDetector)
+        document.addEventListener('keydown', clickInDetector)
+    } else {
+        setFocused(false)
+    }
+    return () => {
+        document.removeEventListener('mousedown', clickInDetector)
+        document.removeEventListener('keydown', clickInDetector)
+    }
+  }, [focused])
+
+  const handleClick = () => {
+    inputField.current!.focus()
+  }
+
+  const handleSearchClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault()
+    if (inputVal.length === 0) return
+    const result = await searchUsers(inputVal)
+    const re = result.map((val: {username: string}) => val.username)
+    re && setData(re)
+  }
+
+  const handleUsernameClick = (username: string) => {
+    setChoosenUser(username)
+    setShowUploadModal(true)
+  }
   return (
-    <TextInput state={{field: "", fun: () => {}, initVal: ""}} validatingFuntion={() => ""}>Add friends to your Main group</TextInput>
+    <div ref={wrapRef} className={`ex-inputWrapper${focused ? " ex-activeWrapper" : ""}`} role="button" onClick={handleClick}>
+        <label className={`ex-inputTitle${focused ? " ex-activeTitle" : ""}`}>Add users to your schedule</label>
+        <div className="ex-inputInnerWrapper">
+            <div className="ex-textAreaWrapper">
+              <input type="text" 
+                    ref={inputField} 
+                    className={`ex-textInput ex-activeInput`}
+                    value={inputVal} 
+                    onChange={(e) => setInputVal(e.target.value)} 
+                    onFocus={() => setFocused(true)} ></input>
+              </div>
+            <div className="ex-svgWrapper">
+              <button style={{
+                        backgroundImage: "url(https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Magnifying_glass_icon.svg/1200px-Magnifying_glass_icon.svg.png)",
+                        backgroundSize: "contain",
+                        width: "32px", 
+                        height: "32px",
+                        borderRadius: "7px",
+                        border: "5px solid var(--Lightcoral)",
+                        backgroundColor: "var(--Lightcoral)",
+                        backgroundRepeat: "no-repeat"}}
+                      onClick={handleSearchClick}></button>
+            </div>
+        </div>
+        {!!focused && (
+          <div className="ex-inputInnerWrapper" style={{flexDirection: "column", paddingTop: "10px", maxHeight: "100px", overflow: "auto"}}>
+            {!!data.length 
+              ? data.map(item => {
+                  return <div key={item} className="usersListItem" onClick={() => handleUsernameClick(item)}><span>{item}</span></div>
+              }) : <div className="usersListItem" style={{textAlign: "center"}}>No results found 😔</div>}
+          </div>
+        )}
+        {!!showUploadModal && (
+          <UploadModal 
+              color="var(--Color4)" 
+              handleClose={(e) => {e!.stopPropagation(); setShowUploadModal(false)}} 
+              handleSoftClose={(e) => {e!.stopPropagation(); setShowUploadModal(false)}} 
+              submitFunction={async () => []}>
+                  Invite {choosenUser} to your group?
+          </UploadModal>
+        )}
+    </div>
 )
 }
 
+// your groups
 function GroupsBox() {
   const [groupsArray, setGroupsArray] = useState<{name: string, userPrivileges: 0 | 1 | 2, isMainGroup: 0 | 1}[] | undefined>(undefined)
+  
+  const wrapRef = useRef<HTMLDivElement | null>(null)
+
   useEffect(() => {
     (async () => {
       const data = await getUserGroups()
@@ -260,23 +353,103 @@ function GroupsBox() {
       setGroupsArray(data)
     })()
   }, [])
+
+  const buttonStyles = {
+    padding: 0,
+    margin: 0,
+    width: "24px",
+    height: "24px",
+    background: "var(--Lightcoral)",
+    outline: "none",
+    border: "none",
+    borderRadius: "4px",
+    boxShadow: "var(--Shadow)"
+  }
+
+  const handleClick = () => {}
   return (
     <>
-      <div className="ex-inputWrapper">
-          <label className="ex-inputTitle">Your groups</label>
+      <div ref={wrapRef} className={`ex-inputWrapper`} role="button" onClick={handleClick}>
+        <label className="ex-inputTitle">Your groups</label>
           <div className={`ex-inputInnerWrapper ${!groupsArray && "animated-background"}`} style={{flexDirection: "column", paddingTop: "10px"}}>
             {groupsArray && groupsArray?.map((item) => {
-              return (<div key={item.name} className="usersListItem">
-                <span title={
-                  item.userPrivileges === 0 
-                    ? "You're an author of this group" 
-                    : item.userPrivileges === 1 
-                      ? "You have write and read permissions on this group" 
-                      : "You have read only permissions on this group"}>
-                        {item.userPrivileges === 0 ? "👑" : item.userPrivileges === 1 ? "👷" : "👀"}
-                </span>
-                <span title="Your group's name">&nbsp;&nbsp;{item.name}&nbsp;&nbsp;</span>
-                <span title={item.isMainGroup ? "This is your main group" : "Just a group"}>{item.isMainGroup ? "✨" : ""}</span>
+              return (<div key={item.name} className="usersListItem" style={{display: "flex", justifyContent: "space-between"}}>
+                <div>
+                  <span title={
+                    item.userPrivileges === 0 
+                      ? "You're an author of this group" 
+                      : item.userPrivileges === 1 
+                        ? "You have write and read permissions on this group" 
+                        : "You have read only permissions on this group"}>
+                          {item.userPrivileges === 0 ? "👑" : item.userPrivileges === 1 ? "👷" : "👀"}
+                  </span>
+                  <span title="Your group's name">
+                    &nbsp;&nbsp;{item.name}&nbsp;&nbsp;
+                  </span>
+                  <span title={item.isMainGroup ? "This is your main group" : "Just a group"}>
+                    {item.isMainGroup ? "✨" : ""}
+                  </span>
+                </div>
+                <div style={{display: "flex", gap: "12px"}}>
+                  {!item.isMainGroup && <button title="Mark as main" style={buttonStyles}>✨</button>}
+                  {item.userPrivileges !== 0 && <button title="Leave group" style={buttonStyles}>❌</button>}
+                </div>
+              </div>)
+            })}
+          </div>
+      </div>
+    </>
+  )
+}
+
+// users of your group
+function UsersBox() {
+  const [usersArray, setUsersArray] = useState<{name: string, privileges: number}[] | undefined>(undefined) 
+  useEffect(() => {
+    (async () => {
+      const boilerplate = [
+        {name: "Bartek", privileges: 1},
+        {name: "Martyna", privileges: 0},
+        {name: "Mateusz", privileges: 1}
+      ]
+      setUsersArray(boilerplate)
+    })()
+  }, [])
+
+  const buttonStyles = {
+    padding: 0,
+    margin: 0,
+    width: "24px",
+    height: "24px",
+    background: "var(--Lightcoral)",
+    outline: "none",
+    border: "none",
+    borderRadius: "4px",
+    boxShadow: "var(--Shadow)"
+  }
+
+  const handleClick = () => {}
+  return (
+    <>
+      <div className={`ex-inputWrapper`} role="button" onClick={handleClick}>
+        <label className="ex-inputTitle">Users of your group</label>
+          <div className={`ex-inputInnerWrapper ${!usersArray && "animated-background"}`} style={{flexDirection: "column", paddingTop: "10px"}}>
+            {usersArray && usersArray?.map((item) => {
+              return (<div key={item.name} className="usersListItem" style={{display: "flex", justifyContent: "space-between"}}>
+                <div>
+                  <span title={
+                    item.privileges === 1 
+                      ? "User have write and read permissions on this group" 
+                      : "User have read only permissions on this group"}>
+                      {item.privileges === 1 ? "👷" : "👀"}
+                  </span>
+                  <span title="Your group's name">
+                    &nbsp;&nbsp;{item.name}&nbsp;&nbsp;
+                  </span>
+                </div>
+                <div style={{display: "flex", gap: "12px"}}>
+                  <button title="Remove user" style={buttonStyles}>❌</button>
+                </div>
               </div>)
             })}
           </div>
