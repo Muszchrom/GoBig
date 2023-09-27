@@ -1,3 +1,5 @@
+import { rejects } from 'node:assert';
+import { resolve } from 'node:path';
 import sqlite from 'sqlite3';
 const sqlite3 = sqlite.verbose()
 
@@ -58,6 +60,13 @@ const dbInitializer = (dbInstance: sqlite.Database=db) => {
         name TEXT NOT NULL 
     )`, (err) => dbInitializerCb(err, "groups"));
 
+    dbInstance.run(`CREATE TABLE IF NOT EXISTS invites(
+        id INTEGER PRIMARY KEY, 
+        sender INTEGER NOT NULL, 
+        receiver INTEGER NOT NULL,
+        UNIQUE(sender, receiver) 
+    )`, (err) => dbInitializerCb(err, "invites"));
+
     dbInstance.run(`CREATE TABLE IF NOT EXISTS groupUsers(
         groupId INTEGER NOT NULL, 
         userId INTEGER NOT NULL, 
@@ -114,7 +123,7 @@ const dbInitializer = (dbInstance: sqlite.Database=db) => {
 }
 
 /* -------------------------------------------------------
-####################### Groups db queries ################
+####################### Groups db AND Invites queries ####
 ------------------------------------------------------- */
 /**
  * If group exist then "group_exists" error is thrown
@@ -207,6 +216,62 @@ const groupUsersDb_getGroups = (userId: GroupUsersTable["userId"]): Promise<{nam
     })
 }
 
+const groupUsersDb_insertUser = (groupId: GroupUsersTable["groupId"], userId: GroupUsersTable["userId"]): Promise<true> => {
+    return new Promise((resolve, reject) => {
+        const sql = `INSERT INTO groupUsers(groupId, userId, userPrivileges, isMainGroup) VALUES(?, ?, ?, ?)`
+
+        db.run(sql, [groupId, userId, 2, 0], (err) => {
+            if (err) reject(err)
+            else resolve(true)
+        })
+    })
+}
+
+const invitesDb_getInvites = (userId: UsersTable["id"]): Promise<{username: string, name: string}[]> => {
+    return new Promise((resolve, reject) => {
+        const sql = `SELECT users.username, groups.name 
+                    FROM users 
+                    INNER JOIN invites ON invites.sender=users.id 
+                    INNER JOIN groups ON groups.owner=invites.sender 
+                    WHERE invites.receiver=?`
+        db.all(sql, [userId], (err, rows: {username: string, name: string}[]) => {
+            if (err) reject(err)
+            else resolve(rows)
+        })
+    })
+}
+
+const invitesDb_checkIfSenderReceiverUnique = (sender: UsersTable["id"], receiver: UsersTable["id"]): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        const sql = `SELECT * FROM invites WHERE sender=? AND receiver=?`
+        db.get(sql, [sender, receiver], (err, row) => {
+            if (err) reject(err)
+            else if (row) resolve(false)
+            else resolve(true)
+        })
+    })
+}
+
+const invitesDb_insertInvite = (sender: UsersTable["id"], receiver: UsersTable["id"]): Promise<true> => {
+    return new Promise((resolve, reject) => {
+        const sql = `INSERT INTO invites(sender, receiver) VALUES(?, ?)`
+        db.run(sql, [sender, receiver], (err) => {
+            if (err) reject(err)
+            else resolve(true)
+        })
+    })
+}
+
+const invitesDb_deleteInvite = (sender: UsersTable["id"], receiver: UsersTable["id"]): Promise<true> => {
+    return new Promise((resolve, reject) => {
+        const sql = `DELETE FROM invites WHERE sender=? AND receiver=?`
+        db.run(sql, [sender, receiver], (err) => {
+            if (err) reject(err)
+            else resolve(true)
+        })
+    })
+}
+
 export interface GroupsTable {
     id: number,
     owner: number,
@@ -224,9 +289,23 @@ export interface GroupUsersTable {
 } 
 export const groupsTable = {
     initGroup: groupsDb_initializeGroup,
+    getId: groupsDb_getId,
     getPrivileges: groupUsersDb_getPrivileges,
     getMainGroupId: groupUsersDb_getMainGroupId,
-    getGroups: groupUsersDb_getGroups
+    getGroups: groupUsersDb_getGroups,
+    insertUser: groupUsersDb_insertUser
+}
+
+export interface InvitesTable {
+    id: number,
+    sender: number,
+    receiver: number
+}
+export const invitesTable = {
+    getInvites: invitesDb_getInvites,
+    checkIfSenderReceiverUnique: invitesDb_checkIfSenderReceiverUnique,
+    insertInvite: invitesDb_insertInvite,
+    deleteInvite: invitesDb_deleteInvite
 }
 /* -------------------------------------------------------
 ####################### Auth db queries ##################
@@ -245,16 +324,13 @@ const authDb_createUser = (username: string, hash: string): Promise<true> => {
         });
     });
 }
-const authDb_getUserByUsername = (username: string): Promise<UsersTable> => {
+const authDb_getUserByUsername = (username: string): Promise<UsersTable | undefined> => {
     const sql = `SELECT * FROM users WHERE username = ?`;
 
     return new Promise((resolve, reject) => {
-        db.get(sql, username, (err, row: UsersTable) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(row);
+        db.get(sql, username, (err, row: UsersTable | undefined) => {
+            if (err) reject(err);
+            else resolve(row);
         })
     })
 }
