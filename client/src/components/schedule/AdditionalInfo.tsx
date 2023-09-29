@@ -4,7 +4,7 @@ import { Overlay } from '../Overlay'
 
 import UploadModal from '../UploadModal';
 import { InputLoading } from '../forms/Common';
-import { TextInput } from '../forms/TextInput';
+import TextInput from '../forms/TextInput';
 import ImageInput, {ImageInputLoading} from '../forms/ImageInput';
 import { SubmitButton } from '../forms/Buttons';
 import { 

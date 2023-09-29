@@ -18,7 +18,7 @@ export function NavigateBackTo({path}: {path: string}) {
     )
 }
   
-export function SubmitButton({children, waitingFor, handleClick}: {children: React.ReactNode, waitingFor: boolean, handleClick: () => void}) {
+export function SubmitButton({children, waitingFor, handleClick}: {children: React.ReactNode, waitingFor: boolean, handleClick?: () => void}) {
     return (
         handleClick ? (
             <button className="signInButton" type="button" onClick={(e) => {e.stopPropagation(); handleClick()}}>
