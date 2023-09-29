@@ -2,20 +2,22 @@ import { useRef, useState, useEffect } from "react"
 import { InputContainer } from "./Common"
 
 interface TextInputProps {
-    children: string, 
-    validatingFuntion: (val: string) => string
+    children: string
     state: {
-        field: string,
-        fun: (field: string, value: string) => void,
+        field: string
+        fun: (field: string, value: string) => void
         initVal: string
-    },
-    multiline?: boolean,
-    rows?: number,
-    focusHandler?: () => void,
+    }
+    type?: "text" | "password"
+    autoComplete?: "off" | "username" | "password" | "new-password"
+    validatingFuntion?: (val: string) => string
+    multiline?: boolean
+    rows?: number
+    focusHandler?: () => void
     blurHandler?: () => void
 }
-export function TextInput({children, validatingFuntion, state, focusHandler, blurHandler, multiline, rows}: TextInputProps) {
-    const [validationError, setValidationError] = useState(validatingFuntion(state.initVal))
+export default function TextInput({children, state, type, autoComplete, validatingFuntion, focusHandler, blurHandler, multiline, rows}: TextInputProps) {
+    const [validationError, setValidationError] = useState(validatingFuntion && validatingFuntion(state.initVal) || "")
     const [focused, setFocused] = useState(false)
     const [inputValue, setInputValue] = useState(state.initVal)
 
@@ -52,7 +54,7 @@ export function TextInput({children, validatingFuntion, state, focusHandler, blu
         }
         setInputValue(e.target.value)
         state.fun(state.field, e.target.value)
-        setValidationError(validatingFuntion(e.target.value))
+        validatingFuntion && setValidationError(validatingFuntion(e.target.value))
     }
     const handleClick = () => (inputRef.current || textAreaRef.current)!.focus()
     const handleFocus = () => {setFocused(true); focusHandler && focusHandler()}
@@ -61,7 +63,7 @@ export function TextInput({children, validatingFuntion, state, focusHandler, blu
         <InputContainer ref={wrapperRef} focused={focused} label={children} error={validationError} handleClick={handleClick}>
             {multiline 
                 ? <textarea ref={textAreaRef} rows={rows || 1} className={`ex-textInput${focused ? " ex-activeInput": ""}`} value={inputValue} onChange={handleChange} onFocus={handleFocus}></textarea>
-                : <input type="text" ref={inputRef} className={`ex-textInput${focused ? " ex-activeInput" : ""}`} value={inputValue} onChange={handleChange} onFocus={handleFocus}></input>
+                : <input type={type || "text"} autoComplete={autoComplete || "off"} ref={inputRef} className={`ex-textInput${focused ? " ex-activeInput" : ""}`} value={inputValue} onChange={handleChange} onFocus={handleFocus}></input>
             }
         </InputContainer>
     )
