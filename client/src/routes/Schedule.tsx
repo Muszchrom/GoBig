@@ -5,11 +5,16 @@ import Header from '../components/schedule/Header'
 import TileMounter from '../components/schedule/TileMounter'
 import { getSchedule, getWeeks } from '../components/Requests'
 
+import { 
+    Schedule as ScheduleType, 
+    Weeks as WeeksType 
+} from '../components/Requests'
+
 export default function Schedule() {
     const daysOfTheWeek = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
-    const [schedule, setSchedule] = useState([])
-    const [weeks, setWeeks] = useState([])
-    const [currentWeek, setCurrentWeek] = useState({})
+    const [schedule, setSchedule] = useState<ScheduleType[][]>([])
+    const [weeks, setWeeks] = useState<{firstMonth: WeeksType["firstMonth"]["month"], weeks: WeeksType["weeks"]} | boolean[]>([])
+    const [currentWeek, setCurrentWeek] = useState<{week: number, type: number}>({week: -1, type: -1})
 
     const createRandomColor = () => {
         const availableColors = [
@@ -24,7 +29,11 @@ export default function Schedule() {
         return availableColors[Math.floor(Math.random() * (6 - 0 + 1)) + 0]
     }
 
-    const updateScheduleWithoutApiCall = (dayToUpdate, changes, uniqueKey=-1) => {
+    interface ScheduleTypeExtended extends ScheduleType {
+        updateArray: (keyof ScheduleType)[]
+    }
+    
+    const updateScheduleWithoutApiCall = (dayToUpdate: ScheduleType["day"], changes: ScheduleTypeExtended, uniqueKey=-1) => {
         // when subject is deleted
         if (uniqueKey !== -1 && Object.keys(changes).length === 1) {
             schedule[dayToUpdate] = [
@@ -37,23 +46,39 @@ export default function Schedule() {
         // when subject is updated but subject.start is not
         else if (uniqueKey !== -1 && !changes.updateArray.includes('start')) {
             changes.updateArray.forEach((item) => {
-                schedule[dayToUpdate][uniqueKey][item] = changes[item]
+                /*
+                // naah i cant understand that
+                interface aa {
+                    a: number
+                    b: string // replace string with number here
+                }
+                
+                const c: aa = { a: 2, b: "a" } // and "a" with any number 
+                
+                const ba = (a: aa, b: (keyof aa)[]) => {
+                    b.forEach((item) => {
+                        c[item] = a[item] as unknown
+                    //  ^ and this error will disappear XD
+                    })
+                }
+                */
+                (schedule as any)[dayToUpdate][uniqueKey][item] = changes[item] 
             })
-            setSchedule(schedule.slice())
-            return
+            return setSchedule(schedule.slice())
         } 
         // when subject is updated and subject.start changes
         else if (uniqueKey !== -1 && changes.updateArray.includes('start')) {
             const buffer = schedule[dayToUpdate][uniqueKey]
             changes.updateArray.forEach((item) => {
-                buffer[item] = changes[item]
+                // same stuff here
+                (buffer as any)[item] = changes[item]
             })
             // remove subject for easier sorting
             schedule[dayToUpdate] = [
                 ...schedule[dayToUpdate].slice(0, uniqueKey),
                 ...schedule[dayToUpdate].slice(uniqueKey+1, schedule[dayToUpdate].length)
             ]
-            changes = buffer
+            changes = buffer as ScheduleTypeExtended // this is really ScheduleType
         }
         if (!changes.onClient_color) {
             changes['onClient_color'] = createRandomColor()
@@ -77,11 +102,9 @@ export default function Schedule() {
     useEffect(() => {
         (async () => {
             const [fetchedSchedule, fetchedWeeks] = await Promise.all([getSchedule(), getWeeks()])
-            if (fetchedWeeks?.notFound) {
-                return setWeeks([false])
-            }
+            if (!fetchedWeeks) return setWeeks([false])
             if (fetchedSchedule) {
-                const bufferArray = [[], [], [], [], [], [], []]
+                const bufferArray: ScheduleType[][] = [[], [], [], [], [], [], []]
                 fetchedSchedule.forEach((subject) => {
                     subject['onClient_color'] = createRandomColor()
                     subject.icon = [
@@ -121,7 +144,7 @@ export default function Schedule() {
     const getCurrentDay = () => daysOfTheWeek[new Date().getDay()]
 
     const getAndSetCurrentWeek = (weeksObjet=weeks) => {
-        if (!weeksObjet.weeks || !weeksObjet.firstMonth) return
+        if (Array.isArray(weeksObjet)) return
         const timeDiff = new Date().getTime() - weeksObjet.firstMonth
         const weekDiff = timeDiff/(1000*60*60*24*7)
         // if weekDiff is in range <0, 1) where 1 is not inclusive, then it means we're in the same week
@@ -130,7 +153,8 @@ export default function Schedule() {
         else return setCurrentWeek(weeksObjet.weeks[weeksObjet.weeks.length - 1])
     }
     // shiftDirection should be -1 or 1
-    const handleWeekChange = (shiftDirection) => {
+    const handleWeekChange = (shiftDirection: -1 | 1) => {
+        if (Array.isArray(weeks)) return
         // prevent shifting outside weeks array
         if (currentWeek.week + shiftDirection < 1) return
         if (currentWeek.week + shiftDirection > weeks.weeks[weeks.weeks.length - 1].week) return
@@ -140,7 +164,7 @@ export default function Schedule() {
 
     return (
     <>
-        {weeks[0] === false && <Navigate to="/schedule/create" replace={true}/>}
+        {Array.isArray(weeks) && weeks[0] === false && <Navigate to="/schedule/create" replace={true}/>}
         <Header 
             getCurrentDay={getCurrentDay} 
             currentWeek={currentWeek} 
@@ -163,6 +187,6 @@ export default function Schedule() {
     </>
     )
 }
-function HandleDefaultPath({getCurrentDay}) {
+function HandleDefaultPath({getCurrentDay}: {getCurrentDay: () => string}) {
     return <Navigate to={getCurrentDay()} />
 }

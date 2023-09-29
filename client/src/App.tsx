@@ -39,7 +39,7 @@ function App() {
         ) : (
           <Routes>
             <Route path="/signin" element={<SignIn signedIn={signedIn} setSignedIn={setSignedIn}/>}/>
-            <Route path="/signup" element={<SignUp />}/>
+            <Route path="/signup" element={<SignUp signedIn={signedIn}/>}/>
             <Route path="*" element={<Navigate to="/signin" replace={true}/>} />
           </Routes>    
         )}

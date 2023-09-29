@@ -17,29 +17,28 @@ const unexpectedAppOrServerError = (status: number): string[] => {
 }
 
 export interface Schedule {
-    rows: {
-        id: number,
-        day: number,
-        start: string,
-        end: string,
-        subjectName: string,
-        subjectType: string,
-        hall: string,
-        teacher: string,
-        icon: string,
-        additionalInfo: string,
-        weekStart: number,
-        weekEnd: number,
-        weekType: number,
-        userId: number
-    }[]
+    id: number,
+    day: number,
+    start: string,
+    end: string,
+    subjectName: string,
+    subjectType: string,
+    hall: string,
+    teacher: string,
+    icon: string,
+    additionalInfo: string,
+    weekStart: number,
+    weekEnd: number,
+    weekType: number,
+    userId: number,
+    onClient_color?: string
 }
 
 export interface Weeks {
     firstMonth: {
         month: number
     }, 
-    data: {
+    weeks: {
         week: number, 
         type: number
     }[]
@@ -207,15 +206,15 @@ export const signUp = async (username: string, password: string, confirmPassword
     return unexpectedAppOrServerError(data.status)
 }
 
-export const getSchedule = async (): Promise<Schedule>=> {
+export const getSchedule = async (): Promise<Schedule[]>=> {
     const data = await callApi({endpoint: "/schedule/", headers: undefined})
     return data.data.rows
 }
 
-export const getWeeks = async () => {
+export const getWeeks = async (): Promise<{firstMonth: Weeks["firstMonth"]["month"], weeks: Weeks["weeks"]} | undefined> => {
     const data = await callApi({endpoint: "/calendar/weeks", headers: undefined})
-    if (data.status === 404 && data.data.message === "Cant find group") return {notFound: true}
-    if (data.status === 200 && !data.data.data.length) return {notFound: true}
+    if (data.status === 404 && data.data.message === "Cant find group") return undefined
+    if (data.status === 200 && !data.data.data.length) return undefined
     if (data.status === 200 && data.data.data.length) return {firstMonth: data.data.firstMonth.month, weeks: data.data.data}
     return undefined
 }
