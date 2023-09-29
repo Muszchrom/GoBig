@@ -1,7 +1,6 @@
 import express, { Request, Response, NextFunction } from "express"
 import { groupsTable, usersTable, invitesTable } from "./db"
 import { serverErrorHandler } from "./commonResponse"
-import { group } from "console"
 
 const router = express.Router()
 
@@ -61,9 +60,9 @@ router.post('/initGroup', (req, res) => {
 // returns array of up to 5 usernames
 router.get('/usernames/:username', (req: Request, res: Response) => {
     const username = req.params.username
-    if (username.length < 3) return res.status(400).json({message: "Provide at least 3 chars", erros: ["Please provide 3 or more characters"]})
+    if (username.length < 3) return res.status(400).json({message: "Provide at least 3 chars", errors: ["Please provide 3 or more characters"]})
 
-    usersTable.getFiveUsernames(username)
+    usersTable.getFiveUsernames(username, res.locals.userId)
         .then((rows) => {
             res.status(200).json({message: "Rows selected successfully!", usernames: rows});
         })
@@ -72,9 +71,35 @@ router.get('/usernames/:username', (req: Request, res: Response) => {
         })
 })
 
-// requested by owner, removes users from his group
-
 // requested by group member, removes himself from other users group
+router.delete('/groups', (req, res) => {
+    if (typeof req.body.groupName !== "string") return res.status(400).json({message: "Invalid groupName", errors: ["Invalid groupName"]})
+    groupsTable.leaveGroup(res.locals.userId, req.body.groupName)
+        .then((changes) => {
+            if (!changes) res.status(400).json({errors: ["Invalid group name"]})
+            else {
+                console.log(changes)
+                res.status(200).json({message: `You successfully left the group`})
+            }
+        })
+        .catch((err) => serverErrorHandler(err, res, "router.delete(/users) groupsTable.leaveGroup catch"))
+})
+
+// returns users of your group
+router.get('/users', (req, res) => {
+    groupsTable.getUsers(res.locals.userId)
+        .then((rows) => {
+            res.status(200).json({users: rows})
+        })
+        .catch((err) => {
+            serverErrorHandler(err, res, "router.delete('/users')")
+        })
+})
+
+// requested by owner, removes users from his group
+router.delete('/users', (req, res) => {
+    if (typeof req.body.username !== "string") return res.status(400).json({message: "Invalid username", errors: ["Invalid username"]})
+})
 
 // marks group as the main one
 
@@ -85,21 +110,25 @@ router.get('/invites', (req, res) => {
         .catch((err) => serverErrorHandler(err, res, "router.get('/invites') catch block"))
 })
 
-// sends invite to group
+// sends invite to group body.receiver: string
 router.post('/invites', (req, res) => {
     if (typeof req.body.receiver !== "string") return res.status(400).json({
         message: "Receiver's name should be a string", 
-        erros: ["Receiver's name should be a string"]
+        errors: ["Receiver's name should be a string"]
     })
     if (req.body.receiver.length < 4 || req.body.receiver.length > 12) return res.status(400).json({
         message: "Receiver's name should be min 4 and max 12 characters long", 
-        erros: ["Receiver's name should be min 4 and max 12 characters long"]
+        errors: ["Receiver's name should be min 4 and max 12 characters long"]
     })
 
-
+    // check if user belongs to group
     const uniqueCheck = (senderId: number, receiverId: number): Promise<{unique: boolean, receiver: number}> => {
         return new Promise((resolve, reject) => {
-            invitesTable.checkIfSenderReceiverUnique(senderId, receiverId)
+            groupsTable.isUserInGroup(receiverId, senderId)
+                .then((userInGroup) => {
+                    if (userInGroup) throw new Error("user_in_group")
+                    else return invitesTable.checkIfSenderReceiverUnique(senderId, receiverId)
+                })
                 .then((unique) => resolve({unique: unique, receiver: receiverId}))
                 .catch((err) => reject(err))
         })
@@ -118,6 +147,7 @@ router.post('/invites', (req, res) => {
         .catch((err) => {
             if (err.message === "user_doesnt_exist") res.status(400).json({message: "User with this username doesn't exist", errors: ["User with this username doesn't exist"]})
             else if (err.message === "invitation_exists") res.status(400).json({message: "User has been already invited", errors: ["User has been already invited"]})
+            else if (err.message === "user_in_group") res.status(400).json({message: "User is already in your group", errors: ["User is already in your group"]})
             else serverErrorHandler(err, res, "router.post('/invites') usersTable.getUserByUsername() catch block")
         })
 })
@@ -127,23 +157,23 @@ router.delete('/invites', (req, res) => {
     if (typeof req.body.accept !== "boolean") return res.status(400).json({message: "'accept' should be a boolean", errors: ["'accept' should be a boolean"]})
     if (typeof req.body.sender !== "string") return res.status(400).json({
         message: "Sender's name should be a string", 
-        erros: ["Sender's name should be a string"]
+        errors: ["Sender's name should be a string"]
     })
     if (req.body.sender.length < 4 || req.body.sender.length > 12) return res.status(400).json({
         message: "Sender's name should be min 4 and max 12 characters long", 
-        erros: ["Sender's name should be min 4 and max 12 characters long"]
+        errors: ["Sender's name should be min 4 and max 12 characters long"]
     })
     if (typeof req.body.groupName !== "string") return res.status(400).json({
         message: "GroupName name should be a string", 
-        erros: ["GroupName name should be a string"]
+        errors: ["GroupName name should be a string"]
     })
-    if (req.body.groupName.length < 4 || req.body.groupName.length > 12) return res.status(400).json({
+    if (req.body.groupName.length < 4 || req.body.groupName.length > 20) return res.status(400).json({
         message: "groupName should be min 2 and max 20 characters long", 
-        erros: ["groupName should be min 2 and max 20 characters long"]
+        errors: ["groupName should be min 2 and max 20 characters long"]
     })
 
     const handleInviteReject = (senderId: number) => {
-        invitesTable.deleteInvite(res.locals.userId, senderId)
+        invitesTable.deleteInvite(senderId, res.locals.userId)
             .then(() => {
                 res.status(200).json({message: "Invite accepted"})
             })
@@ -159,7 +189,7 @@ router.delete('/invites', (req, res) => {
                 return groupsTable.insertUser(row.id, res.locals.userId)
             })
             .then(() => {
-                return invitesTable.deleteInvite(res.locals.userId, senderId)
+                return invitesTable.deleteInvite(senderId, res.locals.userId)
             })
             .then(() => {
                 res.status(200).json({message: "Invite accepted"})

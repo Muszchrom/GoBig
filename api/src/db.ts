@@ -1,5 +1,3 @@
-import { rejects } from 'node:assert';
-import { resolve } from 'node:path';
 import sqlite from 'sqlite3';
 const sqlite3 = sqlite.verbose()
 
@@ -227,6 +225,37 @@ const groupUsersDb_insertUser = (groupId: GroupUsersTable["groupId"], userId: Gr
     })
 }
 
+const groupUsersDb_isUserInGroup = (userId: GroupUsersTable["userId"], ownerId: GroupsTable["owner"]): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        const sql = `SELECT * FROM groupUsers WHERE groupId=(SELECT id FROM groups WHERE owner=?) AND userId=?`
+        db.get(sql, [ownerId, userId], (err, row) => {
+            if (err) reject(err)
+            if (row) resolve(true)
+            else resolve(false)
+        })
+    })
+}
+
+const groupUsersDb_getUsers = (ownerId: UsersTable["id"]): Promise<{username: string}[]> => {
+    return new Promise((resolve, reject) => {
+        const sql = `SELECT username 
+                    FROM users 
+                    WHERE id=(
+                        SELECT userId 
+                        FROM groupUsers 
+                        WHERE groupId=(
+                            SELECT id 
+                            FROM groups 
+                            WHERE owner=?
+                        )
+                    AND userId<>?)`
+        db.all(sql, [ownerId, ownerId], (err, rows: {username: string}[]) => {
+            if (err) reject(err)
+            resolve(rows)
+        })
+    })   
+}
+
 const invitesDb_getInvites = (userId: UsersTable["id"]): Promise<{username: string, name: string}[]> => {
     return new Promise((resolve, reject) => {
         const sql = `SELECT users.username, groups.name 
@@ -272,6 +301,15 @@ const invitesDb_deleteInvite = (sender: UsersTable["id"], receiver: UsersTable["
     })
 }
 
+const groupUsersDb_leaveGroup = (userId: GroupUsersTable["userId"], groupName: GroupsTable["name"]): Promise<number> => {
+    return new Promise((resolve, reject) => {
+        const sql = `DELETE FROM groupUsers WHERE groupId=(SELECT id FROM groups WHERE name=?) AND userId=? AND userPrivileges<>0`
+        db.run(sql, [groupName, userId], function (err) {
+            if (err) reject(err)
+            else resolve(this.changes)
+        })
+    })
+}
 export interface GroupsTable {
     id: number,
     owner: number,
@@ -293,7 +331,10 @@ export const groupsTable = {
     getPrivileges: groupUsersDb_getPrivileges,
     getMainGroupId: groupUsersDb_getMainGroupId,
     getGroups: groupUsersDb_getGroups,
-    insertUser: groupUsersDb_insertUser
+    getUsers: groupUsersDb_getUsers,
+    leaveGroup: groupUsersDb_leaveGroup,
+    insertUser: groupUsersDb_insertUser,
+    isUserInGroup: groupUsersDb_isUserInGroup
 }
 
 export interface InvitesTable {
@@ -347,10 +388,12 @@ const authDb_deleteUser = (userId: string | number, username: string, hash: stri
         });
     });
 }
-const authDb_getFiveUsernames = (username: string): Promise<{username: string}[]> => {
-    const sql = `SELECT username FROM users WHERE username LIKE ? LIMIT 5`
+
+// except querying user
+const authDb_getFiveUsernames = (username: UsersTable["username"], id: UsersTable["id"]): Promise<{username: string}[]> => {
+    const sql = `SELECT username FROM users WHERE username LIKE ? AND id<>? LIMIT 5`
     return new Promise((resolve, reject) => {
-        db.all(sql, [`%${username}%`], (err, rows: {username: string}[]) => {
+        db.all(sql, [`%${username}%`, id], (err, rows: {username: string}[]) => {
             if (err) reject(err)
             resolve(rows)
         })
