@@ -1,7 +1,7 @@
 import React, { useState } from "react"
-import { SubmitButton, CancelButton, LoadingButtonAnimation, ErrorList } from "./Common"
+import { SubmitButton, CancelButton } from "./forms/Buttons"
 import { ModalWindow } from "./Overlay"
-
+import { LoadingButtonAnimation, ErrorList } from "./forms/Common"
 
 interface ModalProps {
     color: string

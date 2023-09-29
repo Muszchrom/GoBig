@@ -76,13 +76,56 @@ const callApi = async ({
         }
 }
 
+export const leaveGroup = async (groupName: string): Promise<string[]> => {
+    const data = await callApi({endpoint: "/groups/groups", method: "DELETE", data: {groupName: groupName}})
+    if (data.status === 200) return []
+    else return data.errors || ["An error occured"]
+}
+
+export const getUsers = async (): Promise<{username: string}[]> => {
+    const data = await callApi({endpoint: "/groups/users"})
+    return data.data.users || []
+}
+
+export const getInvites = async (): Promise<{name: string, username: string}[] | undefined> => {
+    const data = await callApi({endpoint: "/groups/invites"})
+    if (data.status === 200) return data.data.invites
+    else return undefined
+}
+
+export const sendInvite = async (username: string) => {
+    const data = await callApi({endpoint: "/groups/invites", method: "POST", data: {receiver: username}})
+    return data.errors || []
+}
+
+export const acceptInvite = async (sender: string, groupName: string) => {
+    const data = await callApi({
+        endpoint: "/groups/invites", 
+        method: "DELETE", 
+        data: {accept: true, sender: sender, groupName: groupName}
+    })
+    return data.errors || []
+}
+
+export const rejectInvite = async (sender: string, groupName: string) => {
+    const data = await callApi({
+        endpoint: "/groups/invites", 
+        method: "DELETE", 
+        data: {accept: false, sender: sender, groupName: groupName}
+    })
+    return data.errors || []
+}
+
+export const searchUsers = async (username: string) => {
+    const data = await callApi({endpoint: `/groups/usernames/${username}`})
+    if (data.status === 200) return data.data.usernames
+    else return data.errors
+}
+
 export const getUserGroups = async (): Promise<{name: string, userPrivileges: 0 | 1 | 2, isMainGroup: 0 | 1}[]> => {
     const data = await callApi({endpoint: "/groups"})
     if (data.status === 200) return data.data.groups 
-    else {
-        console.log(data.errors)
-        return [{name: "An error occured", userPrivileges: 0, isMainGroup: 0}]
-    }
+    else return [{name: "An error occured", userPrivileges: 0, isMainGroup: 0}]
 }
 
 export const createInitialGroup = async (name: string): Promise<string[]> => {

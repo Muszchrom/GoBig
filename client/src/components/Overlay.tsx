@@ -1,6 +1,6 @@
 import React from 'react';
 import FocusTrap from 'focus-trap-react';
-import { CloseButton } from './Common';
+import { CloseButton } from './forms/Buttons';
 
 interface OverlayProps {
   backgroundColor: string

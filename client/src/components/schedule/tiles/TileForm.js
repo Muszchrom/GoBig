@@ -1,7 +1,7 @@
 import { useRef, useState } from "react"
 import { DropdownInput, TextInput, StartEndInput, WeekStartEndInput} from "./TileInputs"
 import { validateTile } from "../../Requests"
-import { SubmitButton } from "../../Common"
+import { SubmitButton } from "../../forms/Buttons"
 import { ErrorModal } from "../../UploadModal"
 
 // renders form and children which might be buttons

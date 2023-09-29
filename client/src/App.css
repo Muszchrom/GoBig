@@ -574,18 +574,48 @@ li img {
   position: absolute;
   right: 10px;
 }
-.image-frame {
+
+.image-wrapper {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--Background);
+  border: 0;
+  box-shadow: var(--Shadow);
+  padding: 0;
+  border-radius: 12px;
+  cursor: pointer;
   width: 100%;
+  transition: all .2s ease-in-out;
+}
+.image-inner-label-wrapper {
+  transition: all .2s ease-in-out;
+  border-radius: 12px 12px 0 0;
+  outline: none;
+  border: 2px solid var(--Background);
+  padding: 12px;
+}
+.image-inner-image-wrapper {
+  transition: all .2s ease-in-out;
+  border-radius: 0 0 12px 12px;
+  outline: none;
+  border: 2px solid var(--Background);
   height: calc(70vw - 3.5em);
   max-height: 310px;
-  box-shadow: 0 0 28px beige;
-  box-shadow: inset 0 0 28px antiquewhite;
-  flex: none;
 }
+.image-present {
+  height: unset;
+  max-height: 600px;
+}
+.iiw-active {
+  border: 2px solid var(--Lightcoral);
+}
+
 .map-image {
   width: 100%;
   height: 100%;
-  border: 1px solid wheat;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  display: block;
   object-fit: contain;
 }
 .animated-background {

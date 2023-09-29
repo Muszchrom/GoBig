@@ -2,7 +2,8 @@ import { useState } from "react"
 import { NavLink, Navigate, useNavigate } from 'react-router-dom'
 
 import {signUp} from '../components/Requests'
-import { UsernameInput, PasswordInput, ConfirmPasswordInput, ErrorList, SubmitButton } from '../components/Common'
+import { SubmitButton } from "../components/forms/Buttons"
+import { ErrorList } from "../components/forms/Common"
 
 export default function SignUp({signedIn}) {
     const [username, setUsername] = useState("")
@@ -53,4 +54,45 @@ export default function SignUp({signedIn}) {
     ) : (
         <Navigate to="/" replace={true}></Navigate>
     ))
+}
+
+//delte below
+function UsernameInput({inputValue, handleChange}) {
+    return (
+        <input 
+            className="signInInput" 
+            title="Provide an username" 
+            type="text" 
+            placeholder="Username" 
+            autoComplete="username"
+            onChange={e => handleChange(e.target.value)}
+            value={inputValue}>
+        </input>
+    )
+}
+function PasswordInput({inputValue, handleChange, isNewPassword}) {
+    return (
+        <input 
+            className="signInInput" 
+            title="Provide a password" 
+            type="password" 
+            placeholder="Password" 
+            autoComplete={isNewPassword ? "new-password" : "password"}
+            onChange={e => handleChange(e.target.value)}
+            value={inputValue}>
+        </input>
+    )
+}
+function ConfirmPasswordInput({inputValue, handleChange}) {
+    return (
+        <input 
+            className="signInInput" 
+            title="Confirm a password" 
+            type="password" 
+            placeholder="Confirm password" 
+            autoComplete="new-password"
+            onChange={e => handleChange(e.target.value)}
+            value={inputValue}>
+        </input>
+    )
 }

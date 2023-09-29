@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Navigate } from 'react-router-dom'
 import { source } from "../source";
-import { NavigateBackTo, SubmitButton } from "../components/Common";
+import { NavigateBackTo, SubmitButton } from "../components/forms/Buttons";
 import UploadModal from "../components/UploadModal";
 import { createSchedule, createInitialGroup } from "../components/Requests";
 import { TextInput } from "../components/schedule/tiles/TileInputs";
@@ -36,6 +36,7 @@ export default function CreateSchedule() {
         if (start - end > 0) return ["Date start should be older than date end"]
         if ((end - start) / (1000*60*60*24) > 300) return ["Date difference should be smaller than or equal to 300 days"]
         if (scheduleName.length < 2) return ["Schedule name is too short"]
+        if (scheduleName.length > 20) return ["Schedule name is too long"]
         const groupResult = await createInitialGroup(scheduleName)
         if (groupResult.length) return groupResult 
         const result = await createSchedule({dateStart: start, dateEnd: end})
