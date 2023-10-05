@@ -199,15 +199,15 @@ const groupUsersDb_getMainGroupId = (userId: GroupUsersTable["userId"]): Promise
     })
 }
 
-const groupUsersDb_getGroups = (userId: GroupUsersTable["userId"]): Promise<{name: GroupsTable["name"], userPrivileges: GroupUsersTable["userPrivileges"], isMainGroup: GroupUsersTable["isMainGroup"]}[]> => {
+const groupUsersDb_getGroups = (userId: GroupUsersTable["userId"]): Promise<{id: GroupsTable["id"], name: GroupsTable["name"], userPrivileges: GroupUsersTable["userPrivileges"], isMainGroup: GroupUsersTable["isMainGroup"]}[]> => {
     return new Promise((resolve, reject) => {
-        const sql = `SELECT groups.name, groupUsers.userPrivileges, groupUsers.isMainGroup 
+        const sql = `SELECT groups.id, groups.name, groupUsers.userPrivileges, groupUsers.isMainGroup 
                     FROM groups 
                     INNER JOIN groupUsers 
                     ON groups.id=groupUsers.groupId 
                     WHERE userId=?`
         
-        db.all(sql, [userId], (err, rows: {name: GroupsTable["name"], userPrivileges: GroupUsersTable["userPrivileges"], isMainGroup: GroupUsersTable["isMainGroup"]}[]) => {
+        db.all(sql, [userId], (err, rows: {id: GroupsTable["id"], name: GroupsTable["name"], userPrivileges: GroupUsersTable["userPrivileges"], isMainGroup: GroupUsersTable["isMainGroup"]}[]) => {
             if (err) reject(err)
             else resolve(rows)
         })
@@ -256,14 +256,14 @@ const groupUsersDb_getUsers = (ownerId: UsersTable["id"]): Promise<{username: st
     })   
 }
 
-const invitesDb_getInvites = (userId: UsersTable["id"]): Promise<{username: string, name: string}[]> => {
+const invitesDb_getInvites = (userId: UsersTable["id"]): Promise<{username: string, name: string, id: number}[]> => {
     return new Promise((resolve, reject) => {
-        const sql = `SELECT users.username, groups.name 
+        const sql = `SELECT users.username, groups.name, groups.id 
                     FROM users 
                     INNER JOIN invites ON invites.sender=users.id 
                     INNER JOIN groups ON groups.owner=invites.sender 
                     WHERE invites.receiver=?`
-        db.all(sql, [userId], (err, rows: {username: string, name: string}[]) => {
+        db.all(sql, [userId], (err, rows: {username: string, name: string, id: number}[]) => {
             if (err) reject(err)
             else resolve(rows)
         })

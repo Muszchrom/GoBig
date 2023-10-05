@@ -5,15 +5,24 @@ import { serverErrorHandler } from "./commonResponse"
 const router = express.Router()
 
 export const getGroup = (req: Request, res: Response, next: NextFunction) => {
-    groupsTable.getMainGroupId(res.locals.userId)
-        .then((result) => {
-            if (!result) return res.status(404).json({message: "Cant find group", errors: ["Cant find group"]})
-            res.locals.groupId = result.groupId
+    if (req.query.gid && typeof req.query.gid === "string") {
+        const parsedQS = parseInt(req.query.gid)
+        if (isNaN(parsedQS)) return res.status(400).json({errors: ["Invalid query param: gid"]})
+        else {
+            res.locals.groupId = parsedQS
             next()
-        })
-        .catch((err) => {
-            serverErrorHandler(err, res, "getGroup middleware")
-        })
+        }
+    } else {
+        groupsTable.getMainGroupId(res.locals.userId)
+            .then((result) => {
+                if (!result) return res.status(404).json({message: "Cant find group", errors: ["Cant find group"]})
+                res.locals.groupId = result.groupId
+                next()
+            })
+            .catch((err) => {
+                serverErrorHandler(err, res, "getGroup middleware")
+            })
+    }
 }
 
 export const validateWritePermissions = (req: Request, res: Response, next: NextFunction) => {
@@ -25,7 +34,7 @@ export const validateWritePermissions = (req: Request, res: Response, next: Next
         })
         .catch((err) => {
             if (err.message === "result_undefined") serverErrorHandler(err, res, "validateWritePermissions middleware (result undefined)")
-            serverErrorHandler(err, res, "validateWritePermissions middleware")
+            else serverErrorHandler(err, res, "validateWritePermissions middleware")
         })
 }
 
@@ -103,7 +112,7 @@ router.delete('/users', (req, res) => {
 
 // marks group as the main one
 
-// gets inites to someone's group
+// gets invites to someone's group
 router.get('/invites', (req, res) => {
     invitesTable.getInvites(res.locals.userId)
         .then((rows) => res.status(200).json({invites: rows}))
