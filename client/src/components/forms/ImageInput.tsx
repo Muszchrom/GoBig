@@ -3,7 +3,7 @@ import UploadModal from "../UploadModal"
 import { OverlayNoBounds } from "../Overlay"
 import { uploadImage } from "../Requests"
 
-export default function ImageInput({imageSrc, setImageSrc, children}: {imageSrc: string, setImageSrc: (val: string) => void, children: React.ReactNode}) {
+export default function ImageInput({imageSrc, setImageSrc, children, disabled}: {imageSrc: string, setImageSrc: (val: string) => void, children: React.ReactNode, disabled?: boolean}) {
     const [labelFocused, setLabelFocused] = useState(false)
     const [imageFocused, setImageFocused] = useState(false)
     const [newImage, setNewImage] = useState<File | null>(null)
@@ -11,21 +11,22 @@ export default function ImageInput({imageSrc, setImageSrc, children}: {imageSrc:
     const [showBigImage, setShowBigImage] = useState(false)
   
     const uploadNewImage = async () => {
-      if (!newImage) return ["Image not found"]
-      const formData = new FormData()
-      formData.append('image', newImage)
-      const response = await uploadImage(formData)
-  
-      if (response.status === 201) {
+        if (disabled) return
+        if (!newImage) return ["Image not found"]
+        const formData = new FormData()
+        formData.append('image', newImage)
+        const response = await uploadImage(formData)
+
+        if (response.status === 201) {
         const reader = new FileReader()
         reader.onload = (e: ProgressEvent<FileReader>) => setImageSrc(e.target!.result as string)
         reader.readAsDataURL(newImage);
         return []
-      } else {
+        } else {
         const errors = await response.json();
         if (!errors.errors.length) return ["An error occured"]
         else return errors.errors 
-      }
+        }
     }
 
     const handleLabelKeyDown = (e: React.KeyboardEvent | undefined) => {
@@ -46,9 +47,9 @@ export default function ImageInput({imageSrc, setImageSrc, children}: {imageSrc:
         <div className="image-wrapper">
             <div className={`image-inner-label-wrapper${labelFocused ? " iiw-active" : ""}`}
                     role="button" 
-                    tabIndex={0} 
-                    onClick={() => {setShowUploadModal(true)}} onKeyDown={handleLabelKeyDown} 
-                    onFocus={() => {setLabelFocused(true)}} onBlur={() => {setLabelFocused(false)}}>
+                    tabIndex={disabled ? -1 : 0} 
+                    onClick={() => {!disabled && setShowUploadModal(true)}} onKeyDown={!disabled ? handleLabelKeyDown : () => {}} 
+                    onFocus={() => {!disabled && setLabelFocused(true)}} onBlur={() => {setLabelFocused(false)}}>
                 <span className={`ex-inputTitle${labelFocused ? " ex-activeTitle" : ""}`}>{children}</span>
             </div>
             <div className={`image-inner-image-wrapper${imageFocused ? " iiw-active" : ""}${!!imageSrc ? " image-present" : ""}`} 
