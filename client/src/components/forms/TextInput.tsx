@@ -13,10 +13,11 @@ interface TextInputProps {
     validatingFuntion?: (val: string) => string
     multiline?: boolean
     rows?: number
+    disabled?: boolean
     focusHandler?: () => void
     blurHandler?: () => void
 }
-export default function TextInput({children, state, type, autoComplete, validatingFuntion, focusHandler, blurHandler, multiline, rows}: TextInputProps) {
+export default function TextInput({children, state, type, autoComplete, validatingFuntion, focusHandler, blurHandler, multiline, rows, disabled}: TextInputProps) {
     const [validationError, setValidationError] = useState(validatingFuntion && validatingFuntion(state.initVal) || "")
     const [focused, setFocused] = useState(false)
     const [inputValue, setInputValue] = useState(state.initVal)
@@ -62,8 +63,8 @@ export default function TextInput({children, state, type, autoComplete, validati
     return (
         <InputContainer ref={wrapperRef} focused={focused} label={children} error={validationError} handleClick={handleClick}>
             {multiline 
-                ? <textarea ref={textAreaRef} rows={rows || 1} className={`ex-textInput${focused ? " ex-activeInput": ""}`} value={inputValue} onChange={handleChange} onFocus={handleFocus}></textarea>
-                : <input type={type || "text"} autoComplete={autoComplete || "off"} ref={inputRef} className={`ex-textInput${focused ? " ex-activeInput" : ""}`} value={inputValue} onChange={handleChange} onFocus={handleFocus}></input>
+                ? <textarea disabled={disabled ? true : false} ref={textAreaRef} rows={rows || 1} className={`ex-textInput${focused ? " ex-activeInput": ""}`} value={inputValue} onChange={handleChange} onFocus={handleFocus}></textarea>
+                : <input disabled={disabled ? true : false} type={type || "text"} autoComplete={autoComplete || "off"} ref={inputRef} className={`ex-textInput${focused ? " ex-activeInput" : ""}`} value={inputValue} onChange={handleChange} onFocus={handleFocus}></input>
             }
         </InputContainer>
     )

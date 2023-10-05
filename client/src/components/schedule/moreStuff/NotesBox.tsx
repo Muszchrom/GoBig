@@ -4,22 +4,23 @@ import { InputLoading } from "../../forms/Common"
 import { getNotes } from "../../Requests"
 import UploadModal from "../../UploadModal"
 import { uploadNotes } from "../../Requests"
+import { GroupState } from "../AdditionalInfo";
 
-export default function NotesBox() {
+export default function NotesBox({groupState}: {groupState: GroupState["groupState"]}) {
     const [showModal, setShowModal] = useState(false)
     const [fetchedNote, setFetchedNote] = useState<string | undefined>(undefined)  // this one if fetched
     const [note, setNote] = useState<string | undefined>(undefined)  // this one is edited/typed by user
   
     useEffect(() => {
       (async () => {
-        const data = await getNotes()
+        const data = await getNotes(groupState.groupId)
         setFetchedNote(data)
         setNote(data)
       })()
     }, [])
-  
+
     const handleBlur = async () => fetchedNote !== note && setShowModal(true)
-  
+
     const uploadNote = async () => {
       if (note === undefined) return ["Note can not be undefined"]
       const result = await uploadNotes(note)
@@ -32,10 +33,11 @@ export default function NotesBox() {
         {note !== undefined
           ? <TextInput 
               validatingFuntion={() => ""} 
-              state={{field: "value", fun: (a, b) => setNote(b), initVal: note}}
+              state={{field: "value", fun: (a, b) => {setNote(b)}, initVal: note}}
               multiline={true}
               rows={4}
-              blurHandler={handleBlur}>Notes</TextInput>
+              disabled={!(groupState.privileges <= 1)}
+              blurHandler={groupState.privileges <= 1 ? handleBlur : () => {}}>Notes</TextInput>
           : <InputLoading rows={4}>Notes</InputLoading> 
         }
         {showModal && (
