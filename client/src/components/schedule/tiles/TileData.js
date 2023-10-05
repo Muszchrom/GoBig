@@ -1,7 +1,7 @@
 import { Overlay } from "../../Overlay"
 import { source } from "../../../source"
 
-export default function TileData({color, setOpen, open, subject, setEditMode, editMode, signedIn}) {
+export default function TileData({color, setOpen, open, subject, setEditMode, editMode, signedIn, groupState}) {
     return (
         <Overlay backgroundColor={color} setOpen={setOpen} open={open}>
             <span className="heading2">{subject.start} - {subject.end}</span>
@@ -16,7 +16,7 @@ export default function TileData({color, setOpen, open, subject, setEditMode, ed
             {!(subject.weekStart === subject.weekEnd & subject.weekStart === -1) && (
                 <span className="heading2">Week {subject.weekStart === -1 ? "0" : subject.weekStart} - {subject.weekEnd === -1 ? "999" : subject.weekEnd}</span>
             )}
-            {signedIn && (
+            {signedIn && (groupState.privileges <= 1) && (
                 <div role="button" onClick={() => setEditMode(!editMode)} className="span-button heading1">
                     <span>{ editMode ? "Exit edit mode" : "Enter edit mode" }</span>
                     <img src={ editMode ? `${source}/static/Close.svg` : `${source}/static/Edit.svg` } alt=""></img>

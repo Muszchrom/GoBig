@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { CommonTile, WaitingTile, CreateTile } from './Tiles'
 import AdditionalInfo from './AdditionalInfo'
 
-export default function TileMounter({signedIn, currentWeek, scheduleForTheDay, updateScheduleWithoutApiCall}) {
+export default function TileMounter({signedIn, currentWeek, scheduleForTheDay, updateScheduleWithoutApiCall, groupState, setGroupState}) {
   const [editMode, setEditMode] = useState(false)
   return (
     <div className="container">
@@ -27,11 +27,12 @@ export default function TileMounter({signedIn, currentWeek, scheduleForTheDay, u
                 uniqueKey={index}
                 editMode={editMode}
                 setEditMode={setEditMode}
+                groupState={groupState}
                 signedIn={signedIn}>
               </CommonTile>
             )
           })}
-          {!!signedIn && (
+          {!!(signedIn && (groupState.privileges <= 1)) && (
             (editMode || !scheduleForTheDay.length) && <CreateTile updateScheduleWithoutApiCall={updateScheduleWithoutApiCall}></CreateTile>
           )}
         </>
@@ -42,7 +43,7 @@ export default function TileMounter({signedIn, currentWeek, scheduleForTheDay, u
         </>
       )}
         <div style={{display: "flex", justifyContent: "flex-end", padding: "0 1em", position: "sticky", height: "0", bottom: "5em"}}>
-          <AdditionalInfo/>
+          <AdditionalInfo groupState={groupState} setGroupState={setGroupState}/>
         </div>
     </div>
   )

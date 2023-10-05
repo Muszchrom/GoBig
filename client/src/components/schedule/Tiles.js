@@ -5,7 +5,7 @@ import TileData from './tiles/TileData'
 import TileEdit from './tiles/TileEdit'
 import TileCreate from './tiles/TileCreate'
 
-export function CommonTile({subject, editMode,  setEditMode, specialType, signedIn, updateScheduleWithoutApiCall, uniqueKey}) {
+export function CommonTile({subject, editMode,  setEditMode, specialType, signedIn, updateScheduleWithoutApiCall, uniqueKey, groupState}) {
     const [open, setOpen] = useState(false)
     const [editingTile, setEditingTile] = useState(false)
 
@@ -61,6 +61,7 @@ export function CommonTile({subject, editMode,  setEditMode, specialType, signed
                            subject={subject} 
                            editMode={editMode} 
                            setEditMode={setEditMode}
+                           groupState={groupState}
                            signedIn={signedIn}/>}
 
         {editingTile && <TileEdit open={editingTile}
