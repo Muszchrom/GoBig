@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom';
 import { Overlay } from '../Overlay'
 import UploadModal from '../UploadModal';
@@ -11,7 +11,15 @@ import UsersBox from './moreStuff/UsersBox';
 
 import { SubmitButton } from '../forms/Buttons';
 
-export default function AdditionalInfo() {
+export interface GroupState {
+  groupState: {
+    privileges: 0 | 1 | 2,
+    groupId: number
+  }
+  setGroupState: (val: {privileges: 0 | 1 | 2, groupId: number}) => void
+}
+
+export default function AdditionalInfo({groupState, setGroupState}: GroupState) {
   const [open, setOpen] = useState(false) // is This window open
   const [show, setShow] = useState(false) // is sign out button pressed
   const [signOutConfirmed, setSignOutConfirmed] = useState(false) // sign out confirmed, nav to sign out path
@@ -27,12 +35,12 @@ export default function AdditionalInfo() {
         <Overlay backgroundColor={"antiquewhite"} setOpen={setOpen} open={open}>
           {/* Page context */}
           <h1 style={{marginTop: "7px"}}>More stuff</h1>
-          <NotesBox />
-          <ImageBox />
+          <NotesBox groupState={groupState}/>
+          <ImageBox groupState={groupState}/>
           <h1 style={{marginTop: "7px"}}>Groups</h1>
           <UsersBox />
           <SearchBar />
-          <GroupsBox />
+          <GroupsBox groupState={groupState} setGroupState={setGroupState} setOpen={setOpen}/>
           {/* Sign Out */}
           <h1 style={{marginTop: "7px"}}>Account</h1>
           <SubmitButton waitingFor={false} handleClick={() => setShow(true)}>Sign out</SubmitButton>

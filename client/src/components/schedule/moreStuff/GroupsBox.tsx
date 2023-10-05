@@ -1,11 +1,16 @@
 import { useState, useEffect, useRef } from "react"
 import { getUserGroups, getInvites, acceptInvite, rejectInvite, leaveGroup } from "../../Requests"
 import UploadModal from "../../UploadModal"
+import { GroupState } from "../AdditionalInfo"
 
-export default function GroupsBox() {
+interface GroupsBoxProps extends GroupState{
+  setOpen: (val: boolean) => void
+}
+
+export default function GroupsBox({groupState, setGroupState, setOpen}: GroupsBoxProps) {
     const [focused, setFocused] = useState(false)
-    const [groupsArray, setGroupsArray] = useState<{name: string, userPrivileges: 0 | 1 | 2, isMainGroup: 0 | 1}[] | undefined>(undefined)
-    const [invitesArray, setInvitesArray] = useState<{name: string, owner: string, privileges: 0 | 1 | 2}[] | undefined>(undefined)
+    const [groupsArray, setGroupsArray] = useState<{id: number, name: string, userPrivileges: 0 | 1 | 2, isMainGroup: 0 | 1}[] | undefined>(undefined)
+    const [invitesArray, setInvitesArray] = useState<{name: string, owner: string, privileges: 0 | 1 | 2, groupId: number}[] | undefined>(undefined)
     const wrapRef = useRef<HTMLDivElement | null>(null)
   
     const [modalState, setModalState] = useState({
@@ -40,7 +45,7 @@ export default function GroupsBox() {
         const invites = await getInvites()
         if (!invites) return
         setInvitesArray(invites.map((item) => {
-          return {name: item.name, owner: item.username, privileges: 2}
+          return {groupId: item.id, name: item.name, owner: item.username, privileges: 2}
         }))
       })()
     }, [])
@@ -61,7 +66,7 @@ export default function GroupsBox() {
       setModalState(cpy)
     }
   
-    const inviteAction = (accept: boolean, owner: string, name: string) => {
+    const inviteAction = (accept: boolean, owner: string, name: string, groupId: number) => {
       if (accept) {
         setModalState({
           show: true,
@@ -69,7 +74,7 @@ export default function GroupsBox() {
           handleClose: () => {
             setInvitesArray(invitesArray?.filter((item) => item.owner !== owner))
             if (groupsArray?.length) {
-              groupsArray.push({name: name, userPrivileges: 2, isMainGroup: 0})
+              groupsArray.push({id: groupId, name: name, userPrivileges: 2, isMainGroup: 0})
               setGroupsArray([...groupsArray])
             }
           },
@@ -102,6 +107,15 @@ export default function GroupsBox() {
       })
     }
   
+    const hardcoreACTION = (id: number, privileges: 0 | 1 | 2) => {
+      console.log(id)
+      setGroupState({
+        groupId: id,
+        privileges: privileges
+      })
+      setOpen(false)
+    }
+
     return (
       <>
         <div ref={wrapRef} className={`ex-inputWrapper${focused ? " ex-activeWrapper" : ""}`} style={{outline: "none"}} tabIndex={0} onFocus={() => setFocused(true)}>
@@ -118,15 +132,18 @@ export default function GroupsBox() {
                           : "You have read only permissions on this group"}>
                             {item.userPrivileges === 0 ? "👑" : item.userPrivileges === 1 ? "👷" : "👀"}
                     </span>
-                    <span title="Group's name">
+                    <span title="Click to see its contents" role="button" onClick={() => groupState.groupId !== item.id && hardcoreACTION(item.id, item.userPrivileges)}>
                       &nbsp;&nbsp;{item.name}&nbsp;&nbsp;
                     </span>
                     <span title={item.isMainGroup ? "This is your main group" : "Just a group"}>
                       {item.isMainGroup ? "✨" : ""}
                     </span>
+                    <span title={groupState.groupId === item.id ? "This group is currently selected" : ""}>
+                      {groupState.groupId === item.id || (isNaN(groupState.groupId) && item.userPrivileges === 0) ? "👈" : ""}
+                    </span>
                   </div>
                   <div style={{display: "flex", gap: "12px"}}>
-                    {!item.isMainGroup && <button title="Mark as main" style={buttonStyles}>✨</button>}
+                    {/* {!item.isMainGroup && <button title="Mark as main" style={buttonStyles}>✨</button>} */}
                     {item.userPrivileges !== 0 && <button title="Leave group" style={buttonStyles} onClick={() => handleLeaveGroup(item.name)}>❌</button>}
                   </div>
                 </div>)
@@ -150,8 +167,8 @@ export default function GroupsBox() {
                       </span>
                     </div>
                     <div style={{display: "flex", gap: "12px"}}>
-                      <button title="Accept invite" style={buttonStyles} onClick={() => inviteAction(true, item.owner, item.name)}>✔️</button>
-                      <button title="Reject invite" style={buttonStyles} onClick={() => inviteAction(false, item.owner, item.name)}>❌</button>
+                      <button title="Accept invite" style={buttonStyles} onClick={() => inviteAction(true, item.owner, item.name, item.groupId)}>✔️</button>
+                      <button title="Reject invite" style={buttonStyles} onClick={() => inviteAction(false, item.owner, item.name, item.groupId)}>❌</button>
                     </div>
                   </div>)
                 })}

@@ -15,6 +15,10 @@ export default function Schedule() {
     const [schedule, setSchedule] = useState<ScheduleType[][]>([])
     const [weeks, setWeeks] = useState<{firstMonth: WeeksType["firstMonth"]["month"], weeks: WeeksType["weeks"]} | boolean[]>([])
     const [currentWeek, setCurrentWeek] = useState<{week: number, type: number}>({week: -1, type: -1})
+    const [groupState, setGroupState] = useState({
+        privileges: 0,
+        groupId: NaN
+    })
 
     const createRandomColor = () => {
         const availableColors = [
@@ -101,7 +105,13 @@ export default function Schedule() {
 
     useEffect(() => {
         (async () => {
-            const [fetchedSchedule, fetchedWeeks] = await Promise.all([getSchedule(), getWeeks()])
+            const [fetchedSchedule, fetchedWeeks] = await (() => {
+                if (!isNaN(groupState.groupId)) {
+                    return Promise.all([getSchedule(groupState.groupId), getWeeks(groupState.groupId)])
+                } else {
+                    return Promise.all([getSchedule(), getWeeks()])
+                }
+            })()
             if (!fetchedWeeks) return setWeeks([false])
             if (fetchedSchedule) {
                 const bufferArray: ScheduleType[][] = [[], [], [], [], [], [], []]
@@ -139,7 +149,7 @@ export default function Schedule() {
                 else return setCurrentWeek(fetchedWeeks.weeks[fetchedWeeks.weeks.length - 1])
             }
         })()
-    }, [])
+    }, [groupState])
     
     const getCurrentDay = () => daysOfTheWeek[new Date().getDay()]
 
@@ -168,6 +178,7 @@ export default function Schedule() {
         <Header 
             getCurrentDay={getCurrentDay} 
             currentWeek={currentWeek} 
+            groupState={groupState}
             handleWeekChange={handleWeekChange} 
             getAndSetCurrentWeek={getAndSetCurrentWeek}/>
         <Routes>
@@ -176,6 +187,8 @@ export default function Schedule() {
                 <Route path={`/${path}`} key={index} element={
                     <TileMounter 
                         signedIn={true} 
+                        groupState={groupState}
+                        setGroupState={setGroupState}
                         scheduleForTheDay={schedule[index]}
                         updateScheduleWithoutApiCall={updateScheduleWithoutApiCall}
                         currentWeek={currentWeek}/>
