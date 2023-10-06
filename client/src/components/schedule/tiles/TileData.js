@@ -22,7 +22,7 @@ export default function TileData({color, setOpen, open, subject, setEditMode, ed
                     <img src={ editMode ? `${source}/static/Close.svg` : `${source}/static/Edit.svg` } alt=""></img>
                 </div>
             )}
-            <img className="overlay-svg" src={`${source}/static/${subject.icon}`} alt="School graduation hat"/>
+            <img className="overlay-svg" style={{pointerEvents: "none"}} src={`${source}/static/${subject.icon}`} alt="School graduation hat"/>
         </Overlay>
     )
 }
