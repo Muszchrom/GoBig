@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import Calendar from './Calendar';
 import FocusTrap from 'focus-trap-react';
 
-export default function Header({getCurrentDay, currentWeek, handleWeekChange, getAndSetCurrentWeek}) {
+export default function Header({getCurrentDay, currentWeek, handleWeekChange, getAndSetCurrentWeek, groupState}) {
   const [open, setOpen] = useState(false);
   const [dayName, setDayName] = useState("")
   const [showCalendar, setShowCalendar] = useState(false)
@@ -52,7 +52,7 @@ export default function Header({getCurrentDay, currentWeek, handleWeekChange, ge
         <button type="button" className="week-nav-button" onClick={() => handleWeekChange(1)}>{">>"}</button>
       </div>
       </div>
-      {showCalendar && <Calendar handleClose={() => setShowCalendar(false)}></Calendar>}
+      {showCalendar && <Calendar groupState={groupState} handleClose={() => setShowCalendar(false)}></Calendar>}
     </header>
   );
 }

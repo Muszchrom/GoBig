@@ -3,12 +3,18 @@ import { Overlay } from "../Overlay"
 import Draggable from 'react-draggable'
 import { semesterSchedule, SemesterScheduleInterface, patchSemesterScheduleDay, patchSemesterScheduleWeek } from "../Requests"
 import UploadModal from "../UploadModal"
+import { GroupState } from "./AdditionalInfo"
 
-export default function Calendar({handleClose}: {handleClose: () => void}) {
+
+export default function Calendar({handleClose, groupState}: {handleClose: () => void, groupState: GroupState["groupState"]}) {
     const [fetchedData, setFetchedData] = useState<SemesterScheduleInterface>({dates: [], status: -1})
     useEffect(() => {
         (async () => {
-            const data = await semesterSchedule()
+            const data = await (() => {
+                return isNaN(groupState.groupId)
+                    ? semesterSchedule()
+                    : semesterSchedule(groupState.groupId)
+            })()
             data && setFetchedData(data)
         })()
     }, [])
@@ -30,7 +36,7 @@ export default function Calendar({handleClose}: {handleClose: () => void}) {
                             </div>
 
                             <div style={{borderTop: "2px solid var(--Lightcoral)", borderTopRightRadius: "2px"}}>
-                                <CalendarTable weeks={item.weeks} monthId={item.month}/>
+                                <CalendarTable weeks={item.weeks} monthId={item.month} groupState={groupState}/>
                             </div>  
                         </div>
                     )
@@ -62,14 +68,15 @@ export default function Calendar({handleClose}: {handleClose: () => void}) {
 interface CalendarTableInterface {
     weeks: SemesterScheduleInterface["dates"][0]["weeks"]
     monthId: SemesterScheduleInterface["dates"][0]["month"]
+    groupState: GroupState["groupState"]
 }
 
-function CalendarTable({weeks, monthId}: CalendarTableInterface) {
+function CalendarTable({weeks, monthId, groupState}: CalendarTableInterface) {
     return (
         <table className="calendarTable">
             <tbody>
                 {weeks.map((week, index) => {
-                    return <MonthsRow key={`2${index}`} week={week} monthId={monthId} style={{backgroundColor: index%2 ? "var(--Color4)" : "var(--Color3)"}}/>
+                    return <MonthsRow key={`2${index}`} week={week} monthId={monthId} groupState={groupState} style={{backgroundColor: index%2 ? "var(--Color4)" : "var(--Color3)"}}/>
                 })}
             </tbody>
         </table>
@@ -80,14 +87,15 @@ interface MonthsRowInterface {
     week: SemesterScheduleInterface["dates"][0]["weeks"][0]
     monthId: SemesterScheduleInterface["dates"][0]["month"]
     style: {backgroundColor: string}
+    groupState: GroupState["groupState"]
 }
 
-function MonthsRow({week, monthId, style}: MonthsRowInterface) {
+function MonthsRow({week, monthId, style, groupState}: MonthsRowInterface) {
     return (
         <tr className="calendarRow" style={style}>
-            <WeekType weekNum={week.week} weekType={week.type}/>
+            <WeekType groupState={groupState} weekNum={week.week} weekType={week.type}/>
             {week.days.map((item, index) => {
-                return <DayComponent key={`3${index}`} day={item} monthId={monthId}/>
+                return <DayComponent groupState={groupState} key={`3${index}`} day={item} monthId={monthId}/>
             })}
         </tr>
     )
@@ -96,9 +104,10 @@ function MonthsRow({week, monthId, style}: MonthsRowInterface) {
 interface WeekTypeInterface {
     weekNum: SemesterScheduleInterface["dates"][0]["weeks"][0]["week"]
     weekType: SemesterScheduleInterface["dates"][0]["weeks"][0]["type"]
+    groupState: GroupState["groupState"]
 }
 
-function WeekType({weekNum, weekType}: WeekTypeInterface) {
+function WeekType({weekNum, weekType, groupState}: WeekTypeInterface) {
     const [typeState, setTypeState] = useState(weekType)
     const [tempTypeState, setTempTypeState] = useState(0)
     const [show, setShow] = useState<[boolean, number, number, number, number]>([false, 0, 0, 0, 0])
@@ -149,6 +158,7 @@ function WeekType({weekNum, weekType}: WeekTypeInterface) {
                                                     title: `Week № ${weekNum}, ${typeState === 1 ? "Odd" : (typeState === 2 ? "Even" : "Unset")}`, 
                                                     type: typeState
                                                   }}
+                                                  groupState={groupState}
                                                   pos={{x: show[1], y: show[2]}}
                                                   parentSize={{x: show[3], y: show[4]}}
                                                   submitFunction={prepareUploadStates}/>}
@@ -166,9 +176,10 @@ function WeekType({weekNum, weekType}: WeekTypeInterface) {
 interface DayComponentInterface {
     day: SemesterScheduleInterface["dates"][0]["weeks"][0]["days"][0]
     monthId: SemesterScheduleInterface["dates"][0]["month"]
+    groupState: GroupState["groupState"]
 }
 
-function DayComponent({day, monthId}: DayComponentInterface) {
+function DayComponent({day, monthId, groupState}: DayComponentInterface) {
     const [dayState, setDayState] = useState(day)
     const [tempDayState, setTempDayState] = useState<{message: string, type: number}>({message: "", type: 0}) // changes only when prepareUploadStates is executed, no big deal
     const [show, setShow] = useState<[boolean, number, number, number, number]>([false, 0, 0, 0, 0]) // this one changes quite a lot
@@ -233,6 +244,7 @@ function DayComponent({day, monthId}: DayComponentInterface) {
             {date.getDate()}
             {show[0] && <ContextWindow handleClose={handleCloseContext} 
                                     data={{title: dateTitle, message: dayState.message, type: dayState.type}}
+                                    groupState={groupState}
                                     pos={{x: show[1], y: show[2]}}
                                     parentSize={{x: show[3], y: show[4]}}
                                     submitFunction={prepareUploadStates}/>}
@@ -263,9 +275,10 @@ interface ContextWindowInterface {
         x: number 
         y: number
     }
+    groupState: GroupState["groupState"]
 }
 
-function ContextWindow({handleClose, data, submitFunction, pos, parentSize}: ContextWindowInterface) {
+function ContextWindow({handleClose, data, submitFunction, pos, parentSize, groupState}: ContextWindowInterface) {
     const [editMode, setEditMode] = useState(false)
     const [dataState, setDataState] = useState(data)
 
@@ -325,11 +338,11 @@ function ContextWindow({handleClose, data, submitFunction, pos, parentSize}: Con
                                     <Svgs whichOne={1}/>
                                 </button>
                             </>) 
-                            : (<>
+                            : (<>{!!(groupState.privileges <= 1) && (
                                 <button title="Edit day" onClick={() => setEditMode(!editMode)} className="contextWindowButton">
                                     <Svgs whichOne={0}/>
                                 </button>
-                            </>)}
+                            )}</>)}
                     </div>
                 </div>
             </div>
@@ -339,9 +352,10 @@ function ContextWindow({handleClose, data, submitFunction, pos, parentSize}: Con
 
 interface ContextWindowForWeekTypeInterface extends Omit<ContextWindowInterface, "submitFunction"> {
     submitFunction: (type: WeekTypeInterface["weekType"]) => void
+    groupState: GroupState["groupState"]
 }
 
-function ContextWindowForWeekType({handleClose, data, submitFunction, pos, parentSize}: ContextWindowForWeekTypeInterface) {
+function ContextWindowForWeekType({handleClose, data, submitFunction, pos, parentSize, groupState}: ContextWindowForWeekTypeInterface) {
     const [editMode, setEditMode] = useState(false)
     const [type, setType] = useState(data.type)
 
@@ -402,9 +416,11 @@ function ContextWindowForWeekType({handleClose, data, submitFunction, pos, paren
                                                     <Svgs whichOne={2}/>
                                                 </>))}
                                 </div>
-                                <button title="Edit week" onClick={() => setEditMode(!editMode)} className="contextWindowButton">
-                                    <Svgs whichOne={0}/>
-                                </button>
+                                {!!(groupState.privileges <= 1) && (
+                                    <button title="Edit week" onClick={() => setEditMode(!editMode)} className="contextWindowButton">
+                                        <Svgs whichOne={0}/>
+                                    </button>
+                                )}
                             </>)}
                     </div>
                 </div>
