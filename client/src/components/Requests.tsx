@@ -86,7 +86,7 @@ export const getUsers = async (): Promise<{username: string}[]> => {
     return data.data.users || []
 }
 
-export const getInvites = async (): Promise<{name: string, username: string}[] | undefined> => {
+export const getInvites = async (): Promise<{name: string, username: string, id: number}[] | undefined> => {
     const data = await callApi({endpoint: "/groups/invites"})
     if (data.status === 200) return data.data.invites
     else return undefined
@@ -121,10 +121,10 @@ export const searchUsers = async (username: string) => {
     else return data.errors
 }
 
-export const getUserGroups = async (): Promise<{name: string, userPrivileges: 0 | 1 | 2, isMainGroup: 0 | 1}[]> => {
+export const getUserGroups = async (): Promise<{id: number, name: string, userPrivileges: 0 | 1 | 2, isMainGroup: 0 | 1}[]> => {
     const data = await callApi({endpoint: "/groups"})
     if (data.status === 200) return data.data.groups 
-    else return [{name: "An error occured", userPrivileges: 0, isMainGroup: 0}]
+    else return [{id: NaN, name: "An error occured", userPrivileges: 0, isMainGroup: 0}]
 }
 
 export const createInitialGroup = async (name: string): Promise<string[]> => {
@@ -133,8 +133,12 @@ export const createInitialGroup = async (name: string): Promise<string[]> => {
     else return data.errors
 }
 
-export const getNotes = async (): Promise<string> => {
-    const data = await callApi({endpoint: "/files/notes", headers: undefined})
+export const getNotes = async (groupId?: number): Promise<string> => {
+    const data = await (() => {
+        return groupId 
+            ? callApi({endpoint: `/files/notes?gid=${groupId}`, headers: undefined})
+            : callApi({endpoint: `/files/notes`, headers: undefined})
+    })()
     if (data.status !== 200) return ""
     else return data.data.note
 }
@@ -155,11 +159,18 @@ export const uploadImage = async (formData: FormData) => {
     return fetchedData
 }
 
-export const getImage = async () => {
-    const fetchedData = await fetch(`${source}/files`, {
-        method: "GET",
-        credentials: "include",
-    })
+export const getImage = async (groupId?: number) => {
+    const fetchedData = await (() => {
+        return groupId
+            ? fetch(`${source}/files?gid=${groupId}`, {
+                method: "GET",
+                credentials: "include",
+            })
+            : fetch(`${source}/files`, {
+                method: "GET",
+                credentials: "include",
+            })
+    })()
     return fetchedData
 }
 
@@ -206,13 +217,25 @@ export const signUp = async (username: string, password: string, confirmPassword
     return unexpectedAppOrServerError(data.status)
 }
 
-export const getSchedule = async (): Promise<Schedule[]>=> {
-    const data = await callApi({endpoint: "/schedule/", headers: undefined})
+export const getSchedule = async (groupId?: number): Promise<Schedule[]>=> {
+    const data = await (() => {
+        if (!groupId) {
+            return callApi({endpoint: "/schedule/", headers: undefined})
+        } else {
+            return callApi({endpoint: `/schedule/?gid=${groupId}`, headers: undefined})
+        }
+    })()
     return data.data.rows
 }
 
-export const getWeeks = async (): Promise<{firstMonth: Weeks["firstMonth"]["month"], weeks: Weeks["weeks"]} | undefined> => {
-    const data = await callApi({endpoint: "/calendar/weeks", headers: undefined})
+export const getWeeks = async (groupId?: number): Promise<{firstMonth: Weeks["firstMonth"]["month"], weeks: Weeks["weeks"]} | undefined> => {
+    const data = await (() => {
+        if (!groupId) {
+            return callApi({endpoint: "/calendar/weeks", headers: undefined})
+        } else {
+            return callApi({endpoint: `/calendar/weeks?gid=${groupId}`, headers: undefined})
+        }
+    })()
     if (data.status === 404 && data.data.message === "Cant find group") return undefined
     if (data.status === 200 && !data.data.data.length) return undefined
     if (data.status === 200 && data.data.data.length) return {firstMonth: data.data.firstMonth.month, weeks: data.data.data}
@@ -335,8 +358,12 @@ export interface SemesterScheduleInterface {
     }[]
     status: number
 }
-export const semesterSchedule = async (): Promise<SemesterScheduleInterface> => {
-    const data = await callApi({endpoint: "/calendar", headers: undefined})
+export const semesterSchedule = async (groupId?: number): Promise<SemesterScheduleInterface> => {
+    const data = await (() => {
+        return groupId
+            ? callApi({endpoint: `/calendar?gid=${groupId}`, headers: undefined})
+            : callApi({endpoint: "/calendar", headers: undefined})
+    })()
     return {dates: data.data.data.dates, status: data.status}
 }
 
