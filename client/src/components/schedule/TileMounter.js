@@ -12,8 +12,8 @@ export default function TileMounter({signedIn, currentWeek, scheduleForTheDay, u
           {scheduleForTheDay.map((subject, index) => {
             let specialType = "unset"
     
-            if ((subject.weekStart >= currentWeek.week && subject.weekStart !== -1) ||
-                (subject.weekEnd <= currentWeek.week && subject.weekEnd !== -1) ||
+            if ((subject.weekStart > currentWeek.week && subject.weekStart !== -1) ||
+                (subject.weekEnd < currentWeek.week && subject.weekEnd !== -1) ||
                 (subject.weekType !== 0 && subject.weekType !== currentWeek.type)) {
                   specialType = "not today"
             }
