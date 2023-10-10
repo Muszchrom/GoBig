@@ -2,7 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { scheduleTable, ScheduleTable } from './db';
 import { serverErrorHandler } from './commonResponse';
-import { getGroup, validateWritePermissions } from './groups';
+import { validateWritePermissions } from './groups';
 
 const router = express.Router();
 
@@ -119,7 +119,7 @@ const validateUpdate = async (req: Request, res: Response, next: NextFunction) =
 ######################### Routes #########################
 ------------------------------------------------------- */
 
-router.get('/', getGroup, (req: Request, res: Response) => {
+router.get('/', (req: Request, res: Response) => {
     scheduleTable.getSchedule(res.locals.groupId)
         .then((rows) => {
             res.status(200).json({message: "Rows selected successfully!", rows: rows})
@@ -130,7 +130,7 @@ router.get('/', getGroup, (req: Request, res: Response) => {
 })
 
 // Get schedule for given day
-router.get('/:day', getGroup, (req: Request, res: Response) => {
+router.get('/:day', (req: Request, res: Response) => {
     const day = parseInt(req.params.day);
     if (isNaN(day)) return res.status(400).json({message: "Day is not a valid number or was not provided", erros: ["Day is not a valid number or was not provided"]})
     
@@ -200,7 +200,7 @@ router.post('/', validateWritePermissions, validationChain, validateSubject, (re
 });
 
 // Update schedule row
-router.patch('/', getGroup, validateWritePermissions, validateId, validateUpdateArray, validateUpdate, (req, res) => {
+router.patch('/', validateWritePermissions, validateId, validateUpdateArray, validateUpdate, (req, res) => {
     let queryFields = '';
     let values = [];
 
@@ -230,7 +230,7 @@ router.patch('/', getGroup, validateWritePermissions, validateId, validateUpdate
 })
 
 // Delete schedule row
-router.delete('/', getGroup, validateWritePermissions, validateId, (req, res) => {
+router.delete('/', validateWritePermissions, validateId, (req, res) => {
     scheduleTable.deleteSubject(req.body.id, res.locals.groupId)
         .then((result) => {
             if (result) {

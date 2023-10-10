@@ -34,7 +34,7 @@ app.get('/api/', (req, res) => {
 app.use('/api/static', express.static('files/public'))
 app.use('/api/auth', authRouter);
 app.use('/api/groups', verifyToken, groupsRouter) // NEED VALIDATION
-app.use('/api/schedule', verifyToken, scheduleRouter);
+app.use('/api/schedule', verifyToken, getGroup, scheduleRouter);
 app.use('/api/calendar', verifyToken, getGroup, calendarRouter);
 app.use('/api/files', verifyToken, getGroup, more)
 
