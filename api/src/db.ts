@@ -323,7 +323,16 @@ const groupUsersDb_deleteUser = (username: UsersTable["username"], owner: UsersT
         })
     })
 }
-
+const groupUsersDb_userBelongsToGroup = (userId: UsersTable["id"], groupId: GroupsTable["id"]): Promise<boolean> => {
+    return new Promise((resolve,reject) => {
+        const sql = `SELECT * FROM groupUsers WHERE groupId=? AND userId=?`
+        db.get(sql, [groupId, userId], (err, row) => {
+            if (err) reject(err)
+            else if (row) resolve(true)
+            else resolve(false)
+        })
+    })
+}
 export interface GroupsTable {
     id: number,
     owner: number,
@@ -343,6 +352,7 @@ export const groupsTable = {
     initGroup: groupsDb_initializeGroup,
     getId: groupsDb_getId,
     getPrivileges: groupUsersDb_getPrivileges,
+    userBelongsToGroup: groupUsersDb_userBelongsToGroup,
     getMainGroupId: groupUsersDb_getMainGroupId,
     getGroups: groupUsersDb_getGroups,
     getUsers: groupUsersDb_getUsers,

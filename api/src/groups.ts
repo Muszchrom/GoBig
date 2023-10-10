@@ -9,8 +9,28 @@ export const getGroup = (req: Request, res: Response, next: NextFunction) => {
         const parsedQS = parseInt(req.query.gid)
         if (isNaN(parsedQS)) return res.status(400).json({errors: ["Invalid query param: gid"]})
         else {
-            res.locals.groupId = parsedQS
-            next()
+            groupsTable.userBelongsToGroup(res.locals.userId, parsedQS)
+                .then((result) => {
+                    if (result) {
+                        res.locals.groupId = parsedQS
+                        next()
+                        throw new Error("all fine")
+                    } else {
+                        return groupsTable.getMainGroupId(res.locals.userId)
+                    }
+                })
+                .then((result) => {
+                    if (result?.groupId) {
+                        res.locals.groupId = result.groupId
+                        next()
+                    } else {
+                        res.status(401).json({errors: ["You do not belong to any group"]})
+                    }
+                })
+                .catch((err) => {
+                    if (err.message === "all fine") return
+                    serverErrorHandler(err, res, "getGroup groupsTable.userBelongsToGroup catch block")
+                })
         }
     } else {
         groupsTable.getMainGroupId(res.locals.userId)
