@@ -5,6 +5,12 @@ import TileData from './tiles/TileData'
 import TileEdit from './tiles/TileEdit'
 import TileCreate from './tiles/TileCreate'
 
+import Labo from '../../graphics/svgs/Labo.svg'
+import Lecture from '../../graphics/svgs/Lecture.svg'
+import ForeignLanguageCourse from '../../graphics/svgs/Lektorat.svg'
+import Classes from '../../graphics/svgs/Exercises.svg'
+import Project from '../../graphics/svgs/Default.svg'
+
 export function CommonTile({subject, editMode,  setEditMode, specialType, signedIn, updateScheduleWithoutApiCall, uniqueKey, groupState}) {
     const [open, setOpen] = useState(false)
     const [editingTile, setEditingTile] = useState(false)
@@ -44,7 +50,13 @@ export function CommonTile({subject, editMode,  setEditMode, specialType, signed
                         <span className="no-select heading2">{subject.subjectName}</span>
                     </div>
                     <div className="tile-icon-container">
-                        <img src={`${source}/static/${subject.icon}`} alt=""/>
+                        <img src={
+                            subject.subjectType === 'Laboratory' ? Labo :
+                            subject.subjectType === 'Lecture' ? Lecture :
+                            subject.subjectType === 'Classes' ? Classes :
+                            subject.subjectType === 'Foreign language course' ? ForeignLanguageCourse :
+                            subject.subjectType === 'Project' ? Project : Project
+                        } alt=""/>
                     </div>
                 </div>
             </div>
