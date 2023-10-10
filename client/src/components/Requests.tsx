@@ -75,6 +75,12 @@ const callApi = async ({
         }
 }
 
+export const deleteUser = async (username: string): Promise<string[]> => {
+    const data = await callApi({endpoint: "/groups/users", method: "DELETE", data: {username: username}})
+    if (data.status === 200) return []
+    else return data.errors || ["An error occured"]
+}
+
 export const leaveGroup = async (groupName: string): Promise<string[]> => {
     const data = await callApi({endpoint: "/groups/groups", method: "DELETE", data: {groupName: groupName}})
     if (data.status === 200) return []

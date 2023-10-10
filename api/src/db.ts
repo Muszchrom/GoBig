@@ -310,6 +310,20 @@ const groupUsersDb_leaveGroup = (userId: GroupUsersTable["userId"], groupName: G
         })
     })
 }
+
+const groupUsersDb_deleteUser = (username: UsersTable["username"], owner: UsersTable["id"]): Promise<true> => {
+    return new Promise((resolve, reject) => {
+        const sql = `DELETE FROM groupUsers 
+                    WHERE userId=(SELECT id FROM users WHERE username=?) 
+                    AND userPrivileges<>0 
+                    AND groupId=(SELECT id FROM groups WHERE owner=?)`
+        db.run(sql, [username, owner], (err) => {
+            if (err) reject(err)
+            else resolve(true)
+        })
+    })
+}
+
 export interface GroupsTable {
     id: number,
     owner: number,
@@ -334,6 +348,7 @@ export const groupsTable = {
     getUsers: groupUsersDb_getUsers,
     leaveGroup: groupUsersDb_leaveGroup,
     insertUser: groupUsersDb_insertUser,
+    deleteUser: groupUsersDb_deleteUser,
     isUserInGroup: groupUsersDb_isUserInGroup
 }
 

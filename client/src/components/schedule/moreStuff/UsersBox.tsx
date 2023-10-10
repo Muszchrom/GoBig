@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react"
-import { getUsers } from "../../Requests"
+import { getUsers, deleteUser } from "../../Requests"
+import UploadModal from "../../UploadModal"
 
 export default function UsersBox() {
     const [focused, setFocused] = useState(false)
     const [usersArray, setUsersArray] = useState<{name: string, privileges: number}[] | undefined>(undefined) 
-    
+    const [modalState, setModalState] = useState({show: false, username: ""})
+
     const wrapRef = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
@@ -42,6 +44,12 @@ export default function UsersBox() {
       borderRadius: "4px",
       boxShadow: "var(--Shadow)"
     }
+
+    const handleClose = (username: string): void => {
+      const y = usersArray?.filter((item) => item.name !== username)
+      setUsersArray(y || [])
+      setModalState({show: false, username: ""})
+    }
   
     return (
       <>
@@ -63,12 +71,21 @@ export default function UsersBox() {
                       </span>
                     </div>
                     <div style={{display: "flex", gap: "12px"}}>
-                      <button title="Remove user" style={buttonStyles}>❌</button>
+                      <button title="Remove user" style={buttonStyles} onClick={() => setModalState({show: true, username: item.name})}>❌</button>
                     </div>
                   </div>)
                 }) : <div className="usersListItem" style={{textAlign: "center"}}>Your group currently has no users</div>}
             </div>
         </div>
+        {!!modalState.show && (
+          <UploadModal 
+            color="var(--Color4)" 
+            handleClose={(e) => {handleClose(modalState.username)}} 
+            handleSoftClose={(e) => {setModalState({show: false, username: ""})}} 
+            submitFunction={() => deleteUser(modalState.username)}>
+                Are you sure to remove {modalState.username} from your group?
+          </UploadModal>
+        )}
       </>
     )
   }

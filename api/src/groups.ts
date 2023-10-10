@@ -108,6 +108,13 @@ router.get('/users', (req, res) => {
 // requested by owner, removes users from his group
 router.delete('/users', (req, res) => {
     if (typeof req.body.username !== "string") return res.status(400).json({message: "Invalid username", errors: ["Invalid username"]})
+    groupsTable.deleteUser(req.body.username, res.locals.userId)
+        .then(() => {
+            res.status(200).json({message: "User deleted successfully"})
+        })
+        .catch((err) => {
+            serverErrorHandler(err, res, "router.delete('/users') groupsTable.deleteUser catch block")
+        })
 })
 
 // marks group as the main one
