@@ -27,8 +27,6 @@ export default function SignIn({signedIn, setSignedIn}: {signedIn: boolean, setS
         }
         setValidationErrors(errors)
         setWaitingForServer(false)
-        setUsername("")
-        setPassword("")
     }
 
     return(!signedIn ? (

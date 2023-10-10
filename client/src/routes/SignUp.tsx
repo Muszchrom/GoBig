@@ -25,9 +25,6 @@ export default function SignUp({signedIn}: {signedIn: boolean}) {
         if (!errors.length) return navigate("/signin", {replace: true})
         setValidationErrors(errors)
         setWaitingForServer(false)
-        setUsername("")
-        setPassword("")
-        setConfirmPassword("")
     }
 
     return(!signedIn ? (
@@ -35,15 +32,15 @@ export default function SignUp({signedIn}: {signedIn: boolean}) {
             <h1>Sign Up</h1>
             <form onSubmit={formSubmition} className="signInForm">
                 <TextInput 
-                    state={{field: "", fun: (a, username) => setUsername(username), initVal: ""}}
+                    state={{field: "", fun: (a, username) => setUsername(username), initVal: username}}
                     type="text"
                     autoComplete="username">Username</TextInput>
                 <TextInput 
-                    state={{field: "", fun: (a, password) => setPassword(password), initVal: ""}}
+                    state={{field: "", fun: (a, password) => setPassword(password), initVal: password}}
                     type="password"
                     autoComplete="new-password">Password</TextInput>
                 <TextInput 
-                    state={{field: "", fun: (a, confirmPassword) => setConfirmPassword(confirmPassword), initVal: ""}}
+                    state={{field: "", fun: (a, confirmPassword) => setConfirmPassword(confirmPassword), initVal: confirmPassword}}
                     type="password"
                     autoComplete="new-password">Confirm password</TextInput>
 
