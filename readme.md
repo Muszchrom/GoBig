@@ -1,3 +1,10 @@
+## Stuff used
+Front:\
+CRA, React rotuer\
+Backend:\
+Express, Bcrypt, sqlite (??)\
+Deployment:\
+Vercel, AWS EC2
 ## Setting up dev environment
 Run: `docker compose -f docker-compose.dev.yml build`
 then: `docker compose -f docker-compose.dev.yml up`
